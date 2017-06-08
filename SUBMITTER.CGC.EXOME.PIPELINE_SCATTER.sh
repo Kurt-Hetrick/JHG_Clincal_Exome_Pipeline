@@ -5,7 +5,7 @@ PED_FILE=$2
 
 # CHANGE SCRIPT DIR TO WHERE YOU HAVE HAVE THE SCRIPTS BEING SUBMITTED
 
-SCRIPT_DIR="/isilon/cgc/PIPELINES/JHGenomics_CGC_Clinical_Exome/d04bd2a2dc3c00f0ba7fc697750a1eef66985284/scripts"
+SCRIPT_DIR="/isilon/cgc/PIPELINES/JHGenomics_CGC_Clinical_Exome/scripts"
 # The above hash value is the corresponding commit at https://github.com/Kurt-Hetrick/JHGenomics_CGC_Clinical_Exome
 
 CORE_PATH="/isilon/cgc/SS_CRE"
@@ -884,7 +884,7 @@ for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' ~/CGC_PIPELINE_TEMP/
 
 CREATE_FAMILY_ONLY_ARRAY ()
 {
-FAMILY_ONLY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} $20=="'$FAMILY'" {print $1,$20,$12,$18}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
+FAMILY_ONLY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} $20=="'$FAMILY'" {print $1,$20,$12,$18,$17}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
 }
 
 CALL_VARIANT_TO_TABLE_COHORT_ALL_SITES ()
@@ -1410,6 +1410,73 @@ for SAMPLE in $(awk 'BEGIN {FS=","} NR>1 {if ($8~"@") {split($8,smtag,"[@]"); pr
  	BUILD_HOLD_ID_PATH_FILTER_TO_SAMPLE_VCF_TARGET
 	CREATE_SAMPLE_INFO_ARRAY_2
 	CALL_FILTER_TO_SAMPLE_VCF_TARGET_GATHER
+	echo sleep 1s
+ done
+
+###########################################################################################
+########### RUNNING FILTER TO FAMILY ALL SITES BY CHROMOSOME ON TARGET ####################
+###########################################################################################
+
+# CREATE_FAMILY_ONLY_ARRAY ()
+# {
+# FAMILY_ONLY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} $20=="'$FAMILY'" {print $1,$20,$12,$18,$17}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
+# }
+
+CALL_FILTER_TO_FAMILY_ON_TARGET_VARIANT ()
+{
+echo \
+qsub \
+-N P.01-A.06_FILTER_TO_FAMILY_TARGET_VARIANT_${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}_$CHROMOSOME \
+-hold_jid P.01_VARIANT_ANNOTATOR_${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}_$CHROMOSOME \
+-o $CORE_PATH/${FAMILY_ONLY_ARRAY[0]}/${FAMILY_ONLY_ARRAY[1]}/LOGS/${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}.FILTER_TO_FAMILY_ALL_SITES_$CHROMOSOME.log \
+$SCRIPT_DIR/P.01-A.06_FILTER_TO_FAMILY_ON_TARGET_VARIANT_ONLY_CHR.sh \
+$JAVA_1_8 $GATK_DIR $CORE_PATH \
+${FAMILY_ONLY_ARRAY[0]} ${FAMILY_ONLY_ARRAY[1]} ${FAMILY_ONLY_ARRAY[2]} ${FAMILY_ONLY_ARRAY[4]} $CHROMOSOME
+}
+
+for FAMILY in $(awk 'BEGIN {FS="\t"} {print $1}' $PED_FILE | sort | uniq );
+do
+CREATE_FAMILY_ONLY_ARRAY
+	for CHROMOSOME in {{1..22},{X,Y}}
+		do
+		CALL_FILTER_TO_FAMILY_ON_TARGET_VARIANT
+		echo sleep 1s
+		done
+	done
+	
+###############################################################################################################
+##### GATHER UP THE PER FAMILY PER CHROMOSOME ON TARGET FILTER TO FAMILY VCF FILES INTO A SINGLE VCF FILE #####
+###############################################################################################################
+
+BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF_TARGET_VARIANT ()
+{
+	for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET | sort | uniq )
+	do
+	HOLD_ID_PATH="-hold_jid "
+	for CHROMOSOME in {{1..22},{X,Y}};
+ 	do
+ 		HOLD_ID_PATH=$HOLD_ID_PATH"P.01-A.06_FILTER_TO_FAMILY_TARGET_VARIANT_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
+ 	done
+ done
+}
+
+CALL_FILTER_TO_FAMILY_VCF_GATHER_TARGET_VARIANT ()
+{
+echo \
+qsub \
+-N T.09-1_FILTER_TO_FAMILY_ON_TARGET_VARIANT_GATHER_${FAMILY_INFO_ARRAY[2]}_${FAMILY_INFO_ARRAY[0]} \
+ ${HOLD_ID_PATH} \
+ -o $CORE_PATH/${FAMILY_INFO_ARRAY[0]}/${FAMILY_INFO_ARRAY[2]}/LOGS/${FAMILY_INFO_ARRAY[2]}_${FAMILY_INFO_ARRAY[0]}.FILTER_TO_FAMILY_ALL_SITES_GATHER.log \
+ $SCRIPT_DIR/T.09-1_FILTER_TO_FAMILY_ON_TARGET_VARIANT_ONLY_GATHER.sh \
+ $JAVA_1_8 $GATK_DIR $CORE_PATH \
+ ${FAMILY_INFO_ARRAY[0]} ${FAMILY_INFO_ARRAY[2]} ${FAMILY_INFO_ARRAY[3]}
+}
+
+for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt | sort | uniq)
+ do
+	BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF_TARGET_VARIANT
+	CREATE_FAMILY_INFO_ARRAY
+	CALL_FILTER_TO_FAMILY_VCF_GATHER_TARGET_VARIANT
 	echo sleep 1s
  done
 
