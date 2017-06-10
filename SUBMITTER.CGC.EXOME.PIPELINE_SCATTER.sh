@@ -469,7 +469,7 @@ awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
 | sort -k 1 -k 2 -k 3 \
 | uniq \
 | awk '{split($3,smtag,"[@]"); \
-print "qsub","-N","H.03-A.02_PER_BASE_"smtag[1]"_"smtag[2]"_"$1,\
+print "qsub","-N","H.03-A.02_PER_BASE_FILTER_"smtag[1]"_"smtag[2]"_"$1,\
 "-hold_jid","H.03-A.02_PER_BASE_"smtag[1]"_"smtag[2]"_"$1,\
 "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".PER_BASE_FILTER.log",\
 "'$SCRIPT_DIR'""/H.03-A.02-A.01_PER_BASE_FILTERED.sh",\
@@ -500,6 +500,32 @@ print "qsub","-N","H.03-A.02-A.02-A.01_PER_BASE_TABIX_"smtag[1]"_"smtag[2]"_"$1,
 "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".PER_BASE_TABIX.log",\
 "'$SCRIPT_DIR'""/H.03-A.02-A.02-A.01_PER_BASE_TABIX.sh",\
 "'$CORE_PATH'","'$TABIX_DIR'",$1,$2,$3"\n""sleep 1s"}'
+
+# RUN FORMATTING PER CODING INTERVAL COVERAGE WITH GENE NAME ANNNOTATION
+
+awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
+~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+| sort -k 1 -k 2 -k 3 \
+| uniq \
+| awk '{split($3,smtag,"[@]"); \
+print "qsub","-N","H.03-A.03_PER_INTERVAL_"smtag[1]"_"smtag[2]"_"$1,\
+"-hold_jid","H.03_DOC_CODING_10bpFLANKS_"smtag[1]"_"smtag[2]"_"$1,\
+"-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".PER_INTERVAL.log",\
+"'$SCRIPT_DIR'""/H.03-A.03_PER_INTERVAL.sh",\
+"'$CORE_PATH'","'$BEDTOOLS_DIR'","'$CODING_BED'",$1,$2,$3"\n""sleep 1s"}'
+
+# RUN FILTERING PER CODING INTERVAL COVERAGE WITH GENE NAME ANNNOTATION WITH LESS THAN 30x
+
+awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
+~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+| sort -k 1 -k 2 -k 3 \
+| uniq \
+| awk '{split($3,smtag,"[@]"); \
+print "qsub","-N","H.03-A.03_PER_INTERVAL_FILTER_"smtag[1]"_"smtag[2]"_"$1,\
+"-hold_jid","H.03-A.03_PER_INTERVAL_"smtag[1]"_"smtag[2]"_"$1,\
+"-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".PER_INTERVAL_FILTER.log",\
+"'$SCRIPT_DIR'""/H.03-A.03-A.01_PER_INTERVAL_FILTERED.sh",\
+"'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
 
 # RUN DOC TARGET BED
 
