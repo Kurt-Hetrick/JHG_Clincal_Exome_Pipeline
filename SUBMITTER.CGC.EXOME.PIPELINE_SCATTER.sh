@@ -74,13 +74,13 @@ FORMAT_MANIFEST
 MERGE_PED_MANIFEST
 CREATE_SAMPLE_INFO_ARRAY
 MAKE_PROJ_DIR_TREE
-# echo "echo Making padded annotated RefSeq coding bed file for $SAMPLE"
-# PAD_REFSEQ
-# echo "echo Making padded target bed file for $SAMPLE"
-# PAD_TARGET
-# echo "echo Making everything merged together bait file for $SAMPLE"
-# MAKE_BAIT
-# echo Project started at `date` >| $CORE_PATH/${SAMPLE_INFO_ARRAY[0]}/REPORTS/PROJECT_START_END_TIMESTAMP.txt
+echo "echo Making padded annotated RefSeq coding bed file for $SAMPLE"
+PAD_REFSEQ
+echo "echo Making padded target bed file for $SAMPLE"
+PAD_TARGET
+echo "echo Making everything merged together bait file for $SAMPLE"
+MAKE_BAIT
+echo Project started at `date` >| $CORE_PATH/${SAMPLE_INFO_ARRAY[0]}/REPORTS/PROJECT_START_END_TIMESTAMP.txt
 }
 
 FORMAT_MANIFEST ()
@@ -1492,7 +1492,7 @@ echo \
 qsub \
 -N T.09-1_FILTER_TO_FAMILY_ON_TARGET_VARIANT_GATHER_${FAMILY_INFO_ARRAY[2]}_${FAMILY_INFO_ARRAY[0]} \
  ${HOLD_ID_PATH} \
- -o $CORE_PATH/${FAMILY_INFO_ARRAY[0]}/${FAMILY_INFO_ARRAY[2]}/LOGS/${FAMILY_INFO_ARRAY[2]}_${FAMILY_INFO_ARRAY[0]}.FILTER_TO_FAMILY_ALL_SITES_GATHER.log \
+ -o $CORE_PATH/${FAMILY_INFO_ARRAY[0]}/${FAMILY_INFO_ARRAY[2]}/LOGS/${FAMILY_INFO_ARRAY[2]}_${FAMILY_INFO_ARRAY[0]}.FILTER_TO_FAMILY_ON_TARGET_VARIANT_GATHER.log \
  $SCRIPT_DIR/T.09-1_FILTER_TO_FAMILY_ON_TARGET_VARIANT_ONLY_GATHER.sh \
  $JAVA_1_8 $GATK_DIR $CORE_PATH \
  ${FAMILY_INFO_ARRAY[0]} ${FAMILY_INFO_ARRAY[2]} ${FAMILY_INFO_ARRAY[3]}
