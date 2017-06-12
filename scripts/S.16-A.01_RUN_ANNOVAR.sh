@@ -40,7 +40,7 @@ $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_ANNOVAR"
 
 # Run annovar like a boss
 
-START_RUN_ANNOVRAR=`date '+%s'`
+START_RUN_ANNOVAR=`date '+%s'`
 
 $JAVA_1_6/java -jar $CIDRSEQSUITE_DIR/CIDRSeqSuite.jar \
 -pipeline \
