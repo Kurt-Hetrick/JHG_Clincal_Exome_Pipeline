@@ -68,7 +68,7 @@ $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/BAM/$SM_TAG".bam" \
 | awk '{split($5,SMtag,":"); split($6,PU,":"); split($3,Library,":"); print SMtag[2]"\t"PU[2]"\t"Library[2]}' \
 | $DATAMASH_DIR/datamash -s -g 1 collapse 2 unique 3 | sed 's/,/;/g' \
 | awk 'BEGIN {OFS="\t"} {print $0,"'$PROJECT'","'$FAMILY'","'$FATHER'","'$MOTHER'","'$GENDER'","'$AFFECTED'"}' \
-| awk 'BEGIN {OFS="\t"} $8=="1" {print $4,$1,$2,$3,$5,$6,$7,"MALE",$9} $8=="2" {print $4,$1,$2,$3,$5,$6,$7,"FEMALE",$9}' \
+| awk 'BEGIN {OFS="\t"} $8=="1" {print $4,$1,$2,$3,$5,$6,$7,"MALE",$9} $8=="2" {print $4,$1,$2,$3,$5,$6,$7,"FEMALE",$9} $8!="1"&&$8!="2" {print $4,$1,$2,$3,$5,$6,$7,"UNKNOWN",$9}' \
 | awk 'BEGIN {OFS="\t"} $9=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,"MISSING"} $9=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,"MISSING"} \
 $9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"UNAFFECTED"} $9=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"AFFECTED"}' \
 >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_SAMPLE_META.txt"
