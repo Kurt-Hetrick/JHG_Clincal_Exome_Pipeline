@@ -229,7 +229,7 @@ grep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/SUMMARY/$SM
 
 zgrep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/SNV/FILTERED_ON_BAIT/$SM_TAG".SNV.ON_BAIT.PASS.vcf.gz" \
 | awk '{SNV_COUNT++NR} {DBSNP_COUNT+=($3~"rs")} \
-END {if (SNV_COUNT>=l) {print "'$SM_TAG'",SNV_COUNT,(DBSNP_COUNT/SNV_COUNT)*100} \
+END {if (SNV_COUNT!="") {print "'$SM_TAG'",SNV_COUNT,(DBSNP_COUNT/SNV_COUNT)*100} \
 else {print "'$SM_TAG'","0","NaN"}}' \
 | sed 's/ /\t/g' \
 >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_BAIT_SNV_METRICS.TXT"
@@ -243,7 +243,7 @@ else {print "'$SM_TAG'","0","NaN"}}' \
 
 zgrep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/SNV/FILTERED_ON_TARGET/$SM_TAG".SNV.ON_TARGET.PASS.vcf.gz" \
 | awk '{SNV_COUNT++NR} {DBSNP_COUNT+=($3~"rs")} \
-END {if (SNV_COUNT>=l) {print "'$SM_TAG'",SNV_COUNT,(DBSNP_COUNT/SNV_COUNT)*100} \
+END {if (SNV_COUNT!="") {print "'$SM_TAG'",SNV_COUNT,(DBSNP_COUNT/SNV_COUNT)*100} \
 else {print "'$SM_TAG'","0","NaN"}}' \
 | sed 's/ /\t/g' \
 >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_TARGET_SNV_METRICS.TXT"
