@@ -65,12 +65,12 @@
 
 	# load gcc for programs like verifyBamID
 	## this will get pushed out to all of the compute nodes since I specify env var to pushed out with qsub
-		
+
 		module load gcc/7.2.0
 
 	# explicitly setting this b/c not everybody has had the $HOME directory transferred and I'm not going to through
 	# and figure out who does and does not have this set correctly
-		
+
 		umask 0007
 
 	# SUBMIT TIMESTAMP
@@ -78,7 +78,7 @@
 		SUBMIT_STAMP=`date '+%s'`
 
 	# SUBMITTER_ID
-		
+
 		SUBMITTER_ID=`whoami`
 
 	# bind the host file system /mnt to the singularity container. in case I use it in the submitter.
@@ -354,16 +354,174 @@ done
 
 ############################################################
 
-# to create the qsub cmd line to submit bwa alignments to the cluster
-# handle blank lines
-# handle something else too
+################################
+##### CRAM FILE GENERATION #####
+###############################################################################################
+##### NOTE: THE CRAM FILE IS THE END PRODUCT BUT THE BAM FILE IS USED FOR OTHER PROCESSES #####
+##### SOME PROGRAMS CAN'T TAKE IN CRAM AS AN INPUT ############################################
+###############################################################################################
 
-awk 'BEGIN {FS="\t"} {split($19,INDEL,";");split($8,smtag,"[@]"); \
-print "qsub","-N","A.01_BWA_"smtag[1]"_"smtag[2]"_"$2"_"$3"_"$4,\
-"-o","'$CORE_PATH'/"$1"/"$20"/"$8"/LOGS/"$8"_"$2"_"$3"_"$4".BWA.log",\
-"'$SCRIPT_DIR'""/A.01_BWA.sh",\
-"'$BWA_DIR'","'$JAVA_1_8'","'$PICARD_DIR'","'$CORE_PATH'",$1,$20,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12"\n""sleep 3s"}' \
-~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt
+	########################################################################################
+	# create an array at the platform level so that bwa mem can add metadata to the header #
+	########################################################################################
+
+		CREATE_PLATFORM_UNIT_ARRAY ()
+		{
+			PLATFORM_UNIT_ARRAY=(`awk 1 ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
+			| awk 'BEGIN {FS="\t"} $8$2$3$4=="'$PLATFORM_UNIT'" {split($19,INDEL,";"); print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],$$20,$21,$22,$23,$24}' \
+			| sort \
+			| uniq`)
+
+				#  1  Project=the Seq Proj folder name
+
+					PROJECT=${PLATFORM_UNIT_ARRAY[0]}
+
+				#  2  FCID=flowcell that sample read group was performed on
+
+					FCID=${PLATFORM_UNIT_ARRAY[1]}
+
+				#  3  Lane=lane of flowcell that sample read group was performed on
+
+					LANE=${PLATFORM_UNIT_ARRAY[2]}
+
+				#  4  Index=sample barcode
+
+					INDEX=${PLATFORM_UNIT_ARRAY[3]}
+
+				#  5  Platform=type of sequencing chemistry matching SAM specification
+
+					PLATFORM=${PLATFORM_UNIT_ARRAY[4]}
+
+				#  6  Library_Name=library group of the sample read group,
+					# Used during Marking Duplicates to determine if molecules are to be considered as part of the same library or not
+
+					LIBRARY=${PLATFORM_UNIT_ARRAY[5]}
+
+				#  7  Date=should be the run set up date, but doesn't have to be
+
+					RUN_DATE=${PLATFORM_UNIT_ARRAY[6]}
+
+				#  8  SM_Tag=sample ID
+
+					SM_TAG=${PLATFORM_UNIT_ARRAY[7]}
+
+						# sge sm tag. If there is an @ in the qsub or holdId name it breaks
+
+							SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g')
+
+				#  9  Center=the center/funding mechanism
+
+					CENTER=${PLATFORM_UNIT_ARRAY[8]}
+
+				# 10  Description=Generally we use to denote the sequencer setting (e.g. rapid run)
+				# “HiSeq-X”, “HiSeq-4000”, “HiSeq-2500”, “HiSeq-2000”, “NextSeq-500”, or “MiSeq”.
+
+					SEQUENCER_MODEL=${PLATFORM_UNIT_ARRAY[9]}
+
+				########################
+				# 11  Seq_Exp_ID: SKIP #
+				########################
+
+				# 12  Genome_Ref=the reference genome used in the analysis pipeline
+
+					REF_GENOME=${PLATFORM_UNIT_ARRAY[10]}
+
+				#####################################
+				# 13  Operator: SKIP ################
+				# 14  Extra_VCF_Filter_Params: SKIP #
+				#####################################
+
+				# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
+
+					TITV_BED=${PLATFORM_UNIT_ARRAY[11]}
+
+				# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
+				# Used for limited where to run base quality score recalibration on where to create gvcf files.
+
+					BAIT_BED=${PLATFORM_UNIT_ARRAY[12]}
+
+				# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
+
+					TARGET_BED=${PLATFORM_UNIT_ARRAY[13]}
+
+				# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in base call quality score recalibration.
+
+					DBSNP=${PLATFORM_UNIT_ARRAY[14]}
+
+				# 19  KNOWN_INDEL_FILES=used for BQSR masking
+
+					KNOWN_INDEL_1=${PLATFORM_UNIT_ARRAY[15]}
+					KNOWN_INDEL_2=${PLATFORM_UNIT_ARRAY[16]}
+
+				# 20 FAMILY
+
+					FAMILY=${PLATFORM_UNIT_ARRAY[17]}
+
+				# 21 MOM
+
+					MOM=${PLATFORM_UNIT_ARRAY[17]}
+
+				# 22 DAD
+
+					DAD=${PLATFORM_UNIT_ARRAY[17]}
+
+				# 23 GENDER
+
+					GENDER=${PLATFORM_UNIT_ARRAY[17]}
+
+				# 24 PHENOTYPE
+
+					PHENOTYPE=${PLATFORM_UNIT_ARRAY[17]}
+		}
+
+	########################################################################
+	### Use bwa mem to do the alignments; ##################################
+	### pipe to samblaster to add mate tags; ###############################
+	### pipe to picard's AddOrReplaceReadGroups to handle the bam header ###
+	########################################################################
+
+		RUN_BWA ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N A.01-BWA"_"$SGE_SM_TAG"_"$FCID"_"$LANE"_"$INDEX \
+				-o $CORE_PATH/$PROJECT/LOGS/$SM_TAG/$SM_TAG"_"$FCID"_"$LANE"_"$INDEX"-BWA.log" \
+			$SCRIPT_DIR/A.01_BWA.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FCID \
+				$LANE \
+				$INDEX \
+				$PLATFORM \
+				$LIBRARY \
+				$RUN_DATE \
+				$SM_TAG \
+				$CENTER \
+				$SEQUENCER_MODEL \
+				$REF_GENOME \
+				$PIPELINE_VERSION \
+				$BAIT_BED \
+				$TARGET_BED \
+				$TITV_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP \
+				$NOVASEQ_REPO
+		}
+
+	for PLATFORM_UNIT in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8$2$3$4}' \
+			| sort \
+			| uniq );
+		do
+			CREATE_PLATFORM_UNIT_ARRAY
+			mkdir -p $CORE_PATH/$PROJECT/LOGS/$SM_TAG
+			RUN_BWA
+			echo sleep 0.1s
+	done
 
 # create a hold job id qsub command line based on the number of
 # submit merging the bam files created by bwa mem above
