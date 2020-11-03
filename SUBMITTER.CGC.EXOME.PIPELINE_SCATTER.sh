@@ -487,7 +487,7 @@ done
 			qsub \
 				$QSUB_ARGS \
 			-N A.01-BWA"_"$SGE_SM_TAG"_"$FCID"_"$LANE"_"$INDEX \
-				-o $CORE_PATH/$PROJECT/LOGS/$SM_TAG/$SM_TAG"_"$FCID"_"$LANE"_"$INDEX"-BWA.log" \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG/$SM_TAG"_"$FCID"_"$LANE"_"$INDEX"-BWA.log" \
 			$SCRIPT_DIR/A.01_BWA.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -522,6 +522,66 @@ done
 			RUN_BWA
 			echo sleep 0.1s
 	done
+
+	#########################################################################################
+	# Merge files and mark duplicates using picard duplictes with queryname sorting #########
+	# do coordinate sorting with sambamba ###################################################
+	#########################################################################################
+	# I am setting the heap space and garbage collector threads for picard now now ##########
+	# doing this does drastically decrease the load average ( the gc thread specification ) #
+	#########################################################################################
+	# create a hold job id qsub command line based on the number of #########################
+	# submit merging the bam files created by bwa mem above #################################
+	# only launch when every lane for a sample is done being processed by bwa mem ###########
+	# I want to clean this up eventually and get away from using awk to print the qsub line #
+	#########################################################################################
+
+	# What is being pulled out of the merged sample sheet and ped file table.
+		# 1. PROJECT
+		# 2. FAMILY
+		# 3. SM_TAG
+		# 4. FCID_LANE_INDEX
+		# 5. FCID_LANE_INDEX.bam
+		# 6. SM_TAG
+		# 7. DESCRIPTION (INSTRUMENT MODEL)
+
+			awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$2"_"$3"_"$4,$2"_"$3"_"$4".bam",$8,$10}' \
+			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+			| awk 'BEGIN {OFS="\t"} {sub(/@/,"_",$6)} {print $1,$2,$3,$4,$5,$6,$7}' \
+			| sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 -k 7,7 \
+			| uniq \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				-s \
+				-g 1,2,3 \
+				collapse 4 \
+				collapse 5 \
+				unique 6 \
+				unique 7 \
+			| awk 'BEGIN {FS="\t"} \
+				gsub(/,/,",A.01_BWA_"$6"_",$4) \
+				gsub(/,/,",INPUT=" "'$CORE_PATH'" "/" $1"/TEMP/",$5) \
+				{print "qsub",\
+				"-S /bin/bash",\
+				"-cwd",\
+				"-V",\
+				"-v SINGULARITY_BINDPATH=/mnt:/mnt",\
+				"-q","'$QUEUE_LIST'",\
+				"-p","'$PRIORITY'",\
+				"-j y",\
+				"-N","B.01-MARK_DUPLICATES_"$6"_"$1,\
+				"-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1"-MARK_DUPLICATES.log",\
+				"-hold_jid","A.01-BWA_"$6"_"$4, \
+				"'$SCRIPT_DIR'""/B.01_MARK_DUPLICATES.sh",\
+				"'$ALIGNMENT_CONTAINER'",\
+				"'$CORE_PATH'",\
+				$1,\
+				$2,\
+				$3,\
+				$7,\
+				"'$SAMPLE_SHEET'",\
+				"'$SUBMIT_STAMP'",\
+				"INPUT=" "'$CORE_PATH'" "/" $1"/TEMP/"$5"\n""sleep 0.1s"}'
+
 
 # # create a hold job id qsub command line based on the number of
 # # submit merging the bam files created by bwa mem above
