@@ -35,7 +35,6 @@
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
 	SUBMIT_STAMP=$8
 
-
 	INPUT_BAM_FILE_STRING=$9
 		INPUT=`echo $INPUT_BAM_FILE_STRING | sed 's/,/ /g'`
 

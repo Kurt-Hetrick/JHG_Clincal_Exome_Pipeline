@@ -582,65 +582,6 @@ done
 				"'$SUBMIT_STAMP'",\
 				"INPUT=" "'$CORE_PATH'" "/" $1"/TEMP/"$5"\n""sleep 0.1s"}'
 
-
-# # create a hold job id qsub command line based on the number of
-# # submit merging the bam files created by bwa mem above
-# # only launch when every lane for a sample is done being processed by bwa mem
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {split($8,smtag,"[@]"); print $1,$20,$8,$2"_"$3"_"$4,$2"_"$3"_"$4".bam"}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | $DATAMASH_DIR/datamash -s -g 1,2,3 collapse 4 collapse 5 \
-# | awk 'BEGIN {FS="\t"} \
-# gsub(/,/,",A.01_BWA_"$3"_",$4) \
-# gsub(/,/,",INPUT=/isilon/cgc/SS_CRE/"$1"/TEMP/",$5) \
-# {split($3,smtag,"[@]"); print "qsub","-N","B.01_MERGE_BAM_"smtag[1]"_"smtag[2]"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".MERGE.BAM.FILES.log",\
-# "-hold_jid","A.01_BWA_"smtag[1]"_"smtag[2]"_"$4, \
-# "'$SCRIPT_DIR'""/B.01_MERGE_SORT_AGGRO.sh",\
-# "'$JAVA_1_8'","'$PICARD_DIR'","'$CORE_PATH'",$1,$2,$3,"INPUT=/isilon/cgc/SS_CRE/"$1"/TEMP/"$5"\n""sleep 1s"}'
-
-# # Mark duplicates on the bam file above. Create a Mark Duplicates report which goes into the QC report
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); \
-# print "qsub","-N","C.01_MARK_DUPLICATES_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","B.01_MERGE_BAM_"smtag[1]"_"smtag[2]"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".MARK_DUPLICATES.log",\
-# "'$SCRIPT_DIR'""/C.01_MARK_DUPLICATES.sh",\
-# "'$JAVA_1_8'","'$PICARD_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
-
-# # Generate a list of places that could be potentially realigned.
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12,$19}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($5,INDEL,";"); split($3,smtag,"[@]"); \
-# print "qsub","-N","D.01_REALIGNER_TARGET_CREATOR_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","C.01_MARK_DUPLICATES_"smtag[1]"_"smtag[2]"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".REALIGNER_TARGET_CREATOR.log",\
-# "'$SCRIPT_DIR'""/D.01_REALIGNER_TARGET_CREATOR.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4,INDEL[1],INDEL[2]"\n""sleep 1s"}'
-
-# # With the list generated above walk through the BAM file and realign where necessary
-# # Write out a new bam file
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12,$19}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($5,INDEL,";"); split($3,smtag,"[@]"); \
-# print "qsub","-N","E.01_INDEL_REALIGNER_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","D.01_REALIGNER_TARGET_CREATOR_"smtag[1]"_"smtag[2]"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".INDEL_REALIGNER.log",\
-# "'$SCRIPT_DIR'""/E.01_INDEL_REALIGNER.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4,INDEL[1],INDEL[2]"\n""sleep 1s"}'
-
 # # Run Base Quality Score Recalibration
 
 # awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12,$19,$18,$16}' \
