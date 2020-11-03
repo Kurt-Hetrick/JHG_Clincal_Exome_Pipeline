@@ -202,7 +202,7 @@
 		>| ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt
 	}
 
-	CREATE_SAMPLE_INFO_ARRAY ()
+	CREATE_SAMPLE_ARRAY ()
 	{
 		SAMPLE_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} $8=="'$SAMPLE'" \
 			{split($19,INDEL,";"); \
@@ -330,7 +330,7 @@
 	{
 		FORMAT_MANIFEST
 		MERGE_PED_MANIFEST
-		CREATE_SAMPLE_INFO_ARRAY
+		CREATE_SAMPLE_ARRAY
 		MAKE_PROJ_DIR_TREE
 		echo Project started at `date` >| $CORE_PATH/$PROJECT/REPORTS/PROJECT_START_END_TIMESTAMP.txt
 	}
@@ -487,7 +487,7 @@ done
 			qsub \
 				$QSUB_ARGS \
 			-N A.01-BWA"_"$SGE_SM_TAG"_"$FCID"_"$LANE"_"$INDEX \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG/$SM_TAG"_"$FCID"_"$LANE"_"$INDEX"-BWA.log" \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"_"$FCID"_"$LANE"_"$INDEX"-BWA.log" \
 			$SCRIPT_DIR/A.01_BWA.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -581,6 +581,54 @@ done
 				"'$SAMPLE_SHEET'",\
 				"'$SUBMIT_STAMP'",\
 				"INPUT=" "'$CORE_PATH'" "/" $1"/TEMP/"$5"\n""sleep 0.1s"}'
+
+	###############################################
+	# fix common formatting problems in bed files #
+	# merge bait to target for gvcf creation, pad #
+	# create picard style interval files ##########
+	###############################################
+
+		FIX_BED_FILES ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-FIX_BED_FILES.log" \
+			-hold_jid B.01-MARK_DUPLICATES"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/C.01_FIX_BED.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$SM_TAG \
+				$CODING_BED \
+				$TARGET_BED \
+				$BAIT_BED \
+				$TITV_BED \
+				$CYTOBAND_BED \
+				$REF_GENOME \
+				$PADDING_LENGTH \
+				$GVCF_PAD
+		}
+
+for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+		| sort \
+		| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		FIX_BED_FILES
+		echo sleep 0.1s
+		# PERFORM_BQSR
+		# echo sleep 0.1s
+		# APPLY_BQSR
+		# echo sleep 0.1s
+		# BAM_TO_CRAM
+		# echo sleep 0.1s
+		# INDEX_CRAM
+		# echo sleep 0.1s
+done
 
 # # Run Base Quality Score Recalibration
 
