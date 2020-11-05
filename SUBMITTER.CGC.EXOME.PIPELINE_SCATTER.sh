@@ -686,6 +686,29 @@ done
 				$SUBMIT_STAMP
 		}
 
+	# ##########################################################################################
+	# # index the cram file and copy it so that there are both *crai and cram.crai *extensions #
+	# ##########################################################################################
+
+		INDEX_CRAM ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N G.01-INDEX_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-INDEX_CRAM.log" \
+			-hold_jid F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/G.01_INDEX_CRAM.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -701,8 +724,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		BAM_TO_CRAM
 		echo sleep 0.1s
-		# INDEX_CRAM
-		# echo sleep 0.1s
+		INDEX_CRAM
+		echo sleep 0.1s
 done
 
 # # SCATTER THE HAPLOTYPE CALLER GVCF CREATION USING THE WHERE THE BED INTERSECTS WITH {{1.22},{X,Y}}
