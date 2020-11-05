@@ -314,7 +314,7 @@
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/CONCORDANCE \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/COUNT_COVARIATES/{GATK_REPORT,PDF} \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/GC_BIAS/{METRICS,PDF,SUMMARY} \
-		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/DEPTH_OF_COVERAGE/{TARGET_PADDED,REFSEQ_CODING_PLUS_10bp} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/DEPTH_OF_COVERAGE/{TARGET_PADDED,CODING_PADDED} \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/HYB_SELECTION/PER_TARGET_COVERAGE \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/{METRICS,PDF} \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/LOCAL_REALIGNMENT_INTERVALS \
@@ -870,6 +870,36 @@ done
 				$SUBMIT_STAMP
 		}
 
+	##############################################################################
+	# CREATE DEPTH OF COVERAGE FOR CODING BED PADDED WITH THE INPUT FROM THE GUI #
+	# uses a gatk 3.7 container ##################################################
+	# input is the BAM file ######################################################
+	# This with all RefSeq Select CDS exons + missing OMIM, etc. #################
+	# uses the BAM file as the input #############################################
+	##############################################################################
+
+		DOC_CODING ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.05-DOC_CODING"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-DOC_CODING.log" \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,G.01-INDEX_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/H.05_DOC_CODING_PADDED.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$CODING_BED \
+				$PADDING_LENGTH \
+				$GENE_LIST \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -887,8 +917,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		RUN_VERIFYBAMID
 		echo sleep 0.1s
-		# DOC_CODING
-		# echo sleep 0.1s
+		DOC_CODING
+		echo sleep 0.1s
 		# ANEUPLOIDY_CHECK
 		# echo sleep 0.1s
 		# ANNOTATE_PER_BASE_REPORT
