@@ -76,7 +76,7 @@ START_FINAL_BAM=`date '+%s'` # capture time process starts for wall clock tracki
 			exit $SCRIPT_STATUS
 		fi
 
-END_FINAL_BAM=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_FINAL_BAM=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 
 # write out timing metrics to file
 

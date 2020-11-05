@@ -306,7 +306,7 @@
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MIXED/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/VCF/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/GVCF \
-		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/{ALIGNMENT_SUMMARY,ANNOVAR,PICARD_DUPLICATES,TI_TV,VERIFYBAMID,VERIFYBAMID_CHR} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/{ALIGNMENT_SUMMARY,ANNOVAR,PICARD_DUPLICATES,TI_TV,VERIFYBAMID,VERIFYBAMID_CHR,RG_HEADER} \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/{METRICS,SUMMARY} \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/{METRICS,SUMMARY} \
 		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASECALL_Q_SCORE_DISTRIBUTION/{METRICS,PDF} \
@@ -663,6 +663,29 @@ done
 				$SUBMIT_STAMP
 		}
 
+	#####################################################
+	# create a lossless cram, although the bam is lossy #
+	#####################################################
+
+		BAM_TO_CRAM ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-BAM_TO_CRAM.log" \
+			-hold_jid E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/F.01_BAM_TO_CRAM.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -676,8 +699,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		APPLY_BQSR
 		echo sleep 0.1s
-		# BAM_TO_CRAM
-		# echo sleep 0.1s
+		BAM_TO_CRAM
+		echo sleep 0.1s
 		# INDEX_CRAM
 		# echo sleep 0.1s
 done
