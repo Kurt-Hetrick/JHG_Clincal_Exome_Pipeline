@@ -847,6 +847,29 @@ done
 				$SUBMIT_STAMP
 		}
 
+	###############################
+	# RUN VERIFYBAMID #############
+	# THIS RUNS OFF OF A BAM FILE #
+	###############################
+
+		RUN_VERIFYBAMID ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.04-A.01-RUN_VERIFYBAMID"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-VERIFYBAMID.log" \
+			-hold_jid H.04-SELECT_VERIFYBAMID_VCF"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/H.04-A.01_VERIFYBAMID.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -862,8 +885,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		SELECT_VERIFYBAMID_VCF
 		echo sleep 0.1s
-		# RUN_VERIFYBAMID
-		# echo sleep 0.1s
+		RUN_VERIFYBAMID
+		echo sleep 0.1s
 		# DOC_CODING
 		# echo sleep 0.1s
 		# ANEUPLOIDY_CHECK
@@ -885,6 +908,19 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		# CAT_VERIFYBAMID_PER_AUTOSOME
 		# echo sleep 0.1s
 done
+
+# # RUN VERIFYBAMID
+
+# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
+# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+# | sort -k 1 -k 2 -k 3 \
+# | uniq \
+# | awk '{split($3,smtag,"[@]"); \
+# print "qsub","-N","H.08-A.01_VERIFYBAMID_"smtag[1]"_"smtag[2]"_"$1,\
+# "-hold_jid","H.08_SELECT_VERIFYBAMID_VCF_"smtag[1]"_"smtag[2]"_"$1,\
+# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".VERIFYBAMID.log",\
+# "'$SCRIPT_DIR'""/H.08-A.01_VERIFYBAMID.sh",\
+# "'$CORE_PATH'","'$VERIFY_DIR'",$1,$2,$3"\n""sleep 1s"}'
 
 # # SCATTER THE HAPLOTYPE CALLER GVCF CREATION USING THE WHERE THE BED INTERSECTS WITH {{1.22},{X,Y}}
 
@@ -1103,32 +1139,6 @@ done
 # "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".PER_INTERVAL_FILTER.log",\
 # "'$SCRIPT_DIR'""/H.03-A.03-A.01_PER_INTERVAL_FILTERED.sh",\
 # "'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
-
-# # RUN SELECT VERIFYBAM ID VCF
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12,$15}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); \
-# print "qsub","-N","H.08_SELECT_VERIFYBAMID_VCF_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","G.01_FINAL_BAM_"smtag[1]"_"smtag[2]"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".SELECT_VERIFYBAMID_VCF.log",\
-# "'$SCRIPT_DIR'""/H.08_SELECT_VERIFYBAMID_VCF.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'","'$VERIFY_VCF'",$1,$2,$3,$4,$5"\n""sleep 1s"}'
-
-# # RUN VERIFYBAMID
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); \
-# print "qsub","-N","H.08-A.01_VERIFYBAMID_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","H.08_SELECT_VERIFYBAMID_VCF_"smtag[1]"_"smtag[2]"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".VERIFYBAMID.log",\
-# "'$SCRIPT_DIR'""/H.08-A.01_VERIFYBAMID.sh",\
-# "'$CORE_PATH'","'$VERIFY_DIR'",$1,$2,$3"\n""sleep 1s"}'
 
 # ###################################################
 # ### RUN VERIFYBAM ID PER CHROMOSOME - VITO ########
