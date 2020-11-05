@@ -83,7 +83,7 @@ START_COLLECT_HS_METRICS=`date '+%s'` # capture time process starts for wall clo
 			exit $SCRIPT_STATUS
 		fi
 
-END_COLLECT_HS_METRICS=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_COLLECT_HS_METRICS=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 
 # write out timing metrics to file
 

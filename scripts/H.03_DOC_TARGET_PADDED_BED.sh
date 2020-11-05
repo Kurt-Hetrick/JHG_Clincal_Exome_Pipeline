@@ -89,7 +89,7 @@ END_DOC_TARGET=`date '+%s'` # capture time process stops for wall clock tracking
 # write out timing metrics to file
 
 	echo $SM_TAG"_"$PROJECT",H.001,DOC_TARGET,"$HOSTNAME","$START_DOC_TARGET","$END_DOC_TARGET \
-	>> $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
+	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
 ##### MOVE AND RENAME OUTPUTS
 

@@ -77,12 +77,12 @@ START_COLLECT_MULTIPLE_METRICS=`date '+%s'` # capture time process starts for wa
 			exit $SCRIPT_STATUS
 		fi
 
-END_COLLECT_MULTIPLE_METRICS=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_COLLECT_MULTIPLE_METRICS=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 
 # write out timing metrics to file
 
 	echo $SM_TAG"_"$PROJECT"_BAM_REPORTS,Z.01,COLLECT_MULTIPLE_METRICS,"$HOSTNAME","$START_COLLECT_MULTIPLE_METRICS","$END_COLLECT_MULTIPLE_METRICS \
-	>> $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
+	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
 # move and rename output
 

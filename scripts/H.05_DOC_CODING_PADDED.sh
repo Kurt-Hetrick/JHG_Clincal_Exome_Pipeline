@@ -85,7 +85,7 @@ START_DOC_CODING=`date '+%s'` # capture time process starts for wall clock track
 			exit $SCRIPT_STATUS
 		fi
 
-END_DOC_CODING=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_DOC_CODING=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 
 # write out timing metrics to file
 
