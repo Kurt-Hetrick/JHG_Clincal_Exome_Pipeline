@@ -638,6 +638,31 @@ done
 				$SUBMIT_STAMP
 		}
 
+	##############################
+	# use a 4 bin q score scheme #
+	# remove indel Q scores ######
+	# retain original Q score  ###
+	##############################
+
+		APPLY_BQSR ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-APPLY_BQSR.log" \
+			-hold_jid D.01-PERFORM_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/E.01_APPLY_BQSR.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -649,26 +674,13 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		PERFORM_BQSR
 		echo sleep 0.1s
-		# APPLY_BQSR
-		# echo sleep 0.1s
+		APPLY_BQSR
+		echo sleep 0.1s
 		# BAM_TO_CRAM
 		# echo sleep 0.1s
 		# INDEX_CRAM
 		# echo sleep 0.1s
 done
-
-# # write Final Bam file
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); \
-# print "qsub","-N","G.01_FINAL_BAM_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","F.01_PERFORM_BQSR_"smtag[1]"_"smtag[2]"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".FINAL_BAM.log",\
-# "'$SCRIPT_DIR'""/G.01_FINAL_BAM.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4"\n""sleep 1s"}'
 
 # # SCATTER THE HAPLOTYPE CALLER GVCF CREATION USING THE WHERE THE BED INTERSECTS WITH {{1.22},{X,Y}}
 
