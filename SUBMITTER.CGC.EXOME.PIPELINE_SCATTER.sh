@@ -820,6 +820,33 @@ done
 				$SUBMIT_STAMP
 		}
 
+	#################################################################################################
+	# CREATE VCF FOR VERIFYBAMID METRICS ############################################################
+	# USE THE BAIT BED FILE #########################################################################
+	# THE TARGET BED COULD BE MODIFIED TO BE TOO SMALL TO BE USEFUL HERE ############################
+	# TI/TV BED FILE HAS TOO MUCH UNCERTAINTY SINCE IT DOES NOT HAE ANYTHING TO DO WITH THE CAPTURE #
+	#################################################################################################
+
+		SELECT_VERIFYBAMID_VCF ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.04-SELECT_VERIFYBAMID_VCF"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-SELECT_VERIFYBAMID_VCF.log" \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/H.04_SELECT_VERIFYBAMID_VCF.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$SM_TAG \
+				$REF_GENOME \
+				$VERIFY_VCF \
+				$BAIT_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -833,8 +860,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		DOC_TARGET
 		echo sleep 0.1s
-		# SELECT_VERIFYBAMID_VCF
-		# echo sleep 0.1s
+		SELECT_VERIFYBAMID_VCF
+		echo sleep 0.1s
 		# RUN_VERIFYBAMID
 		# echo sleep 0.1s
 		# DOC_CODING
