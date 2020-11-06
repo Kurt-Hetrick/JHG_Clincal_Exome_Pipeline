@@ -922,6 +922,28 @@ done
 				$PADDING_LENGTH
 		}
 
+	########################################################################################
+	# FORMATTING PER BASE COVERAGE AND ADDING GENE NAME, TRANSCRIPT, EXON, ETC ANNNOTATION #
+	########################################################################################
+
+		ANNOTATE_PER_BASE_REPORT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.05-A.02_ANNOTATE_PER_BASE"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-ANNOTATE_PER_BASE.log" \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,H.05-DOC_CODING"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/H.05-A.02_ANNOTATE_PER_BASE.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CODING_BED \
+				$PADDING_LENGTH
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -943,8 +965,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		ANEUPLOIDY_CHECK
 		echo sleep 0.1s
-		# ANNOTATE_PER_BASE_REPORT
-		# echo sleep 0.1s
+		ANNOTATE_PER_BASE_REPORT
+		echo sleep 0.1s
 		# FILTER_ANNOTATED_PER_BASE_REPORT
 		# echo sleep 0.1s
 		# BGZIP_ANNOTATED_PER_BASE_REPORT
