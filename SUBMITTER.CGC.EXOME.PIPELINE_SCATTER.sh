@@ -1013,6 +1013,28 @@ done
 				$SUBMIT_STAMP
 		}
 
+	###################################################################################################
+	# FORMATTING PER CODING INTERVAL COVERAGE AND ADDING GENE NAME, TRANSCRIPT, EXON, ETC ANNNOTATION #
+	###################################################################################################
+
+		ANNOTATE_PER_INTERVAL_REPORT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.05-A.03_ANNOTATE_PER_INTERVAL"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-ANNOTATE_PER_INTERVAL.log" \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,H.05-DOC_CODING"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/H.05-A.03_ANNOTATE_PER_INTERVAL.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CODING_BED \
+				$PADDING_LENGTH
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -1042,8 +1064,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		TABIX_ANNOTATED_PER_BASE_REPORT
 		echo sleep 0.1s
-		# ANNOTATE_PER_INTERVAL_REPORT
-		# echo sleep 0.1s
+		ANNOTATE_PER_INTERVAL_REPORT
+		echo sleep 0.1s
 		# FILTER_ANNOTATED_PER_INTERVAL_REPORT
 		# echo sleep 0.1s
 		# VERIFYBAMID_PER_AUTOSOME
@@ -1051,19 +1073,6 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		# CAT_VERIFYBAMID_PER_AUTOSOME
 		# echo sleep 0.1s
 done
-
-# # RUN FORMATTING PER CODING INTERVAL COVERAGE WITH GENE NAME ANNNOTATION
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); \
-# print "qsub","-N","H.03-A.03_PER_INTERVAL_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","H.03_DOC_CODING_10bpFLANKS_"smtag[1]"_"smtag[2]"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1".PER_INTERVAL.log",\
-# "'$SCRIPT_DIR'""/H.03-A.03_PER_INTERVAL.sh",\
-# "'$CORE_PATH'","'$BEDTOOLS_DIR'","'$CODING_BED'",$1,$2,$3"\n""sleep 1s"}'
 
 # # RUN FILTERING PER CODING INTERVAL COVERAGE WITH GENE NAME ANNNOTATION WITH LESS THAN 30x
 
