@@ -1254,6 +1254,24 @@ done
 			$SUBMIT_STAMP
 	}
 
+	CALL_HAPLOTYPE_CALLER_BAM_GATHER ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+		-N H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER"_"$SGE_SM_TAG"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG-HAPLOTYPE_CALLER_BAM_GATHER.log \
+		${HOLD_ID_PATH} \
+		$SCRIPT_DIR/H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER.sh \
+			$ALIGNMENT_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$SM_TAG \
+			$BAIT_BED \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -1264,94 +1282,13 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		BUILD_HOLD_ID_PATH
 		CALL_HAPLOTYPE_CALLER_GVCF_GATHER
 		echo sleep 0.1s
-		# CALL_HAPLOTYPE_CALLER_BAM_GATHER
-		# echo sleep 0.1s
+		CALL_HAPLOTYPE_CALLER_BAM_GATHER
+		echo sleep 0.1s
 		# HC_BAM_TO_CRAM
 		# echo sleep 0.1s
 		# INDEX_HC_CRAM
 		# echo sleep 0.1s
 done
-
-# ################################################################
-
-# # GATHER UP THE PER SAMPLE PER CHROMOSOME GVCF FILES INTO A SINGLE SAMPLE GVCF
-
-# # BUILD_HOLD_ID_PATH(){
-# # 	for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET | sort | uniq )
-# # 	do
-# # 	HOLD_ID_PATH="-hold_jid "
-# # 	for CHROMOSOME in {{1..22},{X,Y}};
-# #  	do
-# #  		HOLD_ID_PATH=$HOLD_ID_PATH"H.01_HAPLOTYPE_CALLER_"$PROJECT"_"${SAMPLE_INFO_ARRAY_HC[5]}"_chr"$CHROMOSOME","
-# #  	done
-# #  done
-# # }
-
-# BUILD_HOLD_ID_PATH(){
-# 	for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET | sort | uniq )
-# 	do
-# 	HOLD_ID_PATH="-hold_jid "
-# 	for CHROMOSOME in {{1..22},{X,Y}};
-#  	do
-#  		HOLD_ID_PATH=$HOLD_ID_PATH"H.01_HAPLOTYPE_CALLER_"$PROJECT"_"$SAMPLE"_chr"$CHROMOSOME","
-#  	done
-#  done
-# }
-
-# # CREATE_SAMPLE_INFO_ARRAY_HC ()
-# # {
-# # SAMPLE_INFO_ARRAY_HC=(`awk 'BEGIN {FS="\t"; OFS="\t"} $8=="'$SAMPLE'" {split($8,smtag,"[@]"); print $1,$20,$8,$12,$16,smtag[1]"_"smtag[2]}' \
-# # ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
-# # }
-
-# CREATE_SAMPLE_INFO_ARRAY_HC ()
-# {
-# SAMPLE_INFO_ARRAY_HC=(`awk 'BEGIN {FS="\t"; OFS="\t"} {split($8,smtag,"[@]"); if (smtag[1]"_"smtag[2]=="'$SAMPLE'") \
-# print $1,$20,$8,$12,$16,smtag[1]"_"smtag[2]}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
-# }
-
-# CALL_HAPLOTYPE_CALLER_GATHER ()
-# {
-# echo \
-# qsub \
-# -N H.01-A.01_HAPLOTYPE_CALLER_GATHER_${SAMPLE_INFO_ARRAY_HC[0]}_$SAMPLE \
-# ${HOLD_ID_PATH} \
-# -o $CORE_PATH/${SAMPLE_INFO_ARRAY_HC[0]}/${SAMPLE_INFO_ARRAY_HC[1]}/${SAMPLE_INFO_ARRAY_HC[2]}/LOGS/${SAMPLE_INFO_ARRAY_HC[2]}_${SAMPLE_INFO_ARRAY_HC[0]}.HAPLOTYPE_CALLER_GATHER.log \
-# $SCRIPT_DIR/H.01-A.01_HAPLOTYPE_CALLER_GATHER.sh \
-# $JAVA_1_8 $GATK_DIR $CORE_PATH \
-# ${SAMPLE_INFO_ARRAY_HC[0]} ${SAMPLE_INFO_ARRAY_HC[1]} ${SAMPLE_INFO_ARRAY_HC[2]} ${SAMPLE_INFO_ARRAY_HC[3]}
-# }
-
-# # CALL_HAPLOTYPE_CALLER_GATHER ()
-# # {
-# # echo \
-# # qsub \
-# # -N H.01-A.01_HAPLOTYPE_CALLER_GATHER_${SAMPLE_INFO_ARRAY_HC[0]}_${SAMPLE_INFO_ARRAY_HC[5]} \
-# # ${HOLD_ID_PATH} \
-# # -o $CORE_PATH/${SAMPLE_INFO_ARRAY_HC[0]}/${SAMPLE_INFO_ARRAY_HC[1]}/${SAMPLE_INFO_ARRAY_HC[2]}/LOGS/${SAMPLE_INFO_ARRAY_HC[2]}_${SAMPLE_INFO_ARRAY_HC[0]}.HAPLOTYPE_CALLER_GATHER.log \
-# # $SCRIPT_DIR/H.01-A.01_HAPLOTYPE_CALLER_GATHER.sh \
-# # $JAVA_1_8 $GATK_DIR $CORE_PATH \
-# # ${SAMPLE_INFO_ARRAY_HC[0]} ${SAMPLE_INFO_ARRAY_HC[1]} ${SAMPLE_INFO_ARRAY_HC[2]} ${SAMPLE_INFO_ARRAY_HC[3]}
-# # }
-
-# # for SAMPLE in $(awk 'BEGIN {FS=","} NR>1 {print $8} $SAMPLE_SHEET | sort | uniq );
-# #  do
-# # 	BUILD_HOLD_ID_PATH
-# # 	CREATE_SAMPLE_INFO_ARRAY_HC
-# # 	CALL_HAPLOTYPE_CALLER_GATHER
-# # 	echo sleep 1s
-# #  done
-
-# # for SAMPLE in $(awk 'BEGIN {FS=","} NR>1 {split($8,smtag,"[@]"); print smtag[1]"_"smtag[2]}' $SAMPLE_SHEET | sort | uniq );
-
-# for SAMPLE in $(awk 'BEGIN {FS=","} NR>1 {if ($8~"@") {split($8,smtag,"[@]"); print smtag[1]"_"smtag[2]} else print $8"_"}' $SAMPLE_SHEET | sort | uniq );
-#  do
-# 	BUILD_HOLD_ID_PATH
-# 	CREATE_SAMPLE_INFO_ARRAY_HC
-# 	CALL_HAPLOTYPE_CALLER_GATHER
-# 	echo sleep 1s
-#  done
 
 # #### JOINT CALLING AND VQSR #### ###VITO###
 
