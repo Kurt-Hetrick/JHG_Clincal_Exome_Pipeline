@@ -1172,6 +1172,7 @@ done
 			$GATK_3_7_0_CONTAINER \
 			$CORE_PATH \
 			$PROJECT \
+			$FAMILY \
 			$SM_TAG \
 			$REF_GENOME \
 			$CODING_BED \
@@ -1205,6 +1206,70 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 				CALL_HAPLOTYPE_CALLER
 				echo sleep 0.1s
 		done
+done
+
+###########################
+# HAPLOTYPE CALLER GATHER #
+###################################################################################################
+# GATHER UP THE PER SAMPLE PER CHROMOSOME GVCF FILES AND GVCF BAM FILES INTO A SINGLE SAMPLE GVCF #
+###################################################################################################
+
+	BUILD_HOLD_ID_PATH ()
+	{
+		HOLD_ID_PATH="-hold_jid "
+
+		for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+								| sed -r 's/[[:space:]]+/\t/g' \
+								| cut -f 1 \
+								| sed 's/chr//g' \
+								| grep -v "MT" \
+								| sort \
+								| uniq \
+								| singularity exec $ALIGNMENT_CONTAINER datamash \
+									collapse 1 \
+								| sed 's/,/ /g');
+			do
+				HOLD_ID_PATH=$HOLD_ID_PATH"H.07-HAPLOTYPE_CALLER_"$SM_TAG"_"$PROJECT"_chr"$CHROMOSOME","
+				HOLD_ID_PATH=`echo $HOLD_ID_PATH | sed 's/@/_/g'`
+		done
+	}
+
+	CALL_HAPLOTYPE_CALLER_GVCF_GATHER ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+		-N H.01-A.01_HAPLOTYPE_CALLER_GVCF_GATHER"_"$SGE_SM_TAG"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG-HAPLOTYPE_CALLER_GVCF_GATHER.log \
+		${HOLD_ID_PATH} \
+		$SCRIPT_DIR/H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER.sh \
+			$GATK_3_7_0_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$FAMILY \
+			$SM_TAG \
+			$REF_GENOME \
+			$BAIT_BED \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
+
+for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+		| sort \
+		| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		BUILD_HOLD_ID_PATH
+		CALL_HAPLOTYPE_CALLER_GVCF_GATHER
+		echo sleep 0.1s
+		# CALL_HAPLOTYPE_CALLER_BAM_GATHER
+		# echo sleep 0.1s
+		# HC_BAM_TO_CRAM
+		# echo sleep 0.1s
+		# INDEX_HC_CRAM
+		# echo sleep 0.1s
 done
 
 # ################################################################
