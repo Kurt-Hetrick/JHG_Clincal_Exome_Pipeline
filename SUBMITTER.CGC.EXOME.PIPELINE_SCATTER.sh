@@ -1151,36 +1151,61 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 done
 
-# # SCATTER THE HAPLOTYPE CALLER GVCF CREATION USING THE WHERE THE BED INTERSECTS WITH {{1.22},{X,Y}}
+#####################################################################
+# HAPLOTYPE CALLER SCATTER ##########################################
+#####################################################################
+# INPUT IS THE BAM FILE #############################################
+# THE BED FILE FOR THE GVCF INTERVALS IS ############################
+# THE BAIT BED PLUS THE CODING BED FILE CONCATENTATED TOGETHER ######
+# THEN A 250 BP PAD ADDED AND THEN MERGED FOR OVERLAPPING INTERVALS #
+#####################################################################
 
-# CREATE_SAMPLE_INFO_ARRAY_HC ()
-# {
-# SAMPLE_INFO_ARRAY_HC=(`awk 'BEGIN {FS="\t"; OFS="\t"} $8=="'$SAMPLE'" {split($8,smtag,"[@]"); print $1,$20,$8,$12,$16,smtag[1]"_"smtag[2]}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
-# }
+	CALL_HAPLOTYPE_CALLER ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+		-N H.07-HAPLOTYPE_CALLER"_"$SGE_SM_TAG"_"$PROJECT"_chr"$CHROMOSOME \
+			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-HAPLOTYPE_CALLER_chr"$CHROMOSOME".log" \
+		-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+		$SCRIPT_DIR/H.07_HAPLOTYPE_CALLER_SCATTER.sh \
+			$GATK_3_7_0_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$SM_TAG \
+			$REF_GENOME \
+			$CODING_BED \
+			$BAIT_BED \
+			$CHROMOSOME \
+			$GVCF_PAD \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
 
-# CALL_HAPLOTYPE_CALLER ()
-# {
-# echo \
-# qsub \
-# -N H.01_HAPLOTYPE_CALLER_${SAMPLE_INFO_ARRAY_HC[0]}_${SAMPLE_INFO_ARRAY_HC[5]}_chr$CHROMOSOME \
-# -hold_jid G.01_FINAL_BAM_${SAMPLE_INFO_ARRAY_HC[5]}_${SAMPLE_INFO_ARRAY_HC[0]} \
-# -o $CORE_PATH/${SAMPLE_INFO_ARRAY_HC[0]}/${SAMPLE_INFO_ARRAY_HC[1]}/${SAMPLE_INFO_ARRAY_HC[2]}/LOGS/${SAMPLE_INFO_ARRAY_HC[2]}_${SAMPLE_INFO_ARRAY_HC[0]}.HAPLOTYPE_CALLER_chr$CHROMOSOME.log \
-# $SCRIPT_DIR/H.01_HAPLOTYPE_CALLER_SCATTER.sh \
-# $JAVA_1_8 $GATK_DIR $CORE_PATH \
-# ${SAMPLE_INFO_ARRAY_HC[0]} ${SAMPLE_INFO_ARRAY_HC[1]} ${SAMPLE_INFO_ARRAY_HC[2]} ${SAMPLE_INFO_ARRAY_HC[3]} \
-# $CHROMOSOME
-# }
+# Take the samples bait bed file, create a list of unique chromosome to use as a scatter for haplotype_caller_scatter
 
-# for SAMPLE in $(awk 'BEGIN {FS=","} NR>1 {print $8}' $SAMPLE_SHEET | sort | uniq );
-# do
-# CREATE_SAMPLE_INFO_ARRAY_HC
-# 	for CHROMOSOME in {{1..22},{X,Y}}
-# 		do
-# 		CALL_HAPLOTYPE_CALLER
-# 		echo sleep 1s
-# 		done
-# 	done
+for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+		|awk 'BEGIN {FS=","} NR>1 {print $8}' \
+		| sort \
+		| uniq );
+	do
+	CREATE_SAMPLE_ARRAY
+		for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+			| sed -r 's/[[:space:]]+/\t/g' \
+			| sed 's/chr//g' \
+			| grep -v "MT" \
+			| cut -f 1 \
+			| sort \
+			| uniq \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				collapse 1 \
+			| sed 's/,/ /g');
+			do
+				CALL_HAPLOTYPE_CALLER
+				echo sleep 0.1s
+		done
+done
 
 # ################################################################
 
