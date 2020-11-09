@@ -1272,6 +1272,29 @@ done
 			$SUBMIT_STAMP
 	}
 
+	########################################################
+	# create a lossless HC cram, although the bam is lossy #
+	########################################################
+
+		HC_BAM_TO_CRAM ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-HC_BAM_TO_CRAM.log" \
+			-hold_jid H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -1284,8 +1307,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		CALL_HAPLOTYPE_CALLER_BAM_GATHER
 		echo sleep 0.1s
-		# HC_BAM_TO_CRAM
-		# echo sleep 0.1s
+		HC_BAM_TO_CRAM
+		echo sleep 0.1s
 		# INDEX_HC_CRAM
 		# echo sleep 0.1s
 done
