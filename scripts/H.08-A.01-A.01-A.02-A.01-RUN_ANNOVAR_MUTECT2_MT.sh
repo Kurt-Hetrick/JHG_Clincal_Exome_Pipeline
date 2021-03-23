@@ -24,28 +24,33 @@
 
 # INPUT VARIABLES
 
-	ALIGNMENT_CONTAINER=$1
+	MITO_MUTECT2_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
-	REF_GENOME=$6
-	THREADS=$7
-	SAMPLE_SHEET=$8
+	ANNOVAR_MT_DB_DIR=$6
+
+	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$9
+	SUBMIT_STAMP=$8
 
-## --index the cram file
+## run gnomad on mutect2 vcf annotated with gnomad
 
-START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_ANNOVAR_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER samtools" \
-		CMD=$CMD" index" \
-		CMD=$CMD" -@ $THREADS" \
-		CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram""
+		CMD="singularity exec $MITO_MUTECT2_CONTAINER table_annovar.pl" \
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/MUTECT2_MT/$SM_TAG".MUTECT2_MT.vcf"" \
+			CMD=$CMD" $ANNOVAR_MT_DB_DIR" \
+			CMD=$CMD" --buildver GRCh37_MT" \
+			CMD=$CMD" --protocol ensGene,vcf,vcf,vcf,clinvar_20200316,avsnp150" \
+			CMD=$CMD" --operation g,f,f,f,f,f" \
+			CMD=$CMD" --vcfdbfile GRCh37_MT_MMpolymorphisms.vcf,GRCh37_MT_MMdisease.vcf,GRCh37_MT_gnomAD.vcf" \
+			CMD=$CMD" --vcfinput" \
+			CMD=$CMD" --outfile $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_ANNOVAR_MT"/$SM_TAG"
 
 	# write command line to file and execute the command line
 
@@ -67,18 +72,13 @@ START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock track
 			exit $SCRIPT_STATUS
 		fi
 
-END_INDEX_CRAM=`date '+%s'` # capture time process stops for wall clock tracking purposes.
+END_ANNOVAR_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo $SM_TAG"_"$PROJECT",G.01,INDEX_CRAM,"$HOSTNAME","$START_INDEX_CRAM","$END_INDEX_CRAM \
+	echo $SM_TAG"_"$PROJECT",F.01,ANNOVAR_MUTECT2_MT,"$HOSTNAME","$START_ANNOVAR_MUTECT2_MT","$END_ANNOVAR_MUTECT2_MT \
 	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
-# make a copy/rename the cram index file since their appears to be two useable standards
-
-	cp -rvf $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram.crai" \
-	$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".crai"
-
-# exit with the signal from the program
+# exit with the signal from samtools bam to cram
 
 	exit $SCRIPT_STATUS

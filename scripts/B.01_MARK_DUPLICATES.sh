@@ -31,11 +31,12 @@
 	FAMILY=$4
 	SM_TAG=$5
 	SEQUENCER_MODEL=$6
-	SAMPLE_SHEET=$7
+	THREADS=$7
+	SAMPLE_SHEET=$8
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$8
+	SUBMIT_STAMP=$9
 
-	INPUT_BAM_FILE_STRING=$9
+	INPUT_BAM_FILE_STRING=${10}
 		INPUT=`echo $INPUT_BAM_FILE_STRING | sed 's/,/ /g'`
 
 ## If NovaSeq is contained in the description field of the sample sheet then set the pixel distance appropriately
@@ -62,7 +63,7 @@ START_MARK_DUPLICATES=`date '+%s'` # capture time process starts for wall clock 
 
 		CMD="singularity exec $ALIGNMENT_CONTAINER java -jar" \
 			CMD=$CMD" -Xmx16g" \
-			CMD=$CMD" -XX:ParallelGCThreads=6" \
+			CMD=$CMD" -XX:ParallelGCThreads=$THREADS" \
 			CMD=$CMD" /gatk/picard.jar" \
 			CMD=$CMD" MarkDuplicates" \
 			CMD=$CMD" ASSUME_SORT_ORDER=queryname" \
@@ -74,7 +75,7 @@ START_MARK_DUPLICATES=`date '+%s'` # capture time process starts for wall clock 
 			CMD=$CMD" OPTICAL_DUPLICATE_PIXEL_DISTANCE=$PIXEL_DISTANCE" \
 		CMD=$CMD" | singularity exec $ALIGNMENT_CONTAINER sambamba" \
 			CMD=$CMD" sort" \
-			CMD=$CMD" -t 6" \
+			CMD=$CMD" -t $THREADS" \
 			CMD=$CMD" -o $CORE_PATH/$PROJECT/TEMP/$SM_TAG".dup.bam"" \
 			CMD=$CMD" /dev/stdin"
 

@@ -24,28 +24,34 @@
 
 # INPUT VARIABLES
 
-	ALIGNMENT_CONTAINER=$1
+	MITO_MUTECT2_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
 	REF_GENOME=$6
-	THREADS=$7
+	MT_PICARD_INTERVAL_LIST=$7
+
 	SAMPLE_SHEET=$8
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
 	SUBMIT_STAMP=$9
 
-## --index the cram file
+## run collecthsmetrics on full bam file targeting only the mt genome
 
-START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_COLLECTHSMETRICS_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER samtools" \
-		CMD=$CMD" index" \
-		CMD=$CMD" -@ $THREADS" \
-		CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram""
+		CMD="singularity exec $MITO_MUTECT2_CONTAINER java -jar" \
+		CMD=$CMD" /gatk/gatk.jar" \
+		CMD=$CMD" CollectHsMetrics" \
+			CMD=$CMD" --INPUT $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_MT.bam"" \
+			CMD=$CMD" --REFERENCE_SEQUENCE $REF_GENOME" \
+			CMD=$CMD" --TARGET_INTERVALS $MT_PICARD_INTERVAL_LIST" \
+			CMD=$CMD" --BAIT_INTERVALS $MT_PICARD_INTERVAL_LIST" \
+			CMD=$CMD" --PER_BASE_COVERAGE $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT/$SM_TAG"_per_base_cov.tsv"" \
+			CMD=$CMD" --OUTPUT $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT/$SM_TAG".output.metrics""
 
 	# write command line to file and execute the command line
 
@@ -67,18 +73,13 @@ START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock track
 			exit $SCRIPT_STATUS
 		fi
 
-END_INDEX_CRAM=`date '+%s'` # capture time process stops for wall clock tracking purposes.
+END_COLLECTHSMETRICS_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo $SM_TAG"_"$PROJECT",G.01,INDEX_CRAM,"$HOSTNAME","$START_INDEX_CRAM","$END_INDEX_CRAM \
+	echo $SM_TAG"_"$PROJECT",F.01,COLLECTHSMETRICS_MT,"$HOSTNAME","$START_COLLECTHSMETRICS_MT","$END_COLLECTHSMETRICS_MT \
 	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
-# make a copy/rename the cram index file since their appears to be two useable standards
-
-	cp -rvf $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram.crai" \
-	$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".crai"
-
-# exit with the signal from the program
+# exit with the signal from samtools bam to cram
 
 	exit $SCRIPT_STATUS

@@ -24,28 +24,32 @@
 
 # INPUT VARIABLES
 
-	ALIGNMENT_CONTAINER=$1
+	MITO_MUTECT2_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
-	REF_GENOME=$6
-	THREADS=$7
-	SAMPLE_SHEET=$8
+	MT_COVERAGE_R_SCRIPT=$6
+
+	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$9
+	SUBMIT_STAMP=$8
 
-## --index the cram file
+## run alex's r script to generate plot for mt genome coverage
 
-START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_COVERAGE_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER samtools" \
-		CMD=$CMD" index" \
-		CMD=$CMD" -@ $THREADS" \
-		CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram""
+		CMD="singularity exec $MITO_MUTECT2_CONTAINER Rscript" \
+			CMD=$CMD" $MT_COVERAGE_R_SCRIPT" \
+			# input file
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT/$SM_TAG"_per_base_cov.tsv"" \
+			# sample name (or whatever you want the prefix to be for the output file name)
+			CMD=$CMD" $SM_TAG"
+			# directory where you want the output file to go to
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT"
 
 	# write command line to file and execute the command line
 
@@ -67,18 +71,13 @@ START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock track
 			exit $SCRIPT_STATUS
 		fi
 
-END_INDEX_CRAM=`date '+%s'` # capture time process stops for wall clock tracking purposes.
+END_COVERAGE_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo $SM_TAG"_"$PROJECT",G.01,INDEX_CRAM,"$HOSTNAME","$START_INDEX_CRAM","$END_INDEX_CRAM \
+	echo $SM_TAG"_"$PROJECT",F.01,COVERAGE_MT,"$HOSTNAME","$START_COVERAGE_MT","$END_COVERAGE_MT \
 	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
-# make a copy/rename the cram index file since their appears to be two useable standards
-
-	cp -rvf $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram.crai" \
-	$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".crai"
-
-# exit with the signal from the program
+# exit with the signal from samtools bam to cram
 
 	exit $SCRIPT_STATUS

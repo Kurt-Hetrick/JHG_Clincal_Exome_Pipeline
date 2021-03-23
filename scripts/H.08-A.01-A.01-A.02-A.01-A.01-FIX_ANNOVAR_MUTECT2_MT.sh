@@ -24,28 +24,30 @@
 
 # INPUT VARIABLES
 
-	ALIGNMENT_CONTAINER=$1
-	CORE_PATH=$2
+	CORE_PATH=$1
 
-	PROJECT=$3
-	FAMILY=$4
-	SM_TAG=$5
-	REF_GENOME=$6
-	THREADS=$7
-	SAMPLE_SHEET=$8
+	PROJECT=$2
+	FAMILY=$3
+	SM_TAG=$4
+
+	SAMPLE_SHEET=$5
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$9
+	SUBMIT_STAMP=$6
 
-## --index the cram file
+## replace generic annovar headers with descritive headers
 
-START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_FIX_ANNOVAR=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER samtools" \
-		CMD=$CMD" index" \
-		CMD=$CMD" -@ $THREADS" \
-		CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram""
+		CMD="sed -i -e '1s/vcf3/gnomAD\[exclude_AC\/AN\]/'" \
+		CMD=$CMD" -e '1s/vcf2/GB_Freq.MMdisease/'" \
+			CMD=$CMD" -e '1s/vcf/GB_Freq.MMpolymorphisms/'" \
+			CMD=$CMD" -e '1s/Otherinfo11/gnomADplusVCF-INFO/'" \
+			CMD=$CMD" $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_ANNOVAR_MT"/$SM_TAG".GRCh37_MT_multianno.txt"" \
+		CMD=$CMD" &&" \
+			CMD=$CMD" mv -v $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_ANNOVAR_MT"/$SM_TAG".GRCh37_MT_multianno*"" \
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/ANNOVAR_MT/"
 
 	# write command line to file and execute the command line
 
@@ -67,18 +69,13 @@ START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock track
 			exit $SCRIPT_STATUS
 		fi
 
-END_INDEX_CRAM=`date '+%s'` # capture time process stops for wall clock tracking purposes.
+END_FIX_ANNOVAR=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo $SM_TAG"_"$PROJECT",G.01,INDEX_CRAM,"$HOSTNAME","$START_INDEX_CRAM","$END_INDEX_CRAM \
+	echo $SM_TAG"_"$PROJECT",F.01,FIX_ANNOVAR,"$HOSTNAME","$START_FIX_ANNOVAR","$END_FIX_ANNOVAR \
 	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
-# make a copy/rename the cram index file since their appears to be two useable standards
-
-	cp -rvf $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram.crai" \
-	$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".crai"
-
-# exit with the signal from the program
+# exit with the signal from samtools bam to cram
 
 	exit $SCRIPT_STATUS

@@ -42,17 +42,18 @@
 	SEQUENCER_MODEL=${12} # Generally we use to denote the sequencer setting (e.g. rapid run). field X of manifest.
 	REF_GENOME=${13} # the reference genome used in the analysis pipeline. field X of manifest.
 	PIPELINE_VERSION=${14}
-		BAIT_BED=${15}
-			BAIT_NAME=$(basename $BAIT_BED .bed)
-		TARGET_BED=${16}
-			TARGET_NAME=$(basename $TARGET_BED .bed)
-		TITV_BED=${17}
-			TITV_NAME=$(basename $TITV_BED .bed)
-		SAMPLE_SHEET=${18}
-			SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-		SUBMIT_STAMP=${19}
-			SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-		NOVASEQ_REPO=${20}
+	BAIT_BED=${15}
+		BAIT_NAME=$(basename $BAIT_BED .bed)
+	TARGET_BED=${16}
+		TARGET_NAME=$(basename $TARGET_BED .bed)
+	TITV_BED=${17}
+		TITV_NAME=$(basename $TITV_BED .bed)
+	NOVASEQ_REPO=${18}
+	THREADS=${19}
+	SAMPLE_SHEET=${20}
+		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
+	SUBMIT_STAMP=${21}
+		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
 
 # Need to convert data in sample manifest to Iso 8601 date since we are not using bwa mem to populate this.
 # Picard AddOrReplaceReadGroups is much more stringent here.
@@ -129,7 +130,7 @@
 		CMD="singularity exec $ALIGNMENT_CONTAINER bwa mem" \
 			CMD=$CMD" -K 100000000" \
 			CMD=$CMD" -Y" \
-			CMD=$CMD" -t 6" \
+			CMD=$CMD" -t $THREADS" \
 			CMD=$CMD" $REF_GENOME" \
 			CMD=$CMD" $FASTQ_1" \
 			CMD=$CMD" $FASTQ_2" \

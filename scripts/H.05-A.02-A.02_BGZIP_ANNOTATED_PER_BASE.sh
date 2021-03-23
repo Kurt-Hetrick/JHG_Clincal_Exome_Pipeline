@@ -34,9 +34,10 @@
 		CODING_BED_NAME=$(basename $CODING_BED .bed)
 		CODING_MD5=$(md5sum $CODING_BED | cut -c 1-7)
 	PADDING_LENGTH=$7
-	SAMPLE_SHEET=$8
+	THREADS=$8
+	SAMPLE_SHEET=$9
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$9
+	SUBMIT_STAMP=${10}
 
 # Use bgzip to compress the padded and annotated refseq select cds + omim per base depth report
 
@@ -45,6 +46,7 @@ START_PER_BASE_BGZIP=`date '+%s'` # capture time process starts for wall clock t
 	# construct command line
 
 		CMD="singularity exec $ALIGNMENT_CONTAINER bgzip" \
+			CMD=$CMD" -@ $THREADS" \
 			CMD=$CMD" -c" \
 			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/DEPTH_OF_COVERAGE/CODING_PADDED/$SM_TAG"_"$CODING_BED_NAME"-"$CODING_MD5"-"$PADDING_LENGTH"-BP-PAD.PER.BASE.REPORT.txt"" \
 			CMD=$CMD" >| $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/DEPTH_OF_COVERAGE/CODING_PADDED/$SM_TAG"_"$CODING_BED_NAME"-"$CODING_MD5"-"$PADDING_LENGTH"-BP-PAD.PER.BASE.REPORT.txt.gz""

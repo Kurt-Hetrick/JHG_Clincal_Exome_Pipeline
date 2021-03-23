@@ -24,28 +24,35 @@
 
 # INPUT VARIABLES
 
-	ALIGNMENT_CONTAINER=$1
+	MITO_MUTECT2_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
-	FAMILY=$4
-	SM_TAG=$5
-	REF_GENOME=$6
-	THREADS=$7
-	SAMPLE_SHEET=$8
+	SM_TAG=$4
+	REF_GENOME=$5
+
+	SAMPLE_SHEET=$6
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$9
+	SUBMIT_STAMP=$7
 
-## --index the cram file
+## apply recommended filters on mutect2 mito mode vcf output
+#### although I think they are not ultimately helpful since they are based on whole genome autosomal coverage
 
-START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_FILTER_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER samtools" \
-		CMD=$CMD" index" \
-		CMD=$CMD" -@ $THREADS" \
-		CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram""
+		CMD="singularity exec $MITO_MUTECT2_CONTAINER java -jar" \
+		CMD=$CMD" /gatk/gatk.jar" \
+		CMD=$CMD" FilterMutectCalls" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/$SM_TAG.MUTECT2_MT_RAW.vcf" \
+			CMD=$CMD" --reference $REF_GENOME" \
+			CMD=$CMD" --mitochondria-mode true" \
+			CMD=$CMD" --max-alt-allele-count 4" \
+			CMD=$CMD" --min-allele-fraction 0.03" \
+			CMD=$CMD" --contamination-estimate 0.0" \
+			CMD=$CMD" --stats $CORE_PATH/$PROJECT/TEMP/$SM_TAG.MUTECT2_MT_RAW.vcf.stats" \
+			CMD=$CMD" --output $CORE_PATH/$PROJECT/TEMP/$SM_TAG.MUTECT2_MT_FILTERED.vcf" \
 
 	# write command line to file and execute the command line
 
@@ -67,18 +74,13 @@ START_INDEX_CRAM=`date '+%s'` # capture time process starts for wall clock track
 			exit $SCRIPT_STATUS
 		fi
 
-END_INDEX_CRAM=`date '+%s'` # capture time process stops for wall clock tracking purposes.
+END_FILTER_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo $SM_TAG"_"$PROJECT",G.01,INDEX_CRAM,"$HOSTNAME","$START_INDEX_CRAM","$END_INDEX_CRAM \
+	echo $SM_TAG"_"$PROJECT",F.01,FILTER_MUTECT2_MT,"$HOSTNAME","$START_FILTER_MUTECT2_MT","$END_FILTER_MUTECT2_MT \
 	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
-# make a copy/rename the cram index file since their appears to be two useable standards
-
-	cp -rvf $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram.crai" \
-	$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".crai"
-
-# exit with the signal from the program
+# exit with the signal from samtools bam to cram
 
 	exit $SCRIPT_STATUS

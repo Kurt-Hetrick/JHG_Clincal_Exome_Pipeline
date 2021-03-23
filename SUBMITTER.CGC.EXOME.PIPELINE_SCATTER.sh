@@ -28,6 +28,14 @@
 				PRIORITY="-15"
 			fi
 
+	THREADS=$6 # optional. if no 6th argument present then default is 6.
+		# if you wangt to set this then you need to set 3rd,4th and 5th argument as well (even to default)
+
+			if [[ ! $THREADS ]]
+				then
+				THREADS="6"
+			fi
+
 # CHANGE SCRIPT DIR TO WHERE YOU HAVE HAVE THE SCRIPTS BEING SUBMITTED
 
 	SUBMITTER_SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
@@ -106,7 +114,7 @@
 # PIPELINE PROGRAMS #
 #####################
 
-	ALIGNMENT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/images/ddl_ce_control_align-0.0.3.simg"
+	ALIGNMENT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/ddl_ce_control_align-0.0.4.simg"
 	# contains the following software and is on Ubuntu 16.04.5 LTS
 		# gatk 4.0.11.0 (base image). also contains the following.
 			# Python 3.6.2 :: Continuum Analytics, Inc.
@@ -137,12 +145,24 @@
 			# tabix 1.10
 			# bcftools 1.10.2
 
-	GATK_3_7_0_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/images/gatk3-3.7-0.simg"
+	GATK_3_7_0_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/gatk3-3.7-0.simg"
 	# singularity pull docker://broadinstitute/gatk3:3.7-0
 	# used for generating the depth of coverage reports.
 		# comes with R 3.1.1 with appropriate packages needed to create gatk pdf output
 		# also comes with some version of java 1.8
 		# jar file is /usr/GenomeAnalysisTK.jar
+
+	MITO_MUTECT2_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_mutect2-4.1.3.0.0.simg"
+		# uses broadinstitute/gatk:4.1.3.0 as the base image (as /gatk/gatk.jar)
+			# added
+				# bcftools-1.10.2
+				# haplogrep-2.1.20.jar (as /jars/haplogrep-2.1.20.jar)
+				# annovar
+
+	MITO_EKLIPSE_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_eklipse-master-c25931b.0.simg"
+		# https://github.com/dooguypapua/eKLIPse AND all of its dependencies
+
+	MT_COVERAGE_R_SCRIPT="$SCRIPT_DIR/mito_coverage_graph.r"
 
 	# PIPELINE PROGRAMS TO BE IMPLEMENTED
 	JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
@@ -157,18 +177,28 @@
 # PIPELINE FILES #
 ##################
 
-	GENE_LIST="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/RefSeqGene.GRCh37.rCRS.MT.bed"
-		# md5 dec069c279625cfb110c2e4c5480e036
-	VERIFY_VCF="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/Omni25_genotypes_1525_samples_v2.b37.PASS.ALL.sites.vcf"
-	CODING_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINES/TWIST/JHGenomics_CGC_Clinical_Exome_Control_Set/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated.bed"
-	CYTOBAND_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/GRCh37.Cytobands.bed"
-	HAPMAP="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/hapmap_3.3.b37.vcf"
-	OMNI_1KG="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/1000G_omni2.5.b37.vcf"
-	HI_CONF_1KG_PHASE1_SNP="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/1000G_phase1.snps.high_confidence.b37.vcf"
-	MILLS_1KG_GOLD_INDEL="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/Mills_and_1000G_gold_standard.indels.b37.vcf"
-	PHASE3_1KG_AUTOSOMES="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/ALL.autosomes.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz"
-	DBSNP_129="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/dbsnp_138.b37.excluding_sites_after_129.vcf"
-	CONTROL_PED_FILE="$CONTROL_REPO/TWIST_CONTROL_SET1.200601.ped"
+	# Core Pipeline
+
+		GENE_LIST="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/RefSeqGene.GRCh37.rCRS.MT.bed"
+			# md5 dec069c279625cfb110c2e4c5480e036
+		VERIFY_VCF="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/Omni25_genotypes_1525_samples_v2.b37.PASS.ALL.sites.vcf"
+		CODING_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINES/TWIST/JHGenomics_CGC_Clinical_Exome_Control_Set/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated.bed"
+		CYTOBAND_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/GRCh37.Cytobands.bed"
+		HAPMAP="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/hapmap_3.3.b37.vcf"
+		OMNI_1KG="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/1000G_omni2.5.b37.vcf"
+		HI_CONF_1KG_PHASE1_SNP="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/1000G_phase1.snps.high_confidence.b37.vcf"
+		MILLS_1KG_GOLD_INDEL="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/Mills_and_1000G_gold_standard.indels.b37.vcf"
+		PHASE3_1KG_AUTOSOMES="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/ALL.autosomes.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz"
+		DBSNP_129="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/dbsnp_138.b37.excluding_sites_after_129.vcf"
+		CONTROL_PED_FILE="$CONTROL_REPO/TWIST_CONTROL_SET1.200601.ped"
+
+	# Mitochondrial Pipline
+
+		MT_PICARD_INTERVAL_LIST="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/MT.interval_list"
+		MT_MASK="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/hg37_MT_blacklist_sites.hg37.MT.bed"
+		GNOMAD_MT="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/GRCh37_MT_gnomAD.vcf.gz"
+		ANNOVAR_MT_DB_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/annovar_db/"
+		MT_GENBANK="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/NC_012920.1.gb"
 
 #################################
 ##### MAKE A DIRECTORY TREE #####
@@ -323,7 +353,9 @@
 		$CORE_PATH/$PROJECT/$FAMILY/{LOGS,VCF,RELATEDNESS,PCA} \
 		$CORE_PATH/$PROJECT/TEMP/$SM_TAG_ANNOVAR \
 		$CORE_PATH/$PROJECT/TEMP/{VCF_PREP,PLINK,KING} \
-		$CORE_PATH/$PROJECT/{TEMP,FASTQ,REPORTS,LOGS,COMMAND_LINES}
+		$CORE_PATH/$PROJECT/{TEMP,FASTQ,REPORTS,LOGS,COMMAND_LINES} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/{COLLECTHSMETRICS_MT,MUTECT2_MT,HAPLOTYPES,ANNOVAR_MT,EKLIPSE} \
+		$CORE_PATH/$PROJECT/TEMP/$SM_TAG"_ANNOVAR_MT"
 	}
 
 	SETUP_PROJECT ()
@@ -369,7 +401,7 @@ done
 		{
 			PLATFORM_UNIT_ARRAY=(`awk 1 ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
-			| awk 'BEGIN {FS="\t"} $8$2$3$4=="'$PLATFORM_UNIT'" {split($19,INDEL,";"); print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],$$20,$21,$22,$23,$24}' \
+			| awk 'BEGIN {FS="\t"} $8$2$3$4=="'$PLATFORM_UNIT'" {split($19,INDEL,";"); print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],$20,$21,$22,$23,$24}' \
 			| sort \
 			| uniq`)
 
@@ -419,18 +451,18 @@ done
 
 					SEQUENCER_MODEL=${PLATFORM_UNIT_ARRAY[9]}
 
-				########################
-				# 11  Seq_Exp_ID: SKIP #
-				########################
+					########################
+					# 11  Seq_Exp_ID: SKIP #
+					########################
 
 				# 12  Genome_Ref=the reference genome used in the analysis pipeline
 
 					REF_GENOME=${PLATFORM_UNIT_ARRAY[10]}
 
-				#####################################
-				# 13  Operator: SKIP ################
-				# 14  Extra_VCF_Filter_Params: SKIP #
-				#####################################
+					#####################################
+					# 13  Operator: SKIP ################
+					# 14  Extra_VCF_Filter_Params: SKIP #
+					#####################################
 
 				# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
 
@@ -460,19 +492,19 @@ done
 
 				# 21 MOM
 
-					MOM=${PLATFORM_UNIT_ARRAY[17]}
+					MOM=${PLATFORM_UNIT_ARRAY[18]}
 
 				# 22 DAD
 
-					DAD=${PLATFORM_UNIT_ARRAY[17]}
+					DAD=${PLATFORM_UNIT_ARRAY[19]}
 
 				# 23 GENDER
 
-					GENDER=${PLATFORM_UNIT_ARRAY[17]}
+					GENDER=${PLATFORM_UNIT_ARRAY[20]}
 
 				# 24 PHENOTYPE
 
-					PHENOTYPE=${PLATFORM_UNIT_ARRAY[17]}
+					PHENOTYPE=${PLATFORM_UNIT_ARRAY[21]}
 		}
 
 	########################################################################
@@ -506,9 +538,10 @@ done
 				$BAIT_BED \
 				$TARGET_BED \
 				$TITV_BED \
+				$NOVASEQ_REPO \
+				$THREADS \
 				$SAMPLE_SHEET \
-				$SUBMIT_STAMP \
-				$NOVASEQ_REPO
+				$SUBMIT_STAMP
 		}
 
 	for PLATFORM_UNIT in $(awk 1 $SAMPLE_SHEET \
@@ -518,7 +551,7 @@ done
 			| uniq );
 		do
 			CREATE_PLATFORM_UNIT_ARRAY
-			mkdir -p $CORE_PATH/$PROJECT/LOGS/$SM_TAG
+			mkdir -p $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/
 			RUN_BWA
 			echo sleep 0.1s
 	done
@@ -578,6 +611,7 @@ done
 				$2,\
 				$3,\
 				$7,\
+				"'$THREADS'",\
 				"'$SAMPLE_SHEET'",\
 				"'$SUBMIT_STAMP'",\
 				"INPUT=" "'$CORE_PATH'" "/" $1"/TEMP/"$5"\n""sleep 0.1s"}'
@@ -682,6 +716,7 @@ done
 				$FAMILY \
 				$SM_TAG \
 				$REF_GENOME \
+				$THREADS \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
 		}
@@ -705,9 +740,14 @@ done
 				$FAMILY \
 				$SM_TAG \
 				$REF_GENOME \
+				$THREADS \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
 		}
+
+######################################
+# run steps for cram file generation #
+######################################
 
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
@@ -941,7 +981,10 @@ done
 				$FAMILY \
 				$SM_TAG \
 				$CODING_BED \
-				$PADDING_LENGTH
+				$PADDING_LENGTH \
+				$THREADS \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
 		}
 
 	##########################################################################
@@ -985,6 +1028,7 @@ done
 				$SM_TAG \
 				$CODING_BED \
 				$PADDING_LENGTH \
+				$THREADS \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
 		}
@@ -1112,6 +1156,10 @@ done
 				$BAIT_BED
 		}
 
+###############################################
+# run steps for cram/bam file related metrics #
+###############################################
+
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
@@ -1151,6 +1199,328 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 done
 
+#####################################################
+##### MITOCHONDRIAL WORKFLOW ########################
+##### RUN MUTECT2 TO CALL SNVS AND SMALL INDELS #####
+##### GENERATE COVERAGE STATS #######################
+##### RUN EKLIPSE FOR LARGER DELETIONS ##############
+#####################################################
+
+	#########################################
+	##### MUTECT2 IN MITO MODE WORKFLOW #####
+	##### WORKS ON FULL BAM FILE ############
+	#########################################
+
+		#####################################################
+		# run mutect2 in mitochondria mode on full bam file #
+		# this runs MUCH slower on non-avx machines #########
+		#####################################################
+
+			MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.08-MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-MUTECT2_MT.log" \
+					-hold_jid E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.08-MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$REF_GENOME \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		#######################################
+		# apply filters to mutect2 vcf output #
+		#######################################
+
+			FILTER_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.08-A.01-FILTER_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-FILTER_MUTECT2_MT.log" \
+					-hold_jid H.08-MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.08-A.01-FILTER_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$SM_TAG \
+					$REF_GENOME \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		###################################################
+		# apply masks to mutect2 mito filtered vcf output #
+		###################################################
+
+			MASK_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.08-A.01-A.01-MASK_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-MASK_MUTECT2_MT.log" \
+					-hold_jid H.08-A.01-FILTER_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.08-A.01-A.01-MASK_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$SM_TAG \
+					$MT_MASK \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		#############################################
+		# run haplogrep2 on mutect2 mito vcf output #
+		#############################################
+
+			HAPLOGREP2_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.08-A.01-A.01-A01-HAPLOGREP2_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-HAPLOGREP2_MUTECT2_MT.log" \
+					-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.08-A.01-A.01-A.01-HAPLOGREP2_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$REF_GENOME \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		#############################################################
+		# add gnomad annotation to info field of mutect2 vcf output #
+		#############################################################
+
+			GNOMAD_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-GNOMAD_MUTECT2_MT.log" \
+					-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$GNOMAD_MT \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		##########################################
+		# run annovar on final mutect2 based vcf #
+		##########################################
+
+			RUN_ANNOVAR_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-RUN_ANNOVAR_MUTECT2_MT.log" \
+					-hold_jid H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.08-A.01-A.01-A.02-A.01-RUN_ANNOVAR_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$ANNOVAR_MT_DB_DIR \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		##########################################
+		# run annovar on final mutect2 based vcf #
+		##########################################
+
+			FIX_ANNOVAR_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-FIX_ANNOVAR_MUTECT2_MT.log" \
+					-hold_jid H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT.sh \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+	##############################################################
+	##### RUN EKLIPSE TO DETECT LARGE DELETIONS IN MT GENOME #####
+	##############################################################
+
+		############################################
+		# SUBSET BAM FILE TO CONTAIN ONLY MT READS #
+		############################################
+
+			SUBSET_BAM_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.09-MAKE_BAM_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-MAKE_BAM_MT.log" \
+					-hold_jid E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.09-MAKE_MT_BAM.sh \
+					$MITO_EKLIPSE_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$THREADS \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		###############
+		# RUN EKLIPSE #
+		###############
+
+			RUN_EKLIPSE ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.09-A.01-RUN_EKLIPSE"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-RUN_EKLIPSE.log" \
+					-hold_jid H.09-MAKE_BAM_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.09-A.01-RUN_EKLIPSE.sh \
+					$MITO_EKLIPSE_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$MT_GENBANK \
+					$THREADS \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+	######################################################
+	##### COVERAGE STATISTICS AND PLOT FOR MT GENOME #####
+	######################################################
+
+		####################################################
+		# RUN COLLECTHSMETRICS ON MT ONLY BAM FILE #########
+		# USES GATK IMPLEMENTATION INSTEAD OF PICARD TOOLS #
+		####################################################
+
+			COLLECTHSMETRICS_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.09-A.02-COLLECTHSMETRICS_MT"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-COLLECTHSMETRICS_MT.log" \
+					-hold_jid H.09-MAKE_BAM_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.09-A.02-COLLECTHSMETRICS_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$REF_GENOME \
+					$MT_PICARD_INTERVAL_LIST \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		###############################################################
+		# RUN ALEX'S R SCRIPT TO GENERATE COVERAGE PLOT FOR MT GENOME #
+		###############################################################
+
+			PLOT_MT_COVERAGE ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+					$STANDARD_QUEUE_QSUB_ARG \
+				-N H.09-A.02-A.01-PLOT_MT_COVERAGE"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-PLOT_MT_COVERAGE.log" \
+					-hold_jid H.09-A.02-COLLECTHSMETRICS_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/H.09-A.02-A.01_PLOT_MT_COVERAGE.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$MT_COVERAGE_R_SCRIPT \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+###############################################################
+# run steps centered on gatk's mutect2 mitochondrial workflow #
+###############################################################
+
+for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+		| sort \
+		| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		# run mutect2 and then filter, annotate, run haplogrep2
+		MUTECT2_MT
+		echo sleep 0.1s
+		FILTER_MUTECT2_MT
+		echo sleep 0.1s
+		MASK_MUTECT2_MT
+		echo sleep 0.1s
+		HAPLOGREP2_MUTECT2_MT
+		echo sleep 0.1s
+		GNOMAD_MUTECT2_MT
+		echo sleep 0.1s
+		RUN_ANNOVAR_MUTECT2_MT
+		echo sleep 0.1s
+		FIX_ANNOVAR_MUTECT2_MT
+		echo sleep 0.1s
+		# run eklipse workflow
+		SUBSET_BAM_MT
+		echo sleep 0.1s
+		RUN_EKLIPSE
+		echo sleep 0.1s
+		# generate coverage for mt genome
+		COLLECTHSMETRICS_MT
+		echo sleep 0.1s
+		PLOT_MT_COVERAGE
+		echo sleep 0.1s
+done
+
 #####################################################################
 # HAPLOTYPE CALLER SCATTER ##########################################
 #####################################################################
@@ -1172,7 +1542,6 @@ done
 			$GATK_3_7_0_CONTAINER \
 			$CORE_PATH \
 			$PROJECT \
-			$FAMILY \
 			$SM_TAG \
 			$REF_GENOME \
 			$CODING_BED \
@@ -1183,7 +1552,8 @@ done
 			$SUBMIT_STAMP
 	}
 
-# Take the samples bait bed file, create a list of unique chromosome to use as a scatter for haplotype_caller_scatter
+# Take the samples bait bed file and...
+# create a list of unique chromosome to use as a scatter for haplotype_caller_scatter
 
 for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
