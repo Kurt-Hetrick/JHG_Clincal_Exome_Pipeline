@@ -36,7 +36,6 @@
 	SAMPLE_SHEET=$8
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
 	SUBMIT_STAMP=$9
-	DATAMASH_DIR=${10}
 
 ## --write lossless cram file. this is the deliverable
 
@@ -46,11 +45,12 @@ START_CRAM=`date '+%s'` # capture time process starts for wall clock tracking pu
 
 		CMD="singularity exec $ALIGNMENT_CONTAINER samtools" \
 		CMD=$CMD" view" \
-		CMD=$CMD" -C $CORE_PATH/$PROJECT/TEMP/$SM_TAG".bam"" \
-		CMD=$CMD" -T $REF_GENOME" \
-		CMD=$CMD" -@ $THREADS" \
-		CMD=$CMD" -O CRAM" \
-		CMD=$CMD" -o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram""
+			CMD=$CMD" -C $CORE_PATH/$PROJECT/TEMP/$SM_TAG".bam"" \
+			CMD=$CMD" -T $REF_GENOME" \
+			CMD=$CMD" -@ $THREADS" \
+			CMD=$CMD" --write-index" \
+			CMD=$CMD" -O CRAM" \
+		CMD=$CMD" -o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram"" \
 
 	# write command line to file and execute the command line
 

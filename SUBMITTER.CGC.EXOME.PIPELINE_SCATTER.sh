@@ -721,30 +721,6 @@ done
 				$SUBMIT_STAMP
 		}
 
-	# ##########################################################################################
-	# # index the cram file and copy it so that there are both *crai and cram.crai *extensions #
-	# ##########################################################################################
-
-		INDEX_CRAM ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N G.01-INDEX_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-INDEX_CRAM.log" \
-			-hold_jid F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
-			$SCRIPT_DIR/G.01_INDEX_CRAM.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$REF_GENOME \
-				$THREADS \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
 ######################################
 # run steps for cram file generation #
 ######################################
@@ -763,8 +739,6 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		APPLY_BQSR
 		echo sleep 0.1s
 		BAM_TO_CRAM
-		echo sleep 0.1s
-		INDEX_CRAM
 		echo sleep 0.1s
 done
 
@@ -788,7 +762,7 @@ done
 				$QSUB_ARGS \
 			-N H.01-COLLECT_MULTIPLE_METRICS"_"$SGE_SM_TAG"_"$PROJECT \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-COLLECT_MULTIPLE_METRICS.log" \
-			-hold_jid G.01-INDEX_CRAM"_"$SGE_SM_TAG"_"$PROJECT,C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
 			$SCRIPT_DIR/H.01_COLLECT_MULTIPLE_METRICS.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -816,7 +790,7 @@ done
 				$QSUB_ARGS \
 			-N H.02-COLLECT_HS_METRICS"_"$SGE_SM_TAG"_"$PROJECT \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-COLLECT_HS_METRICS.log" \
-			-hold_jid G.01-INDEX_CRAM"_"$SGE_SM_TAG"_"$PROJECT,C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
 			$SCRIPT_DIR/H.02_COLLECT_HS_METRICS.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -845,7 +819,7 @@ done
 				$QSUB_ARGS \
 			-N H.03-DOC_TARGET"_"$SGE_SM_TAG"_"$PROJECT \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-DOC_TARGET.log" \
-			-hold_jid G.01-INDEX_CRAM"_"$SGE_SM_TAG"_"$PROJECT,C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
 			$SCRIPT_DIR/H.03_DOC_TARGET_PADDED_BED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -925,7 +899,7 @@ done
 				$QSUB_ARGS \
 			-N H.05-DOC_CODING"_"$SGE_SM_TAG"_"$PROJECT \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-DOC_CODING.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,G.01-INDEX_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
 			$SCRIPT_DIR/H.05_DOC_CODING_PADDED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -1029,30 +1003,6 @@ done
 				$CODING_BED \
 				$PADDING_LENGTH \
 				$THREADS \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	######################################################
-	# TABIX PER BASE COVERAGE WITH GENE NAME ANNNOTATION #
-	######################################################
-
-		TABIX_ANNOTATED_PER_BASE_REPORT ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.05-A.02-A.02-A.01_TABIX_ANNOTATED_PER_BASE"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-TABIX_ANNOTATED_PER_BASE.log" \
-			-hold_jid H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE"_"$SGE_SM_TAG"_"$PROJECT \
-			$SCRIPT_DIR/H.05-A.02-A.02-A.01_TABIX_ANNOTATED_PER_BASE.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$CODING_BED \
-				$PADDING_LENGTH \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
 		}
@@ -1186,8 +1136,6 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		FILTER_ANNOTATED_PER_BASE_REPORT
 		echo sleep 0.1s
 		BGZIP_ANNOTATED_PER_BASE_REPORT
-		echo sleep 0.1s
-		TABIX_ANNOTATED_PER_BASE_REPORT
 		echo sleep 0.1s
 		ANNOTATE_PER_INTERVAL_REPORT
 		echo sleep 0.1s
@@ -1661,29 +1609,7 @@ done
 				$FAMILY \
 				$SM_TAG \
 				$REF_GENOME \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	##########################################################################################
-	# index the cram file and copy it so that there are both *crai and cram.crai *extensions #
-	##########################################################################################
-
-		INDEX_HC_CRAM ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.07-A.02-A.01-A.01_INDEX_HAPLOTYPE_CALLER_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-HC_INDEX_CRAM.log" \
-			-hold_jid H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
-			$SCRIPT_DIR/H.07-A.02-A.01-A.01_INDEX_HAPLOTYPE_CALLER_CRAM.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$REF_GENOME \
+				$THREADS \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
 		}
@@ -1701,8 +1627,6 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		CALL_HAPLOTYPE_CALLER_BAM_GATHER
 		echo sleep 0.1s
 		HC_BAM_TO_CRAM
-		echo sleep 0.1s
-		INDEX_HC_CRAM
 		echo sleep 0.1s
 done
 
