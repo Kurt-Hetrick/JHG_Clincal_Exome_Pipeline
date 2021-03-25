@@ -4,9 +4,6 @@
 # tell sge to execute in bash
 #$ -S /bin/bash
 
-# tell sge to submit any of these queue when available
-#$ -q cgc.q
-
 # tell sge that you are in the users current working directory
 #$ -cwd
 
@@ -20,92 +17,89 @@
 #$ -j y
 
 # export all variables, useful to find out what compute node the program was executed on
-# redirecting stderr/stdout to file as a log.
 
-set
+	set
 
-echo
+	echo
 
-JAVA_1_8=$1
-GATK_DIR=$2
-CORE_PATH=$3
+# INPUT VARIABLES
 
-PROJECT=$4
-FAMILY=$5
-REF_GENOME=$6
+	GATK_3_7_0_CONTAINER=$1
+	CORE_PATH=$2
 
-## -----Haplotype Caller-----
+	PROJECT=$3
+	FAMILY=$4
+	REF_GENOME=$5
+	SAMPLE_SHEET=$6
+		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
+	SUBMIT_STAMP=$7
 
-## Call on Bait (padded or superset)
+# GATHER UP PER CHROMOSOME GENOTYPED VCF FILES.
 
 START_GENOTYPE_GVCF_GATHER=`date '+%s'`
 
-$JAVA_1_8/java -cp $GATK_DIR/GenomeAnalysisTK.jar \
-org.broadinstitute.gatk.tools.CatVariants \
--R $REF_GENOME \
---assumeSorted \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.1.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.2.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.3.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.4.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.5.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.6.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.7.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.8.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.9.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.10.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.11.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.12.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.13.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.14.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.15.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.16.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.17.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.18.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.19.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.20.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.21.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.22.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.X.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.Y.vcf" \
---outputFile $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.vcf"
+	# construct command line
+
+		CMD="singularity exec $GATK_3_7_0_CONTAINER java -cp" \
+				CMD=$CMD" /usr/GenomeAnalysisTK.jar" \
+		CMD=$CMD" org.broadinstitute.gatk.tools.CatVariants" \
+			CMD=$CMD" -R $REF_GENOME" \
+			CMD=$CMD" --assumeSorted" \
+
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.1.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.2.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.3.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.4.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.5.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.6.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.7.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.8.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.9.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.10.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.11.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.12.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.13.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.14.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.15.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.16.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.17.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.18.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.19.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.20.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.21.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.22.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.X.vcf"" \
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.Y.vcf"" \
+
+			CMD=$CMD" --outputFile $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.vcf""
+
+	# write command line to file and execute the command line
+
+		echo $CMD >> $CORE_PATH/$PROJECT/COMMAND_LINES/$FAMILY"_command_lines.txt"
+		echo >> $CORE_PATH/$PROJECT/COMMAND_LINES/$FAMILY"_command_lines.txt"
+		echo $CMD | bash
+
+	# check the exit signal at this point.
+
+		SCRIPT_STATUS=`echo $?`
+
+	# if exit does not equal 0 then exit with whatever the exit signal is at the end.
+	# also write to file that this job failed
+
+		if [ "$SCRIPT_STATUS" -ne 0 ]
+		 then
+			echo $SM_TAG $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
+			>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt"
+			exit $SCRIPT_STATUS
+		fi
 
 END_GENOTYPE_GVCF_GATHER=`date '+%s'`
 
-HOSTNAME=`hostname`
+# write out timing metrics to file
 
-echo $FAMILY"_"$PROJECT",I.01-A.01,GENOTYPE_GVCF_GATHER,"$HOSTNAME","$START_GENOTYPE_GVCF_GATHER","$END_GENOTYPE_GVCF_GATHER \
->> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
+	echo $FAMILY"_"$PROJECT",I.01-A.01,GENOTYPE_GVCF_GATHER,"$HOSTNAME","$START_GENOTYPE_GVCF_GATHER","$END_GENOTYPE_GVCF_GATHER \
+	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
-echo $JAVA_1_8/java -cp $GATK_DIR/GenomeAnalysisTK.jar \
-org.broadinstitute.gatk.tools.CatVariants \
--R $REF_GENOME \
---assumeSorted \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.1.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.2.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.3.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.4.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.5.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.6.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.7.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.8.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.9.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.10.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.11.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.12.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.13.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.14.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.15.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.16.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.17.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.18.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.19.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.20.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.21.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.22.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.X.vcf" \
---variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.Y.vcf" \
---outputFile $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.vcf" \
->> $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".COMMAND.LINES.txt"
+# exit with the signal from the program
 
-echo >> $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".COMMAND.LINES.txt"
+	exit $SCRIPT_STATUS

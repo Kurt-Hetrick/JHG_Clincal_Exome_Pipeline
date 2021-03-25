@@ -42,7 +42,7 @@
 
 START_GENOTYPE_GVCF=`date '+%s'`
 
-# construct command line
+	# construct command line
 
 		CMD="singularity exec $GATK_3_7_0_CONTAINER java -jar" \
 			CMD=$CMD" /usr/GenomeAnalysisTK.jar" \

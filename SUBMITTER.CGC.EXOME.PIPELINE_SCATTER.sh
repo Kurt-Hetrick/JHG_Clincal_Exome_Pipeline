@@ -1761,9 +1761,9 @@ done
 			>| $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.list"
 		}
 
-	###################################################################################
-	# create a hold_id variable for haplotype gather step for all samples in a family #
-	###################################################################################
+	###############################################################################################
+	# create a hold_id variable for haplotype caller gvcf gather step for all samples in a family #
+	###############################################################################################
 
 		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF ()
 		{
@@ -1795,7 +1795,7 @@ done
 				qsub \
 					$QSUB_ARGS \
 				-N "I.01_GENOTYPE_GVCF_SCATTER_"$FAMILY"_"$PROJECT"_chr"$CHROMOSOME \
-					-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY_$PROJECT.GENOTYPE_GVCF_chr$CHROMOSOME.log \
+					-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT.GENOTYPE_GVCF_chr$CHROMOSOME.log \
 				$HOLD_ID_PATH \
 				$SCRIPT_DIR/I.01_GENOTYPE_GVCF_SCATTER.sh \
 					$GATK_3_7_0_CONTAINER \
@@ -1838,8 +1838,8 @@ done
 #################################################################################
 
 for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
-			NR>1 \
-			{print $20}' \
+		NR>1 \
+		{print $20}' \
 		~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
 		| sort \
 		| uniq);
@@ -1851,48 +1851,75 @@ do
 	SCATTER_GENOTYPE_GVCF_PER_CHROMOSOME
 done
 
-# ########################################################################################
-# ##### GATHER UP THE PER FAMILY PER CHROMOSOME GVCF FILES INTO A SINGLE FAMILY GVCF #####
-# ########################################################################################
+########################################################################################
+##### GATHER UP THE PER FAMILY PER CHROMOSOME GVCF FILES INTO A SINGLE FAMILY GVCF #####
+########################################################################################
 
-# BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER()
-# {
-# 	for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET | sort | uniq )
-# 	do
-# 	HOLD_ID_PATH="-hold_jid "
-# 	for CHR in {{1..22},{X,Y}};
-#  	do
-#  		HOLD_ID_PATH=$HOLD_ID_PATH"I.01_GENOTYPE_GVCF_SCATTER_"$FAMILY"_"$PROJECT"_chr"$CHR","
-#  	done
-#  done
-# }
+	########################################################################
+	# create a hold_id variable for genotype gvcfs scatter step per family #
+	########################################################################
 
+		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER()
+		{
+			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' \
+				$SAMPLE_SHEET \
+				| sort \
+				| uniq )
+			do
+				HOLD_ID_PATH="-hold_jid "
+				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+					| sed -r 's/[[:space:]]+/\t/g' \
+					| sed 's/chr//g' \
+					| grep -v "MT" \
+					| cut -f 1 \
+					| sort \
+					| uniq \
+					| singularity exec $ALIGNMENT_CONTAINER datamash \
+						collapse 1 \
+					| sed 's/,/ /g');
+				do
+					HOLD_ID_PATH=$HOLD_ID_PATH"I.01_GENOTYPE_GVCF_SCATTER_"$FAMILY"_"$PROJECT"_chr"$CHROMOSOME","
+				done
+			done
+		}
 
-# CALL_GENOTYPE_GVCF_GATHER ()
-# {
-# echo \
-# qsub \
-# -N I.01-A.01_GENOTYPE_GVCF_GATHER_${FAMILY_ARRAY[0]}_${FAMILY_ARRAY[2]} \
-#  ${HOLD_ID_PATH} \
-#  -o $CORE_PATH/$PROJECT/${FAMILY_ARRAY[2]}/LOGS/$FAMILY_${FAMILY_ARRAY[0]}.GENOTYPE_GVCF_GATHER.log \
-#  $SCRIPT_DIR/I.01-A.01_GENOTYPE_GVCF_GATHER.sh \
-#  $JAVA_1_8 $GATK_DIR $CORE_PATH \
-#  ${FAMILY_ARRAY[0]} ${FAMILY_ARRAY[2]} ${FAMILY_ARRAY[3]}
-# }
+	###########################################################
+	# gather up per chromosome genotyped vcf files per family #
+	###########################################################
 
+		CALL_GENOTYPE_GVCF_GATHER ()
+		{
+			echo \
+			qsub \
+			$QSUB_ARGS \
+			-N I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".GENOTYPE_GVCF_GATHER.log" \
+			${HOLD_ID_PATH} \
+			$SCRIPT_DIR/I.01-A.01_GENOTYPE_GVCF_GATHER.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
-# for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt | sort | uniq)
-#  do
-#  	# echo $FAMILY
-# 	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
-# 	CREATE_FAMILY_ARRAY
-# 	CALL_GENOTYPE_GVCF_GATHER
-# 	echo sleep 1s
-#  done
+#####################################################
+# run step to gather per chromosome per family vcfs #
+#####################################################
 
-# ##########################################################
-# ################END VITO##################################
-# ##########################################################
+for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+	| sort \
+	| uniq)
+ do
+	# echo $FAMILY
+	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
+	CREATE_FAMILY_ARRAY
+	CALL_GENOTYPE_GVCF_GATHER
+	echo sleep 1s
+ done
 
 # #####################################################################################################
 # ##### Run Variant Recalibrator for the SNP model, this is done in parallel with the INDEL model #####
