@@ -1785,11 +1785,37 @@ done
 			done
 		}
 
-	##############################################
-	# do joint calling per family per chromosome #
-	##############################################
+	#########################################################
+	# joint calling per family per chromosome core function #
+	#########################################################
 
-		CALL_GENOTYPE_GVCF ()
+		GENOTYPE_GVCF ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N "I.01_GENOTYPE_GVCF_SCATTER_"$FAMILY"_"$PROJECT"_chr"$CHROMOSOME \
+					-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY_$PROJECT.GENOTYPE_GVCF_chr$CHROMOSOME.log \
+				$HOLD_ID_PATH \
+				$SCRIPT_DIR/I.01_GENOTYPE_GVCF_SCATTER.sh \
+					$GATK_3_7_0_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$REF_GENOME \
+					$DBSNP \
+					$CHROMOSOME \
+					$CONTROL_REPO \
+					$CONTROL_DATA_SET_FILE \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+	########################################
+	# scatter genotype gvcfs by chromosome #
+	########################################
+
+		SCATTER_GENOTYPE_GVCF_PER_CHROMOSOME ()
 		{
 			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
 				| sed -r 's/[[:space:]]+/\t/g' \
@@ -1802,32 +1828,14 @@ done
 					collapse 1 \
 				| sed 's/,/ /g');
 			do
-				echo \
-				qsub \
-				$QSUB_ARGS \
-				-N "I.01_GENOTYPE_GVCF_SCATTER_"$FAMILY"_"$PROJECT"_chr"$CHROMOSOME \
-				$HOLD_ID_PATH \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY_$PROJECT.GENOTYPE_GVCF_chr$CHROMOSOME.log \
-				$SCRIPT_DIR/I.01_GENOTYPE_GVCF_SCATTER.sh \
-				$GATK_3_7_0_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$REF_GENOME \
-				$DBSNP \
-				$CHROMOSOME \
-				$CONTROL_REPO \
-				$CONTROL_DATA_SET_FILE \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-
+				GENOTYPE_GVCF
 				echo sleep 0.1s
 			done
 		}
 
-################################################################################
-# run steps to do joint caller per family per set of intervals in a chromosome #
-################################################################################
+#################################################################################
+# run steps to do joint calling per family per set of intervals in a chromosome #
+#################################################################################
 
 for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
 			NR>1 \
@@ -1840,7 +1848,7 @@ do
 	CREATE_GVCF_LIST
 	CREATE_FAMILY_SAMPLE_LIST
 	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF
-	CALL_GENOTYPE_GVCF
+	SCATTER_GENOTYPE_GVCF_PER_CHROMOSOME
 done
 
 # ########################################################################################
