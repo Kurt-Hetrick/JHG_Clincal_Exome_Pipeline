@@ -1663,7 +1663,7 @@ done
 		{
 			FAMILY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
 				$20=="'$FAMILY_ONLY'" \
-				{print $1,$8,$12,$18,$20}' \
+				{print $1,$8,$12,$15,$16,$17,$18,$20}' \
 			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
 				| sort \
 				| uniq`)
@@ -1701,14 +1701,24 @@ done
 					########################################################
 					# 13 SKIP : Operator=no standard on this, not captured #
 					# 14 SKIP : Extra_VCF_Filter_Params=LEGACY, NOT USED ###
-					# 15 SKIP : TS_TV_BED_File=the master bed file #########
-					# 16 SKIP : Baits_BED_File=the master bed file #########
-					# 17 SKIP : Targets_BED_File=the master bed file #######
 					########################################################
+
+			# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
+
+				TITV_BED=${FAMILY_ARRAY[3]}
+
+			# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
+			# Used for limited where to run base quality score recalibration on where to create gvcf files.
+
+				BAIT_BED=${FAMILY_ARRAY[4]}
+
+			# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
+
+				TARGET_BED=${FAMILY_ARRAY[5]}
 
 			# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in BQSR
 
-				DBSNP=${FAMILY_ARRAY[3]}
+				DBSNP=${FAMILY_ARRAY[6]}
 
 					#####################################################
 					# 19 SKIP : KNOWN_INDEL_FILES=used for BQSR masking #
@@ -1716,7 +1726,7 @@ done
 
 			# 20 family that sample belongs to
 
-				FAMILY=${FAMILY_ARRAY[4]}
+				FAMILY=${FAMILY_ARRAY[7]}
 
 					#######################
 					# 21 SKIP : MOM #######
@@ -1759,6 +1769,34 @@ done
 				| sort \
 				| uniq \
 			>| $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.list"
+		}
+
+	#################################################################################
+	# fix common formatting problems in bed files to use for family level functions #
+	# merge bait to target for gvcf creation, pad ###################################
+	# create picard style interval files ############################################
+	#################################################################################
+
+		FIX_BED_FILES_FAMILY ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.10-FIX_BED_FILES"_"$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"-FIX_BED_FILES.log" \
+			$SCRIPT_DIR/H.10_FIX_BED_FAMILY.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$CODING_BED \
+				$TARGET_BED \
+				$BAIT_BED \
+				$TITV_BED \
+				$CYTOBAND_BED \
+				$REF_GENOME \
+				$PADDING_LENGTH \
+				$GVCF_PAD
 		}
 
 	###############################################################################################
@@ -1848,7 +1886,10 @@ do
 	CREATE_GVCF_LIST
 	CREATE_FAMILY_SAMPLE_LIST
 	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF
+	FIX_BED_FILES_FAMILY
+	echo sleep 0.1s
 	SCATTER_GENOTYPE_GVCF_PER_CHROMOSOME
+	echo sleep 0.1s
 done
 
 ########################################################################################
