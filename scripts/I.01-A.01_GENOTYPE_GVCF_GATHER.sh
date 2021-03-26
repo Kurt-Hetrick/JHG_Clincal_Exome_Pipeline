@@ -30,13 +30,52 @@
 	PROJECT=$3
 	FAMILY=$4
 	REF_GENOME=$5
-	SAMPLE_SHEET=$6
+	BAIT_BED=$6
+		BAIT_BED_NAME=(`basename $BAIT_BED .bed`)
+	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$7
+	SUBMIT_STAMP=$8
 
 # GATHER UP PER CHROMOSOME GENOTYPED VCF FILES.
 
 START_GENOTYPE_GVCF_GATHER=`date '+%s'`
+
+# Start with creating a *list file, reference sorted, to put into --variant.
+# Assumption is that this is a correctly sorted GRCh37 reference file as the input reference used
+
+	# Put the autosome into a file, sort numerically
+
+		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $CORE_PATH/$PROJECT/TEMP/$FAMILY"-"$BAIT_BED_NAME".bed" \
+			| sed -r 's/[[:space:]]+/\t/g' \
+			| cut -f 1 \
+			| sort \
+			| uniq \
+			| awk '$1~/^[0-9]/' \
+			| sort -k1,1n \
+			| awk '{print "'$CORE_PATH'" "/" "'$PROJECT'" "/TEMP/" "CONTROLS_PLUS_" "'$FAMILY'" ".RAW." $1 ".vcf"}' \
+		>| $CORE_PATH/$PROJECT/TEMP/$FAMILY".raw.vcf.list"
+
+	# Append X if present
+
+		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $CORE_PATH/$PROJECT/TEMP/$FAMILY"-"$BAIT_BED_NAME".bed" \
+			| sed -r 's/[[:space:]]+/\t/g' \
+			| cut -f 1 \
+			| sort \
+			| uniq \
+			| awk '$1=="X"' \
+			| awk '{print "'$CORE_PATH'" "/" "'$PROJECT'" "/TEMP/" "CONTROLS_PLUS_" "'$FAMILY'" ".RAW." $1 ".vcf"}' \
+		>> $CORE_PATH/$PROJECT/TEMP/$FAMILY".raw.vcf.list"
+
+	# Append Y if present
+
+		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $CORE_PATH/$PROJECT/TEMP/$FAMILY"-"$BAIT_BED_NAME".bed" \
+			| sed -r 's/[[:space:]]+/\t/g' \
+			| cut -f 1 \
+			| sort \
+			| uniq \
+			| awk '$1=="Y"' \
+			| awk '{print "'$CORE_PATH'" "/" "'$PROJECT'" "/TEMP/" "CONTROLS_PLUS_" "'$FAMILY'" ".RAW." $1 ".vcf"}' \
+		>> $CORE_PATH/$PROJECT/TEMP/$FAMILY".raw.vcf.list"
 
 	# construct command line
 
@@ -45,32 +84,7 @@ START_GENOTYPE_GVCF_GATHER=`date '+%s'`
 		CMD=$CMD" org.broadinstitute.gatk.tools.CatVariants" \
 			CMD=$CMD" -R $REF_GENOME" \
 			CMD=$CMD" --assumeSorted" \
-
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.1.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.2.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.3.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.4.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.5.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.6.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.7.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.8.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.9.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.10.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.11.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.12.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.13.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.14.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.15.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.16.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.17.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.18.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.19.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.20.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.21.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.22.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.X.vcf"" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.Y.vcf"" \
-
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/$FAMILY".raw.vcf.list"" \
 			CMD=$CMD" --outputFile $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.vcf""
 
 	# write command line to file and execute the command line
@@ -88,7 +102,7 @@ START_GENOTYPE_GVCF_GATHER=`date '+%s'`
 
 		if [ "$SCRIPT_STATUS" -ne 0 ]
 		 then
-			echo $SM_TAG $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
+			echo $FAMILY $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
 			>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt"
 			exit $SCRIPT_STATUS
 		fi
