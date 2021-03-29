@@ -2033,9 +2033,32 @@ done
 			$SUBMIT_STAMP
 	}
 
-#####################################################
+################################################
+# Run Variant Recalibrator for the INDEL model #
+################################################
+
+	RUN_VQSR_INDEL ()
+	{
+		echo \
+		qsub \
+		$QSUB_ARGS \
+		-N J02_VQSR_INDEL_$FAMILY"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".VQSR_INDEL.log" \
+		-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
+		$SCRIPT_DIR/J02-VARIANT_RECALIBRATOR_INDEL.sh \
+			$GATK_3_7_0_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$FAMILY \
+			$REF_GENOME \
+			$MILLS_1KG_GOLD_INDEL \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
+
+####################
 # run step do VQSR #
-#####################################################
+####################
 
 for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
@@ -2044,6 +2067,8 @@ for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 do
 	CREATE_FAMILY_ARRAY
 	RUN_VQSR_SNP
+	echo sleep 1s
+	RUN_VQSR_INDEL
 	echo sleep 1s
 done
 
