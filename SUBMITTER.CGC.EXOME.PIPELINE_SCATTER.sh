@@ -2015,10 +2015,10 @@ done
 		echo \
 		qsub \
 		$QSUB_ARGS \
-		-N J01_VQSR_SNP_$FAMILY"_"$PROJECT \
-			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".VQSR_SNP.log" \
+		-N J01_RUN_VQSR_SNP_$FAMILY"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".RUN_VQSR_SNP.log" \
 		-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
-		$SCRIPT_DIR/J01-VARIANT_RECALIBRATOR_SNP.sh \
+		$SCRIPT_DIR/J01-RUN_VARIANT_RECALIBRATOR_SNP.sh \
 			$GATK_3_7_0_CONTAINER \
 			$CORE_PATH \
 			$PROJECT \
@@ -2042,16 +2042,38 @@ done
 		echo \
 		qsub \
 		$QSUB_ARGS \
-		-N J02_VQSR_INDEL_$FAMILY"_"$PROJECT \
-			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".VQSR_INDEL.log" \
+		-N J02_RUN_VQSR_INDEL_$FAMILY"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".RUN_VQSR_INDEL.log" \
 		-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
-		$SCRIPT_DIR/J02-VARIANT_RECALIBRATOR_INDEL.sh \
+		$SCRIPT_DIR/J02-RUN_VARIANT_RECALIBRATOR_INDEL.sh \
 			$GATK_3_7_0_CONTAINER \
 			$CORE_PATH \
 			$PROJECT \
 			$FAMILY \
 			$REF_GENOME \
 			$MILLS_1KG_GOLD_INDEL \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
+
+##############################################
+# Run Variant Recalibrator for the SNP model #
+##############################################
+
+	APPLY_VQSR_SNP ()
+	{
+		echo \
+		qsub \
+		$QSUB_ARGS \
+		-N K01_APPLY_VQSR_SNP_$FAMILY"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".APPLY_VQSR_SNP.log" \
+		-hold_jid J01_RUN_VQSR_SNP_$FAMILY"_"$PROJECT,J02_RUN_VQSR_INDEL_$FAMILY"_"$PROJECT \
+		$SCRIPT_DIR/K01-APPLY_VARIANT_RECALIBRATION_SNP.sh \
+			$GATK_3_7_0_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$FAMILY \
+			$REF_GENOME \
 			$SAMPLE_SHEET \
 			$SUBMIT_STAMP
 	}
@@ -2070,31 +2092,9 @@ do
 	echo sleep 1s
 	RUN_VQSR_INDEL
 	echo sleep 1s
+	APPLY_VQSR_SNP
+	echo sleep 1s
 done
-
-# ### Run Variant Recalibrator for the INDEL model, this is done in parallel with the SNP model
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$12}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 \
-# | uniq \
-# | awk '{print "qsub","-N","J.02_VARIANT_RECALIBRATOR_INDEL_"$2"_"$1,\
-# "-hold_jid","I.01-A.01_GENOTYPE_GVCF_GATHER_"$1"_"$2,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/LOGS/"$2"_"$1".VARIANT_RECALIBRATOR_INDEL.log",\
-# "'$SCRIPT_DIR'""/J.02_VARIANT_RECALIBRATOR_INDEL.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,"'$MILLS_1KG_GOLD_INDEL'""\n""sleep 1s"}'
-
-# ### Run Apply Recalbration with the SNP model to the VCF file
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$12}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 \
-# | uniq \
-# | awk '{print "qsub","-N","K.01_APPLY_RECALIBRATION_SNP_"$2"_"$1,\
-# "-hold_jid","J.01_VARIANT_RECALIBRATOR_SNP_"$2"_"$1",""J.02_VARIANT_RECALIBRATOR_INDEL_"$2"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/LOGS/"$2"_"$1".APPLY_RECALIBRATION_SNP.log",\
-# "'$SCRIPT_DIR'""/K.01_APPLY_RECALIBRATION_SNP.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
 
 # ### Run Apply Recalibration with the INDEL model to the VCF file.
 
