@@ -85,6 +85,14 @@
 
 		SUBMITTER_ID=`whoami`
 
+	# grab email addy
+
+		SEND_TO=`cat $SCRIPT_DIR/../email_lists.txt`
+
+	# grab submitter's name
+
+		PERSON_NAME=`getent passwd | awk 'BEGIN {FS=":"} $1=="'$SUBMITTER_ID'" {print $5}'`
+
 	# bind the host file system /mnt to the singularity container. in case I use it in the submitter.
 
 		export SINGULARITY_BINDPATH="/mnt:/mnt"
@@ -203,6 +211,34 @@
 		GNOMAD_MT="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/GRCh37_MT_gnomAD.vcf.gz"
 		ANNOVAR_MT_DB_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/annovar_db/"
 		MT_GENBANK="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/NC_012920.1.gb"
+
+	# CNV calling workflow
+
+		exomeDEPTH_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated_uniq_cnv120.bed"
+
+		# bed file for computing CNV call percentage
+
+			CNV_CALL_PCT_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated_uniq_cnv120.bed"
+
+		# read count from female reference panel, won't need to change unless changes in bed file or reference samples
+
+			REF_PANEL_FEMALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountFemaleUniqBed22.rda"
+
+		# read count from male reference panel, won't need to change unless changes in bed file or reference samples
+
+			REF_PANEL_MALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountMaleUniqBed26.rda"
+
+		# if subject sex is not specified as 'm' or 'f', it will use count of all sample
+
+			REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountAllUniqBed48.rda"
+
+		# gene list directory, if exist, a separate output that overlapped with those genes will be generated, use "NA" if no such file
+
+			# gene_list_file /mnt/clinical/ddl/NGS/CNVPipeline/data/ImmunoZoom.ALL.ZoomV1.GeneList.190822.csv
+
+		# a name you want to add to the separate output, use "NA" if gene_list_file is "NA" 
+
+			# gene_list_name gene.v1
 
 #################################
 ##### MAKE A DIRECTORY TREE #####
@@ -1476,6 +1512,13 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 done
 
+#################################
+##### CNV CALLING WORKFLOW ######
+# USES EXOME DEPTH TO CALL CNVS #
+#################################
+
+
+
 #########################################################################
 ##### HAPLOTYPE CALLER SCATTER ##########################################
 # INPUT IS THE BAM FILE #################################################
@@ -1651,9 +1694,9 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 done
 
-##################################
-##### JOINT CALLING AND VQSR #####
-##################################
+##################################################################
+##### JOINT CALLING SAMPLES IN A FAMILY WITH SET OF CONTROLS #####
+##################################################################
 
 	######################################################
 	# create an array for each family/sample combination #
@@ -1955,27 +1998,54 @@ for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
 	| sort \
 	| uniq)
- do
+do
 	# echo $FAMILY
 	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
 	CREATE_FAMILY_ARRAY
 	CALL_GENOTYPE_GVCF_GATHER
 	echo sleep 1s
- done
+done
 
-# #####################################################################################################
-# ##### Run Variant Recalibrator for the SNP model, this is done in parallel with the INDEL model #####
-# #####################################################################################################
+##############################################
+# Run Variant Recalibrator for the SNP model #
+##############################################
 
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$12,$18}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 \
-# | uniq \
-# | awk '{print "qsub","-N","J.01_VARIANT_RECALIBRATOR_SNP_"$2"_"$1,\
-# "-hold_jid","I.01-A.01_GENOTYPE_GVCF_GATHER_"$1"_"$2,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/LOGS/"$2"_"$1".VARIANT_RECALIBRATOR_SNP.log",\
-# "'$SCRIPT_DIR'""/J.01_VARIANT_RECALIBRATOR_SNP.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4,"'$HAPMAP'","'$OMNI_1KG'","'$HI_CONF_1KG_PHASE1_SNP'""\n""sleep 1s"}'
+	RUN_VQSR_SNP ()
+	{
+		echo \
+		qsub \
+		$QSUB_ARGS \
+		-N J01_VQSR_SNP_$FAMILY"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".VQSR_SNP.log" \
+		-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
+		$SCRIPT_DIR/J01-VARIANT_RECALIBRATOR_SNP.sh \
+			$GATK_3_7_0_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$FAMILY \
+			$REF_GENOME \
+			$DBSNP \
+			$HAPMAP \
+			$OMNI_1KG \
+			$HI_CONF_1KG_PHASE1_SNP \
+			$SEND_TO \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
+
+#####################################################
+# run step do VQSR #
+#####################################################
+
+for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+	| sort \
+	| uniq)
+do
+	CREATE_FAMILY_ARRAY
+	RUN_VQSR_SNP
+	echo sleep 1s
+done
 
 # ### Run Variant Recalibrator for the INDEL model, this is done in parallel with the SNP model
 
