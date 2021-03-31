@@ -1,5 +1,3 @@
-
-
 # Eric Minikel
 # script to run ExomeDepth
 # how to run:
@@ -7,10 +5,25 @@
 
 start_time = Sys.time()
 options(stringsAsFactors=FALSE) # crucial for handling BAM filenames as strings
+
+########################
+##### START REMOVE #####
+########################
+
 # sessionInfo()
-.libPaths("/mnt/linuxtools/clinical/R/3.5.3/lib64/R/library")
-library(optparse) # http://cran.r-project.org/web/packages/optparse/optparse.pdf
+.libPaths("/mnt/linuxtools/clinical/R/3.5.3/lib64/R/library") ## remove
+library(optparse) # http://cran.r-project.org/web/packages/optparse/optparse.pdf ## remove
+
+######################
+##### END REMOVE #####
+######################
+
 library(ExomeDepth)
+
+########################
+##### START REMOVE #####
+########################
+
 ##################################################
 ### this part as replacement of QCpipeline library
 #library(QCpipeline)
@@ -59,6 +72,13 @@ setConfigDefaults <- function(config, required, optional, default) {
 
 ##########end of read.config function#######################################
 
+##### IS THIS READING IN
+
+# 1. CONFIG FILE
+# 2. SAMPLE NAME
+# 3. GENDER
+# 4. BAM FILE
+
 ## read configuration
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 1) stop("missing configuration file")
@@ -66,11 +86,42 @@ config <- readConfig(args[1])
 
 # check for type
 if (length(args) < 4) stop("missing bam")
+
+######################
+##### END REMOVE #####
+######################
+
+#####################################################
+##### NOT SURE WHAT NAME IS HERE...SAMPLE NAME? #####
+#####################################################
+
 name <- args[2]
+
+###########################################################################################
+# THIS IS TO BE REPLACED BY AN ARG. IF/THEN/ELSE STATEMENT OCCURS OUTSIDE TO PASS REF_PANEL
+# argument should be refcounts
+# question: what happens in a trio...how is sex determined?
+# OR IS EACH SAMPLE IN A TRIO/FAMILY DONE INDIVUALLY AGAINST A REF PANEL 
+###########################################################################################
+
 sex <- args[3]
+###########################################################################################
+
+##########################################################################################
+##### NOT SURE WHAT HAPPENS WHEN THERE ARE MULTIPLE BAMS...IS IS COMMA DELIMITED STRING? #
+##### OR IS EACH SAMPLE DONE IN A FAMILY INDIVIDUALLY AGAINST A REF PANEL ################
+##########################################################################################
+
 bam <- args[4]
 
 # check config and set defaults
+
+##################################################################################
+##### REF PANEL DETERMINATION. TO BE DETERMINED OUTSIDE AND PASSED AS AN ARG #####
+##### LOOKS LIKE THE DATA IS TO BE CALLED refcounts ##############################
+# SO I THINK THIS CAN BE MOSTLY REMOVED AS THERE IS A load(refcounts) below ######
+##################################################################################
+
 if (sex %in% c("female", "F", "Female", "FEMALE")) {
   required <- c("ref_female")
   refcounts <- config["ref_female"]
@@ -85,20 +136,45 @@ if (sex %in% c("female", "F", "Female", "FEMALE")) {
   cat(paste("all referecence panel selected for sample ",name,"\n",sep=''),file=stdout())
 }
 
+###########################
+##### END REPLACEMENT #####
+###########################
+
+#############################################################################################
+##### BED FILE AND OUTDIR IS SET OUTSIDE ####################################################
+##### IT LOOKS LIKE BED FILE HERE REFERS TO THE ZOOM PANEL, SO...HAVE TO SET NA SOMEHOW #####
+#############################################################################################
+
 ## check config and set defaults
+# i'm assuming that bed file is the zoom panel.
+
 optional <- c("bed_file", "out_dir")
 default <- c(NA, "./")
 config <- setConfigDefaults(config, required, optional, default)
 print(config)
 
 if (file.exists(config["bed_file"])) {
+
+##############################################################
   # read bam list directly into a vector (note use of $V1)
+##### I DON'T UNDERSTAND THIS COMMENT OR WHY IT IS HERE. #####
+##############################################################
+
+#######################################################################
+##### BED FILE SHOULD BE AN ARG. PRESUMABLY AS "NA" or zoom panel #####
+#######################################################################
+
   bed = read.table(config["bed_file"],header=TRUE, stringsAsFactors = FALSE)
   colnames(bed) = c("chromosome", "start", "end","name")
 } else {
   cat("You need to specify a valid bed file using -f.\n",file=stderr())
   stop()
 }
+
+##################################################################################################
+##### this can be probably moved up higher...or keep here. just need load(refcounts) I think #####
+##################################################################################################
+
 
 if (file.exists(refcounts)) {
   # refcounts
@@ -107,6 +183,10 @@ if (file.exists(refcounts)) {
   cat("You need to specify the name of reference set using -r.\n",file=stderr())
   stop()
 }
+
+###############################################################################
+##### HMMM. OUTPUT DIRECTORY IS CREATED OUTSIDE...SO THIS CAN BE REWORKED #####
+###############################################################################
 
 # read output directory
 # note right now if not specified, I stop execution. 
@@ -122,17 +202,29 @@ if (file.exists(config["out_dir"])) {
   stop()
 }
 
+##### 
+
 # if (opt$verbose) {
      cat(paste("Read BAM list from ",name,"\n",sep=''),file=stdout())
 # }
 # get the read count if it exist in .rda
 counts_file <- grep(".+\\.rda$", list.files(), value = TRUE)
 # file.rename(counts, "counts.rda")
+
+####################################################################################
+##### not sure what unique references to, but I think that this can be removed #####
+####################################################################################
+
 # if there is a unique rda file, using the existing rda
 if (length(counts_file) == 1) {
   load(counts_file)
   cat(paste("Use the existing counts for this sample ", counts_file, "\n", sep=''),file=stderr())
 } else {
+
+####################################################################################
+# this is the actual exome depth. bam and bed are input args.
+####################################################################################
+
   # count the study sample
   counts = getBamCounts(bed.frame = bed, bam.files = bam)
 #  save(counts,file=paste("counts", ".rda", sep=""))
@@ -228,12 +320,22 @@ i <- 1
         cat(paste("\n",sep=''),file=stdout())
 #    }
 
+###################################################################################################
+##### would like to have this be its own separate system call and not be executed within here #####
+##### if this was not here, I probably wouldn't break out everything below as much ################
+###################################################################################################
+
    # compute the percentage
    cnv_call_pct_file <- paste(sample_name,".call.pct.by.chr.txt",sep='')
    code_dir <- config["script_dir"]
    bed_pct_file <- config["bed_pct"]
    cmd <- paste("bash ",code_dir, "/scripts/compute.chr.cover.pct.by.sample.sh ",  exomeDepth_output," ", bed_pct_file, " >", cnv_call_pct_file, sep="")
    system(cmd)
+
+###########################################################################################################
+# i think this might end up being its own script or maybe moved into if it relies on the shell script above
+###########################################################################################################
+
    # # set the threshold of cnv percentage to 5% for each chr
    # cnv_pct_threshold <- 3
     pct_chr <- read.table(cnv_call_pct_file, header=FALSE)
@@ -241,6 +343,11 @@ i <- 1
     pct_chr_out_file <- paste(sample_name,".call.pct.by.chr.txt",sep='')
     write.table(pct_chr, file=pct_chr_out_file, row.names=FALSE, quote=FALSE, sep="\t")
    # pct_chr_out <- pct_chr[pct_chr$pct>cnv_pct_threshold,]
+
+##########################################################
+##### this will get moved into it's own shell script #####
+##########################################################
+
    # annote with annotSV
    # set the path, it's currently in the runall.sh script, can also be added to user's .bash_profile
    # system(paste("export ANNOTSV=",config["annotSV_dir"], sep=''))
@@ -248,6 +355,10 @@ i <- 1
    annotSV_temp <- paste(sample_name,".annotSV.temp.tsv",sep='')
    cmd <- paste("$ANNOTSV/bin/AnnotSV --SVinputFile ", exomeDepth_output," -outputFile ", annotSV_temp, " -typeOfAnnotation split -outputDir ./ -SVinputInfo 1 -svtBEDcol 4", sep="")
    system(cmd)
+
+#########################################################################
+##### this will either be it's own shell script or another R script #####
+#########################################################################
 
    annotSV <- read.table(annotSV_temp, header=TRUE, stringsAsFactors = FALSE, sep="\t")
 # NEED TO CHANGE TO TSV INSTEAD OF CSV FORMAT
@@ -311,6 +422,11 @@ i <- 1
    # remove the intermediate files
    # file.remove(cnv_call_pct_file)
    file.remove(annotSV_temp)
+
+###########################################################################
+#### if this is what I think it is, it can either be removed or moved #####
+###########################################################################
+
    save(counts,file=paste(sample_name, ".rda", sep=""))
 #   file.rename(counts, paste(sample_name, ".rda", sep=''))
 # }

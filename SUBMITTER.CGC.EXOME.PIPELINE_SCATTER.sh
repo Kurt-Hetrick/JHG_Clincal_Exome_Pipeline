@@ -2078,6 +2078,28 @@ done
 			$SUBMIT_STAMP
 	}
 
+##############################################
+# Run Variant Recalibrator for the SNP model #
+##############################################
+
+	APPLY_VQSR_INDEL ()
+	{
+		echo \
+		qsub \
+		$QSUB_ARGS \
+		-N L01_APPLY_VQSR_INDEL_$FAMILY"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".APPLY_VQSR_INDEL.log" \
+		-hold_jid K01_APPLY_VQSR_SNP_$FAMILY"_"$PROJECT \
+		$SCRIPT_DIR/L01-APPLY_VARIANT_RECALIBRATION_INDEL.sh \
+			$GATK_3_7_0_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$FAMILY \
+			$REF_GENOME \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
+
 ####################
 # run step do VQSR #
 ####################
@@ -2089,24 +2111,14 @@ for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 do
 	CREATE_FAMILY_ARRAY
 	RUN_VQSR_SNP
-	echo sleep 1s
+	echo sleep 0.1s
 	RUN_VQSR_INDEL
-	echo sleep 1s
+	echo sleep 0.1s
 	APPLY_VQSR_SNP
-	echo sleep 1s
+	echo sleep 0.1s
+	APPLY_VQSR_INDEL
+	echo sleep 0.1s
 done
-
-# ### Run Apply Recalibration with the INDEL model to the VCF file.
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$12}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 \
-# | uniq \
-# | awk '{print "qsub","-N","L.01_APPLY_RECALIBRATION_INDEL_"$2"_"$1,\
-# "-hold_jid","K.01_APPLY_RECALIBRATION_SNP_"$2"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/LOGS/"$2"_"$1".APPLY_RECALIBRATION_INDEL.log",\
-# "'$SCRIPT_DIR'""/L.01_APPLY_RECALIBRATION_INDEL.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
 
 # ################################################
 # ##### SCATTER GATHER FOR ADDING ANNOTATION #####
