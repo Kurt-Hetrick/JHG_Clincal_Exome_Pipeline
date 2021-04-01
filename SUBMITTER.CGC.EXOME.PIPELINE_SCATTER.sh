@@ -168,6 +168,10 @@
 
 	MT_COVERAGE_R_SCRIPT="$SCRIPT_DIR/mito_coverage_graph.r"
 
+	CNV_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/exome_depth-dev.simg"
+
+	EXOME_DEPTH_R_SCRIPT="$SCRIPT_DIR/runExomeDepth.r"
+
 	# PIPELINE PROGRAMS TO BE IMPLEMENTED
 	JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
 	SAMTOOLS_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/samtools-0.1.18"
@@ -214,25 +218,31 @@
 
 	# CNV calling workflow
 
-		exomeDEPTH_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated_uniq_cnv120.bed"
+		# bed file used for exomeDepth
+
+			EXOME_DEPTH_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated_uniq_cnv120.bed"
 
 		# bed file for computing CNV call percentage
 
-			CNV_CALL_PCT_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated_uniq_cnv120.bed"
+			CNV_CALL_PCT_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated_uniq_cnv120_merged.bed"
 
-		# read count from female reference panel, won't need to change unless changes in bed file or reference samples
+		## REF_PANEL_COUNTS USED IN EXOME DEPTH IS SEX SPECIFIC.
+		## DETERMINED WHEN PARSING GENDER FROM PED FILE DURING CREATE_SAMPLE_ARRAY
+		## THE THREE RDA FILES BELOW GET REASSIGNED TO $REF_PANEL_COUNTS depending on what the gender is.
 
-			REF_PANEL_FEMALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountFemaleUniqBed22.rda"
+			# read count from female reference panel, won't need to change unless changes in bed file or reference samples
 
-		# read count from male reference panel, won't need to change unless changes in bed file or reference samples
+				REF_PANEL_FEMALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountFemaleUniqBed22.rda"
 
-			REF_PANEL_MALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountMaleUniqBed26.rda"
+			# read count from male reference panel, won't need to change unless changes in bed file or reference samples
 
-		# if subject sex is not specified as 'm' or 'f', it will use count of all sample
+				REF_PANEL_MALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountMaleUniqBed26.rda"
 
-			REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountAllUniqBed48.rda"
+			# if subject sex is not specified as 'm' or 'f', it will use count of all sample
 
-		# gene list directory, if exist, a separate output that overlapped with those genes will be generated, use "NA" if no such file
+				REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountAllUniqBed48.rda"
+
+		# gene list directory, if exist, a separate output that overlapped with those genes will be generated, use "NA" if no such file. this will come from sample sheet.
 
 			# gene_list_file /mnt/clinical/ddl/NGS/CNVPipeline/data/ImmunoZoom.ALL.ZoomV1.GeneList.190822.csv
 
@@ -279,6 +289,7 @@
 		}
 
 	# create an array from values of the merged sample sheet and ped file
+	## set $REF_PANEL_COUNTS based on gender
 
 		CREATE_SAMPLE_ARRAY ()
 		{
@@ -367,6 +378,16 @@
 
 				GENDER=${SAMPLE_ARRAY[14]}
 
+				# set $REF_PANEL_COUNTS USED IN EXOMEDEPTH TO THE SEX SPECIFIC ONE
+
+					if [[ $GENDER = "1" ]];
+						then REF_PANEL_COUNTS=${REF_PANEL_MALE_READ_COUNT_RDA}
+					elif [[ $GENDER = "2" ]];
+						then REF_PANEL_COUNTS=${REF_PANEL_FEMALE_READ_COUNT_RDA}
+					else
+						REF_PANEL_COUNTS=${REF_PANEL_ALL_READ_COUNT_RDA}
+					fi
+
 			# 24 PHENOTYPE
 
 				PHENOTYPE=${SAMPLE_ARRAY[15]}
@@ -377,6 +398,7 @@
 		MAKE_PROJ_DIR_TREE ()
 		{
 			mkdir -p $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CNV_OUTPUT \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/HC_CRAM \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/INDEL/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
@@ -1515,9 +1537,48 @@ done
 #################################
 ##### CNV CALLING WORKFLOW ######
 # USES EXOME DEPTH TO CALL CNVS #
+# ANNOTATE WITH ANNOTSV #########
 #################################
 
+	########################################
+	# run exomeDepth to generate CNV calls #
+	########################################
 
+		RUN_EXOME_DEPTH ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-RUN_EXOME_DEPTH.log" \
+				-hold_jid E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+				$SCRIPT_DIR/F02_RUN_EXOME_DEPTH.sh \
+					$CNV_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$EXOME_DEPTH_R_SCRIPT \
+					$REF_PANEL_COUNTS \
+					$EXOME_DEPTH_BED \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+##############################
+# run steps for cnv workflow #
+##############################
+
+for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+		| sort \
+		| uniq );
+do
+	CREATE_SAMPLE_ARRAY
+	RUN_EXOME_DEPTH
+	echo sleep 0.1s
+done
 
 #########################################################################
 ##### HAPLOTYPE CALLER SCATTER ##########################################
