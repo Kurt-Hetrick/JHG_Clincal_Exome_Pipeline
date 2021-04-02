@@ -54,10 +54,9 @@ print(opt,file=stderr())
 
   setwd(opt$outdir)
 
-####################################################################################
-# keep, but probaby won't use. this is for re-running exomeDepth ###################
-# might be helpful while setting developing or when changes are added to save time #
-####################################################################################
+#########################################################################################
+# helpful for testing/developing. looks to see if the patient rda has already been made #
+#########################################################################################
 
   # get the read count if it exist in .rda
   counts_file <- grep(".+\\.rda$", list.files(), value = TRUE)
@@ -134,7 +133,7 @@ i <- 1
       chromosome=countdf$chromosome, start=countdf$start,
       end=countdf$end, name=countdf$exon)
    
-     pdf(paste(sample_name, "_all_chr_CNV_plot_cnt30.pdf", sep=""))
+     pdf(paste(opt$smTag, ".all_chr_CNV_plot_cnt30.pdf", sep=""))
     for (k in 1:dim(min_pos)[1]-2){
       title = paste("chr_", k, "_",sample_name, sep="")
       plot (all_exons,
@@ -174,12 +173,12 @@ i <- 1
     # reorder the columns for annotSV annotation, index of "type" will affect command of annotSV
     calls <- calls[c("chromosome","start","end","type","sample", "num.calls", "id","BF","reads.expected","reads.observed","reads.ratio","start.p", "end.p", "nexons")]
     # table(calls$chromosome)
-    exomeDepth_output <- paste(sample_name,".bed",sep='')
+    exomeDepth_output <- paste(opt$smTag,".exomeDepth.bed",sep='')
     write.table(calls, file=exomeDepth_output, 
         sep='\t', row.names=FALSE, col.names=TRUE, quote=FALSE)
 #    if (opt$verbose) {
-        cat(paste("Total # CNVs called for ",sample_name," is: ", dim(calls)[1], "\n",sep=''),file=stdout())
-        cat(paste("Test_sample: ",sample_name,"\n",sep=''),file=stdout())
+        cat(paste("Total # CNVs called for ",opt$smTag," is: ", dim(calls)[1], "\n",sep=''),file=stdout())
+        cat(paste("Test_sample: ",opt$smTag,"\n",sep=''),file=stdout())
         cat(paste(reference_list[[1]], sep=' '), file=stdout())
         cat(paste("\n",sep=''),file=stdout())
 #    }
