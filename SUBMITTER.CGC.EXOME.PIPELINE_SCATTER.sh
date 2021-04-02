@@ -1575,7 +1575,7 @@ done
 			qsub \
 				$QSUB_ARGS \
 			-N F02-A01_PCT_CNV_COVERAGE_PER_CHR"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-PCT_CNV_COVERAGE_PER_CHR.sh.log" \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-PCT_CNV_COVERAGE_PER_CHR.log" \
 			-hold_jid F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
 			$SCRIPT_DIR/F02-A01_PCT_CNV_COVERAGE_PER_CHR.sh \
 				$CNV_CONTAINER \
@@ -1584,6 +1584,28 @@ done
 				$FAMILY \
 				$SM_TAG \
 				$CNV_CALL_PCT_BED
+		}
+
+	################################################################
+	# calculate the percent of cnv call length for each chromosome #
+	################################################################
+
+		RUN_ANNOTSV ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N F02-A02_RUN_ANNOTSV"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-RUN_ANNOTSV.log" \
+			-hold_jid F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/F02-A02_RUN_ANNOTSV.sh \
+				$CNV_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
 		}
 
 ##############################
@@ -1600,6 +1622,8 @@ do
 	RUN_EXOME_DEPTH
 	echo sleep 0.1s
 	CALCULATE_CNV_COVERAGE
+	echo sleep 0.1s
+	RUN_ANNOTSV
 	echo sleep 0.1s
 done
 

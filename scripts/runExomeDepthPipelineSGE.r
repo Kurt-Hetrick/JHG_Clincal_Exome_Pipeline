@@ -335,6 +335,9 @@ i <- 1
 ###########################################################################################################
 # i think this might end up being its own script or maybe moved into if it relies on the shell script above
 ###########################################################################################################
+#################################################
+##### NEW! I DON'T THINK THIS DOES ANYTHING #####
+#################################################
 
    # # set the threshold of cnv percentage to 5% for each chr
    # cnv_pct_threshold <- 3
