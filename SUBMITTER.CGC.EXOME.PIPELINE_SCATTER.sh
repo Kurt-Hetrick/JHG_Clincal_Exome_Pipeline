@@ -1565,6 +1565,27 @@ done
 					$SUBMIT_STAMP
 			}
 
+	################################################################
+	# calculate the percent of cnv call length for each chromosome #
+	################################################################
+
+		CALCULATE_CNV_COVERAGE ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N F02-A01_PCT_CNV_COVERAGE_PER_CHR"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-PCT_CNV_COVERAGE_PER_CHR.sh.log" \
+			-hold_jid F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/F02-A01_PCT_CNV_COVERAGE_PER_CHR.sh \
+				$CNV_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CNV_CALL_PCT_BED
+		}
+
 ##############################
 # run steps for cnv workflow #
 ##############################
@@ -1577,6 +1598,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 do
 	CREATE_SAMPLE_ARRAY
 	RUN_EXOME_DEPTH
+	echo sleep 0.1s
+	CALCULATE_CNV_COVERAGE
 	echo sleep 0.1s
 done
 
