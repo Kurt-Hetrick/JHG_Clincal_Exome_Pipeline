@@ -30,23 +30,28 @@
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
-	SAMPLE_SHEET=$6
+	
+	FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT=$6
+	ZOOM_LIST=$7
+	ZOOM_NAME=$8
+
+	SAMPLE_SHEET=$9
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$7
+	SUBMIT_STAMP=${10}
 
 ## run R script for exomeDepth
 
-START_ANNOTSV=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_FORMAT_AND_ZOOM_ANNOTSV=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec $CNV_CONTAINER AnnotSV" \
-			CMD=$CMD" -typeOfAnnotation split" \
-			CMD=$CMD" -SVinputInfo 1" \
-			CMD=$CMD" -svtBEDcol 4" \
-			CMD=$CMD" -SVinputFile $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CNV_OUTPUT/$SM_TAG".exomeDepth.bed"" \
-			CMD=$CMD" -outputDir $CORE_PATH/$PROJECT/TEMP" \
-			CMD=$CMD" -outputFile $SM_TAG".annotSV.temp.tsv""
+		CMD="singularity exec $CNV_CONTAINER Rscript" \
+			CMD=$CMD" $FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT" \
+			CMD=$CMD" --annotSVtemp $CORE_PATH/$PROJECT/TEMP/$SM_TAG".annotSV.temp.tsv"" \
+			CMD=$CMD" --zoomfile $ZOOM_LIST" \
+			CMD=$CMD" --zoomname $ZOOM_NAME" \
+			CMD=$CMD" --smTag $SM_TAG" \
+			CMD=$CMD" --outdir $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CNV_OUTPUT"
 
 	# write command line to file and execute the command line
 
@@ -68,14 +73,13 @@ START_ANNOTSV=`date '+%s'` # capture time process starts for wall clock tracking
 			exit $SCRIPT_STATUS
 		fi
 
-END_ANNOTSV=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_FORMAT_AND_ZOOM_ANNOTSV=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo $SM_TAG"_"$PROJECT",F.01,ANNOTSV,"$HOSTNAME","$START_ANNOTSV","$END_ANNOTSV \
+	echo $SM_TAG"_"$PROJECT",F.01,FORMAT_AND_ZOOM_ANNOTSV,"$HOSTNAME","$START_FORMAT_AND_ZOOM_ANNOTSV","$END_FORMAT_AND_ZOOM_ANNOTSV \
 	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
 # exit with the signal from samtools bam to cram
 
 	exit $SCRIPT_STATUS
-

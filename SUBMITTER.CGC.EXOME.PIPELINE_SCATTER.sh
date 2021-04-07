@@ -172,6 +172,8 @@
 
 	EXOME_DEPTH_R_SCRIPT="$SCRIPT_DIR/runExomeDepth.r"
 
+	FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="$SCRIPT_DIR/FORMAT_AND_ZOOM_ANNOTSV.r"
+
 	# PIPELINE PROGRAMS TO BE IMPLEMENTED
 	JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
 	SAMTOOLS_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/samtools-0.1.18"
@@ -242,14 +244,6 @@
 
 				REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountAllUniqBed48.rda"
 
-		# gene list directory, if exist, a separate output that overlapped with those genes will be generated, use "NA" if no such file. this will come from sample sheet.
-
-			# gene_list_file /mnt/clinical/ddl/NGS/CNVPipeline/data/ImmunoZoom.ALL.ZoomV1.GeneList.190822.csv
-
-		# a name you want to add to the separate output, use "NA" if gene_list_file is "NA" 
-
-			# gene_list_name gene.v1
-
 #################################
 ##### MAKE A DIRECTORY TREE #####
 #################################
@@ -295,7 +289,7 @@
 		{
 			SAMPLE_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} $8=="'$SAMPLE'" \
 				{split($19,INDEL,";"); \
-				print $1,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],$20,$21,$22,$23,$24}' \
+				print $1,$8,$9,$10,$11,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],$20,$21,$22,$23,$24}' \
 					~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
 					| sort \
 					| uniq`)
@@ -327,13 +321,20 @@
 
 				SEQUENCER_MODEL=${SAMPLE_ARRAY[3]}
 
-				#########################
-				# 11  SKIP : Seq_Exp_ID #
-				#########################
+			# 11  Seq_Exp_ID=Zoom Gene List for filtering ExomeDepth output by gene symbol
+
+				ZOOM_LIST=${SAMPLE_ARRAY[4]}
+
+					# if the zoom list file exists than the output file prefix is the input file prefix before .GeneList
+
+						if [ -f $ZOOM_LIST ]
+							then ZOOM_NAME=$(basename $ZOOM_LIST | sed 's/.GeneList.[0-9]*.csv//g')
+							else ZOOM_NAME="NA"
+						fi
 
 			# 12  Genome_Ref=the reference genome used in the analysis pipeline
 
-				REF_GENOME=${SAMPLE_ARRAY[4]}
+				REF_GENOME=${SAMPLE_ARRAY[5]}
 
 				#####################################
 				# 13  Operator: SKIP ################
@@ -342,41 +343,41 @@
 
 			# 15  TS_TV_BED_File=where ucsc coding exons overlap with bait and target bed files
 
-				TITV_BED=${SAMPLE_ARRAY[5]}
+				TITV_BED=${SAMPLE_ARRAY[6]}
 
 			# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
 			# Used for limited where to run base quality score recalibration on where to create gvcf files.
 
-				BAIT_BED=${SAMPLE_ARRAY[6]}
+				BAIT_BED=${SAMPLE_ARRAY[7]}
 
 			# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
 
-				TARGET_BED=${SAMPLE_ARRAY[7]}
+				TARGET_BED=${SAMPLE_ARRAY[8]}
 
 			# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in base call quality score recalibration.
 
-				DBSNP=${SAMPLE_ARRAY[8]}
+				DBSNP=${SAMPLE_ARRAY[9]}
 
 			# 19  KNOWN_INDEL_FILES=used for BQSR masking, sensitivity in local realignment.
 
-				KNOWN_INDEL_1=${SAMPLE_ARRAY[9]}
-				KNOWN_INDEL_2=${SAMPLE_ARRAY[10]}
+				KNOWN_INDEL_1=${SAMPLE_ARRAY[10]}
+				KNOWN_INDEL_2=${SAMPLE_ARRAY[11]}
 
 			# 20 family that sample belongs to
 
-				FAMILY=${SAMPLE_ARRAY[11]}
+				FAMILY=${SAMPLE_ARRAY[12]}
 
 			# 21 MOM
 
-				MOM=${SAMPLE_ARRAY[12]}
+				MOM=${SAMPLE_ARRAY[13]}
 
 			# 22 DAD
 
-				DAD=${SAMPLE_ARRAY[13]}
+				DAD=${SAMPLE_ARRAY[14]}
 
 			# 23 GENDER
 
-				GENDER=${SAMPLE_ARRAY[14]}
+				GENDER=${SAMPLE_ARRAY[15]}
 
 				# set $REF_PANEL_COUNTS USED IN EXOMEDEPTH TO THE SEX SPECIFIC ONE
 
@@ -390,7 +391,7 @@
 
 			# 24 PHENOTYPE
 
-				PHENOTYPE=${SAMPLE_ARRAY[15]}
+				PHENOTYPE=${SAMPLE_ARRAY[16]}
 		}
 
 	# PROJECT DIRECTORY TREE CREATOR
@@ -1586,9 +1587,9 @@ done
 				$CNV_CALL_PCT_BED
 		}
 
-	################################################################
-	# calculate the percent of cnv call length for each chromosome #
-	################################################################
+	########################################
+	# run annotSV on the exomeDepth output #
+	########################################
 
 		RUN_ANNOTSV ()
 		{
@@ -1604,6 +1605,31 @@ done
 				$PROJECT \
 				$FAMILY \
 				$SM_TAG \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	########################################################################################
+	# reformat the header in the annotSV output and filter to zoom gene list if applicable #
+	########################################################################################
+
+		RUN_FORMAT_AND_ZOOM_ANNOTSV ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N F02-A02-A01_RUN_FORMAT_AND_ZOOM_ANNOTSV"_"$SGE_SM_TAG"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-RUN_FORMAT_AND_ZOOM_ANNOTSV.log" \
+			-hold_jid F02-A02_RUN_ANNOTSV"_"$SGE_SM_TAG"_"$PROJECT \
+			$SCRIPT_DIR/F02-A02-A01_RUN_FORMAT_AND_ZOOM_ANNOTSV.sh \
+				$CNV_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT \
+				$ZOOM_LIST \
+				$ZOOM_NAME \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
 		}
@@ -1624,6 +1650,8 @@ do
 	CALCULATE_CNV_COVERAGE
 	echo sleep 0.1s
 	RUN_ANNOTSV
+	echo sleep 0.1s
+	RUN_FORMAT_AND_ZOOM_ANNOTSV
 	echo sleep 0.1s
 done
 
