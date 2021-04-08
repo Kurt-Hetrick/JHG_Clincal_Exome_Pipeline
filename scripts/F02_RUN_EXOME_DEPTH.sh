@@ -33,7 +33,9 @@
 	
 	EXOME_DEPTH_R_SCRIPT=$6
 	REF_PANEL_COUNTS=$7
-	EXOME_DEPTH_BED=$8
+	CODING_BED=$8
+		CODING_BED_NAME=$(basename $CODING_BED .bed)
+		CODING_MD5=$(md5sum $CODING_BED | cut -c 1-7)
 
 	SAMPLE_SHEET=$9
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
@@ -49,7 +51,7 @@ START_EXOME_DEPTH=`date '+%s'` # capture time process starts for wall clock trac
 			CMD=$CMD" $EXOME_DEPTH_R_SCRIPT" \
 			CMD=$CMD" --bamfile $CORE_PATH/$PROJECT/TEMP/$SM_TAG".bam"" \
 			CMD=$CMD" --refcounts $REF_PANEL_COUNTS" \
-			CMD=$CMD" --bedfile $EXOME_DEPTH_BED" \
+			CMD=$CMD" --bedfile $CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$CODING_BED_NAME"-"$CODING_MD5".exomeDepth.input.bed"" \
 			CMD=$CMD" --smTag $SM_TAG" \
 			CMD=$CMD" --outdir $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CNV_OUTPUT"
 

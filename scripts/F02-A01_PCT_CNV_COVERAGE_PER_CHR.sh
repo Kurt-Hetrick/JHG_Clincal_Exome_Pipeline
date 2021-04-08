@@ -32,10 +32,9 @@
 	FAMILY=$5
 	SM_TAG=$6
 
-	CNV_CALL_PCT_BED=$7 # example command to create bed file
-		# sed '1d' RefGene.Coding.Clean.Format.19Feb2018_gene_exomeDepth_noY.bed |sort -k1,1 -k2,2n -k3,3n -u|bedtools merge -i - >RefGene.Coding.Clean.Format.19Feb2018_gene_noY_uniq_region.bed
-		# BEDFILE=/mnt/research/statgen/DDL/CNV_pipeline_DDL/data/RefGene.Coding.Clean.Format.19Feb2018_gene_noY_uniq_region2.bed
-		# I think I know what this is...I also think it should be created from the original bed file.
+	CODING_BED=$7
+		CODING_BED_NAME=$(basename $CODING_BED .bed)
+		CODING_MD5=$(md5sum $CODING_BED | cut -c 1-7)
 
 # Create header in output
 
@@ -47,7 +46,7 @@
 	CREATE_CHR_LENGTH_ARRAY ()
 	{
 		CHR_LENGTH_ARRAY=(`awk 'BEGIN {OFS="\t"} $1=="'$CHROMOSOME'" {print $1,($3-$2)}' \
-			$CNV_CALL_PCT_BED \
+			$CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$CODING_BED_NAME"-"$CODING_MD5".exomeDepth.input.merged.bed" \
 			| sort -k 2,2n \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				-g 1 sum 2`)
@@ -73,7 +72,7 @@
 			bedtools \
 			intersect \
 			-a - \
-			-b $CNV_CALL_PCT_BED \
+			-b $CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$CODING_BED_NAME"-"$CODING_MD5".exomeDepth.input.merged.bed" \
 		| awk '{SUM += $3-$2} END {printf "chr" "'$CHROMOSOME_BED'" "\t" "%.1f\n", 100*SUM/"'$CHROMOSOME_LENGTH'"}'
 	}
 
@@ -82,7 +81,10 @@
 # run both function above
 # do a natural sort of karyotype chromosomes
 
-	for CHROMOSOME in $(cut -f 1 $CNV_CALL_PCT_BED | sort | uniq | egrep "^[0-9]|^X|^Y")
+	for CHROMOSOME in $(cut -f 1 $CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$CODING_BED_NAME"-"$CODING_MD5".exomeDepth.input.merged.bed" \
+			| sort \
+			| uniq \
+			| egrep "^[0-9]|^X|^Y")
 	do
 		CREATE_CHR_LENGTH_ARRAY
 		CALCULATE_PCT_LENGTH

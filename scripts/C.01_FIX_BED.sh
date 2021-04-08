@@ -84,7 +84,7 @@
 			| grep -v "^MT" \
 		>| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$TARGET_BED_NAME"-"$PADDING_LENGTH"-BP-PAD.bed"
 
-# FIX THE CODING BED FILE. THIS IS TO BE COMBINED WITH THE CODING BED FILE
+# FIX THE CODING BED FILE. THIS IS TO BE COMBINED WITH THE BAIT BED FILE
 # AND THEN PADDED BY 250 BP AND THEN MERGED (FOR OVERLAPPING INTERVALS) FOR GVCF CREATION.
 	# FOR DATA PROCESSING AND METRICS REPORTS AS WELL.
 		# make sure that there is EOF
@@ -195,3 +195,51 @@
 			; awk 'BEGIN {OFS="\t"} {print $1,($2+1),$3,"+",$1"_"($2+1)"_"$3}' \
 				$CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$TITV_BED_NAME".bed") \
 		>| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$TITV_BED_NAME"-picard.bed"
+
+# CREATE exomeDepth input bed file
+# FIX THE CODING BED FILE.
+	# make sure that there is EOF
+	# remove CARRIAGE RETURNS
+	# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
+	# remove chr prefix
+	# remove MT genome (done in another pipeline)
+	# keep the chr, subtract 120 from start, add 120 to the end, keep the gene symbol
+	# do a natural sort on the chromosome order and numerical sort on the start
+	# for genes/features that have the same coordinates, keep the first one (it really doesn't matter)
+	# add a header
+
+		awk 1 $CODING_BED \
+			| sed 's/\r//g' \
+			| sed -r 's/[[:space:]]+/\t/g' \
+			| sed 's/^chr//g' \
+			| grep -v "^MT" \
+			| awk 'BEGIN {OFS="\t"} {print $1,($2-120),($3+120),$4}' \
+			| sort -k 1,1V -k 2,2n \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				-g 1,2,3 first 4 \
+			| awk 'BEGIN {print "chromosome" "\t" "start" "\t" "end" "\t" "name"}  \
+				{print $0}' \
+		>| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$CODING_BED_NAME"-"$CODING_MD5".exomeDepth.input.bed"
+
+# merge overlapping intervals exomeDepth input bed file
+# FIX THE CODING BED FILE.
+	# make sure that there is EOF
+	# remove CARRIAGE RETURNS
+	# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
+	# remove chr prefix
+	# remove MT genome (done in another pipeline)
+	# keep the chr, subtract 120 from start, add 120 to the end, keep the gene symbol
+	# do a natural sort on the chromosome order and numerical sort on the start
+	# merge overlapping intervals
+
+		awk 1 $CODING_BED \
+			| sed 's/\r//g' \
+			| sed -r 's/[[:space:]]+/\t/g' \
+			| sed 's/^chr//g' \
+			| grep -v "^MT" \
+			| awk 'BEGIN {OFS="\t"} {print $1,($2-120),($3+120)}' \
+			| sort -k 1,1V -k 2,2n \
+			| singularity exec $ALIGNMENT_CONTAINER bedtools \
+				merge \
+				-i - \
+		>| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$CODING_BED_NAME"-"$CODING_MD5".exomeDepth.input.merged.bed"

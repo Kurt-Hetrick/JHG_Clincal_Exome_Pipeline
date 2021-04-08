@@ -220,14 +220,6 @@
 
 	# CNV calling workflow
 
-		# bed file used for exomeDepth
-
-			EXOME_DEPTH_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated_uniq_cnv120.bed"
-
-		# bed file for computing CNV call percentage
-
-			CNV_CALL_PCT_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated_uniq_cnv120_merged.bed"
-
 		## REF_PANEL_COUNTS USED IN EXOME DEPTH IS SEX SPECIFIC.
 		## DETERMINED WHEN PARSING GENDER FROM PED FILE DURING CREATE_SAMPLE_ARRAY
 		## THE THREE RDA FILES BELOW GET REASSIGNED TO $REF_PANEL_COUNTS depending on what the gender is.
@@ -1552,7 +1544,7 @@ done
 					$QSUB_ARGS \
 				-N F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
 					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-RUN_EXOME_DEPTH.log" \
-				-hold_jid E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+				-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
 				$SCRIPT_DIR/F02_RUN_EXOME_DEPTH.sh \
 					$CNV_CONTAINER \
 					$CORE_PATH \
@@ -1561,7 +1553,7 @@ done
 					$SM_TAG \
 					$EXOME_DEPTH_R_SCRIPT \
 					$REF_PANEL_COUNTS \
-					$EXOME_DEPTH_BED \
+					$CODING_BED \
 					$SAMPLE_SHEET \
 					$SUBMIT_STAMP
 			}
@@ -1577,7 +1569,7 @@ done
 				$QSUB_ARGS \
 			-N F02-A01_PCT_CNV_COVERAGE_PER_CHR"_"$SGE_SM_TAG"_"$PROJECT \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-PCT_CNV_COVERAGE_PER_CHR.log" \
-			-hold_jid F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
+			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
 			$SCRIPT_DIR/F02-A01_PCT_CNV_COVERAGE_PER_CHR.sh \
 				$CNV_CONTAINER \
 				$ALIGNMENT_CONTAINER \
@@ -1585,7 +1577,7 @@ done
 				$PROJECT \
 				$FAMILY \
 				$SM_TAG \
-				$CNV_CALL_PCT_BED
+				$CODING_BED
 		}
 
 	########################################
