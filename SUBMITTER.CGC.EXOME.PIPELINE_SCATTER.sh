@@ -1570,7 +1570,7 @@ done
 	# calculate the percent of cnv call length for each chromosome #
 	################################################################
 
-		CALCULATE_CNV_COVERAGE ()
+		CALCULATE_PCT_CNV_COVERAGE ()
 		{
 			echo \
 			qsub \
@@ -1580,6 +1580,7 @@ done
 			-hold_jid F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
 			$SCRIPT_DIR/F02-A01_PCT_CNV_COVERAGE_PER_CHR.sh \
 				$CNV_CONTAINER \
+				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
 				$FAMILY \
@@ -1647,7 +1648,7 @@ do
 	CREATE_SAMPLE_ARRAY
 	RUN_EXOME_DEPTH
 	echo sleep 0.1s
-	CALCULATE_CNV_COVERAGE
+	CALCULATE_PCT_CNV_COVERAGE
 	echo sleep 0.1s
 	RUN_ANNOTSV
 	echo sleep 0.1s
