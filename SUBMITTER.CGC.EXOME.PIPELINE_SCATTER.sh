@@ -2128,106 +2128,110 @@ for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 	| sort \
 	| uniq)
 do
-	# echo $FAMILY
 	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
 	CREATE_FAMILY_ARRAY
 	CALL_GENOTYPE_GVCF_GATHER
 	echo sleep 1s
 done
 
-##############################################
-# Run Variant Recalibrator for the SNP model #
-##############################################
+########################################################
+##### DO VARIANT QUALITY SCORE RECALIBRATION ###########
+# I THINK ALL OF THIS CAN BE MOVED INTO THE LOOP ABOVE #
+########################################################
 
-	RUN_VQSR_SNP ()
-	{
-		echo \
-		qsub \
-		$QSUB_ARGS \
-		-N J01_RUN_VQSR_SNP_$FAMILY"_"$PROJECT \
-			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".RUN_VQSR_SNP.log" \
-		-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
-		$SCRIPT_DIR/J01-RUN_VARIANT_RECALIBRATOR_SNP.sh \
-			$GATK_3_7_0_CONTAINER \
-			$CORE_PATH \
-			$PROJECT \
-			$FAMILY \
-			$REF_GENOME \
-			$DBSNP \
-			$HAPMAP \
-			$OMNI_1KG \
-			$HI_CONF_1KG_PHASE1_SNP \
-			$SEND_TO \
-			$SAMPLE_SHEET \
-			$SUBMIT_STAMP
-	}
+	##############################################
+	# Run Variant Recalibrator for the SNP model #
+	##############################################
 
-################################################
-# Run Variant Recalibrator for the INDEL model #
-################################################
+		RUN_VQSR_SNP ()
+		{
+			echo \
+			qsub \
+			$QSUB_ARGS \
+			-N J01_RUN_VQSR_SNP_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".RUN_VQSR_SNP.log" \
+			-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
+			$SCRIPT_DIR/J01-RUN_VARIANT_RECALIBRATOR_SNP.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$DBSNP \
+				$HAPMAP \
+				$OMNI_1KG \
+				$HI_CONF_1KG_PHASE1_SNP \
+				$SEND_TO \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
-	RUN_VQSR_INDEL ()
-	{
-		echo \
-		qsub \
-		$QSUB_ARGS \
-		-N J02_RUN_VQSR_INDEL_$FAMILY"_"$PROJECT \
-			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".RUN_VQSR_INDEL.log" \
-		-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
-		$SCRIPT_DIR/J02-RUN_VARIANT_RECALIBRATOR_INDEL.sh \
-			$GATK_3_7_0_CONTAINER \
-			$CORE_PATH \
-			$PROJECT \
-			$FAMILY \
-			$REF_GENOME \
-			$MILLS_1KG_GOLD_INDEL \
-			$SAMPLE_SHEET \
-			$SUBMIT_STAMP
-	}
+	################################################
+	# Run Variant Recalibrator for the INDEL model #
+	################################################
 
-##############################################
-# Run Variant Recalibrator for the SNP model #
-##############################################
+		RUN_VQSR_INDEL ()
+		{
+			echo \
+			qsub \
+			$QSUB_ARGS \
+			-N J02_RUN_VQSR_INDEL_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".RUN_VQSR_INDEL.log" \
+			-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
+			$SCRIPT_DIR/J02-RUN_VARIANT_RECALIBRATOR_INDEL.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$MILLS_1KG_GOLD_INDEL \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
-	APPLY_VQSR_SNP ()
-	{
-		echo \
-		qsub \
-		$QSUB_ARGS \
-		-N K01_APPLY_VQSR_SNP_$FAMILY"_"$PROJECT \
-			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".APPLY_VQSR_SNP.log" \
-		-hold_jid J01_RUN_VQSR_SNP_$FAMILY"_"$PROJECT,J02_RUN_VQSR_INDEL_$FAMILY"_"$PROJECT \
-		$SCRIPT_DIR/K01-APPLY_VARIANT_RECALIBRATION_SNP.sh \
-			$GATK_3_7_0_CONTAINER \
-			$CORE_PATH \
-			$PROJECT \
-			$FAMILY \
-			$REF_GENOME \
-			$SAMPLE_SHEET \
-			$SUBMIT_STAMP
-	}
+	##############################################
+	# Run Variant Recalibrator for the SNP model #
+	##############################################
 
-##############################################
-# Run Variant Recalibrator for the SNP model #
-##############################################
+		APPLY_VQSR_SNP ()
+		{
+			echo \
+			qsub \
+			$QSUB_ARGS \
+			-N K01_APPLY_VQSR_SNP_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".APPLY_VQSR_SNP.log" \
+			-hold_jid J01_RUN_VQSR_SNP_$FAMILY"_"$PROJECT,J02_RUN_VQSR_INDEL_$FAMILY"_"$PROJECT \
+			$SCRIPT_DIR/K01-APPLY_VARIANT_RECALIBRATION_SNP.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
-	APPLY_VQSR_INDEL ()
-	{
-		echo \
-		qsub \
-		$QSUB_ARGS \
-		-N L01_APPLY_VQSR_INDEL_$FAMILY"_"$PROJECT \
-			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".APPLY_VQSR_INDEL.log" \
-		-hold_jid K01_APPLY_VQSR_SNP_$FAMILY"_"$PROJECT \
-		$SCRIPT_DIR/L01-APPLY_VARIANT_RECALIBRATION_INDEL.sh \
-			$GATK_3_7_0_CONTAINER \
-			$CORE_PATH \
-			$PROJECT \
-			$FAMILY \
-			$REF_GENOME \
-			$SAMPLE_SHEET \
-			$SUBMIT_STAMP
-	}
+	##############################################
+	# Run Variant Recalibrator for the SNP model #
+	##############################################
+
+		APPLY_VQSR_INDEL ()
+		{
+			echo \
+			qsub \
+			$QSUB_ARGS \
+			-N L01_APPLY_VQSR_INDEL_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".APPLY_VQSR_INDEL.log" \
+			-hold_jid K01_APPLY_VQSR_SNP_$FAMILY"_"$PROJECT \
+			$SCRIPT_DIR/L01-APPLY_VARIANT_RECALIBRATION_INDEL.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
 ####################
 # run step do VQSR #
@@ -2249,26 +2253,30 @@ do
 	echo sleep 0.1s
 done
 
-# ################################################
-# ##### SCATTER GATHER FOR ADDING ANNOTATION #####
-# ################################################
+################################################
+##### SCATTER GATHER FOR ADDING ANNOTATION #####
+################################################
 
-# CREATE_FAMILY_ARRAY ()
-# {
-# FAMILY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} $20=="'$FAMILY'" {print $1,$8,$20,$12,$18}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
-# }
-
-# CALL_VARIANT_ANNOTATOR ()
-# {
-# echo \
-# qsub \
-# -N P.01_VARIANT_ANNOTATOR_$FAMILY_${FAMILY_ARRAY[0]}_$CHROMOSOME \
-# -hold_jid L.01_APPLY_RECALIBRATION_INDEL_${FAMILY_ARRAY[2]}"_"${FAMILY_ARRAY[0]} \
-# -o $CORE_PATH/$PROJECT/${FAMILY_ARRAY[2]}/LOGS/$FAMILY_${FAMILY_ARRAY[0]}.VARIANT_ANNOTATOR_$CHROMOSOME.log \
-# $SCRIPT_DIR/P.01_VARIANT_ANNOTATOR_SCATTER.sh \
-# $JAVA_1_8 $GATK_DIR $CORE_PATH $PED_FILE \
-# ${FAMILY_ARRAY[0]} ${FAMILY_ARRAY[2]} ${FAMILY_ARRAY[3]} $CHROMOSOME $PHASE3_1KG_AUTOSOMES
-# }
+	CALL_VARIANT_ANNOTATOR ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+		-N P01_VARIANT_ANNOTATOR_$FAMILY_$PROJECT_$CHROMOSOME \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".VARIANT_ANNOTATOR_$CHROMOSOME.log" \
+		-hold_jid L01_APPLY_VQSR_INDEL_$FAMILY"_"$PROJECT \
+		$SCRIPT_DIR/P01_VARIANT_ANNOTATOR_SCATTER.sh \
+			$GATK_3_7_0_CONTAINER \
+			$CORE_PATH \
+			$PED_FILE \
+			$PROJECT \
+			$FAMILY \
+			$REF_GENOME \
+			$CHROMOSOME \
+			$PHASE3_1KG_AUTOSOMES \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
 
 # for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt | sort | uniq);
 # do
