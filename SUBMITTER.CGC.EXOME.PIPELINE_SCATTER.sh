@@ -2304,42 +2304,75 @@ do
 		done
 done
 
-# ##############################################################################################
-# ##### GATHER UP THE PER FAMILY PER CHROMOSOME ANNOTATED VCF FILES INTO A SINGLE VCF FILE #####
-# ##############################################################################################
+##############################################################################################
+##### GATHER UP THE PER FAMILY PER CHROMOSOME ANNOTATED VCF FILES INTO A SINGLE VCF FILE #####
+##############################################################################################
 
-# BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION ()
-# {
-# 	for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET | sort | uniq )
-# 	do
-# 	HOLD_ID_PATH="-hold_jid "
-# 	for CHROMOSOME in {{1..22},{X,Y}};
-#  	do
-#  		HOLD_ID_PATH=$HOLD_ID_PATH"P.01_VARIANT_ANNOTATOR_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
-#  	done
-#  done
-# }
+	######################################################
+	# generate hold id from scatter of variant annotator #
+	######################################################
 
-# CALL_VARIANT_ANNOTATOR_GATHER ()
-# {
-# echo \
-# qsub \
-# -N P.01-A.01_VARIANT_ANNOTATOR_GATHER_$FAMILY_${FAMILY_ARRAY[0]} \
-#  ${HOLD_ID_PATH} \
-#  -o $CORE_PATH/$PROJECT/${FAMILY_ARRAY[2]}/LOGS/$FAMILY_${FAMILY_ARRAY[0]}.ADD_MORE_ANNOTATION_GATHER.log \
-#  $SCRIPT_DIR/P.01-A.01_VARIANT_ANNOTATOR_GATHER.sh \
-#  $JAVA_1_8 $GATK_DIR $CORE_PATH \
-#  ${FAMILY_ARRAY[0]} ${FAMILY_ARRAY[2]} ${FAMILY_ARRAY[3]}
-# }
+		BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION ()
+		{
+			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' \
+						$SAMPLE_SHEET \
+						| sort \
+						| uniq )
+			do
+				HOLD_ID_PATH="-hold_jid "
+				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+									| sed -r 's/[[:space:]]+/\t/g' \
+									| sed 's/chr//g' \
+									| grep -v "MT" \
+									| cut -f 1 \
+									| sort \
+									| uniq \
+									| singularity exec $ALIGNMENT_CONTAINER datamash \
+										collapse 1 \
+									| sed 's/,/ /g');
+				do
+					HOLD_ID_PATH=$HOLD_ID_PATH"P01_VARIANT_ANNOTATOR_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
+				done
+			done
+		}
 
+	############################
+	# variant annotator gather #
+	############################
 
-# for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt | sort | uniq)
-#  do
-# 	BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION
-# 	CREATE_FAMILY_ARRAY
-# 	CALL_VARIANT_ANNOTATOR_GATHER
-# 	echo sleep 1s
-#  done
+		CALL_VARIANT_ANNOTATOR_GATHER ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N P01-A01_VARIANT_ANNOTATOR_GATHER_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".MORE_VARIANT_ANNOTATOR_GATHER.log" \
+			${HOLD_ID_PATH} \
+			$SCRIPT_DIR/P01-A01_VARIANT_ANNOTATOR_GATHER.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$BAIT_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	############################################
+	# run steps to do variant annotator gather #
+	############################################
+
+		for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+			| sort \
+			| uniq)
+		do
+			CREATE_FAMILY_ARRAY
+			BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION
+			CALL_VARIANT_ANNOTATOR_GATHER
+			echo sleep 0.1s
+		done
 
 # ############################################################################################################
 # ##### DO PER CHROMOSOME VARIANT TO TABLE FOR COHORT ########################################################
