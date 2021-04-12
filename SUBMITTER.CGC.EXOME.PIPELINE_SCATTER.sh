@@ -1840,79 +1840,79 @@ done
 				| sort \
 				| uniq`)
 
-			#  1  Project=the Seq Proj folder name
+				#  1  Project=the Seq Proj folder name
 
-				PROJECT=${FAMILY_ARRAY[0]}
+					PROJECT=${FAMILY_ARRAY[0]}
 
-					################################################################################
-					# 2 SKIP : FCID=flowcell that sample read group was performed on ###############
-					# 3 SKIP : Lane=lane of flowcell that sample read group was performed on] ######
-					# 4 SKIP : Index=sample barcode ################################################
-					# 5 SKIP : Platform=type of sequencing chemistry matching SAM specification ####
-					# 6 SKIP : Library_Name=library group of the sample read group #################
-					# 7 SKIP : Date=should be the run set up date to match the seq run folder name #
-					################################################################################
+						################################################################################
+						# 2 SKIP : FCID=flowcell that sample read group was performed on ###############
+						# 3 SKIP : Lane=lane of flowcell that sample read group was performed on] ######
+						# 4 SKIP : Index=sample barcode ################################################
+						# 5 SKIP : Platform=type of sequencing chemistry matching SAM specification ####
+						# 6 SKIP : Library_Name=library group of the sample read group #################
+						# 7 SKIP : Date=should be the run set up date to match the seq run folder name #
+						################################################################################
 
-			#  8  SM_Tag=sample ID
+				#  8  SM_Tag=sample ID
 
-				SM_TAG=${FAMILY_ARRAY[1]}
+					SM_TAG=${FAMILY_ARRAY[1]}
 
-					SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g') # "@" in qsub job or holdid is not allowed
+						SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g') # "@" in qsub job or holdid is not allowed
 
-						####################################################################################
-						#  9  SKIP : Center=the center/funding mechanism ###################################
-						# 10  SKIP : Description=Sequencer model and/or setting (setting e.g. "Rapid-Run") #
-						## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq” ##
-						# 11  SKIP : Seq_Exp_ID ############################################################
-						####################################################################################
+							####################################################################################
+							#  9  SKIP : Center=the center/funding mechanism ###################################
+							# 10  SKIP : Description=Sequencer model and/or setting (setting e.g. "Rapid-Run") #
+							## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq” ##
+							# 11  SKIP : Seq_Exp_ID ############################################################
+							####################################################################################
 
-			# 12  Genome_Ref=the reference genome used in the analysis pipeline
+				# 12  Genome_Ref=the reference genome used in the analysis pipeline
 
-				REF_GENOME=${FAMILY_ARRAY[2]}
+					REF_GENOME=${FAMILY_ARRAY[2]}
 
-					########################################################
-					# 13 SKIP : Operator=no standard on this, not captured #
-					# 14 SKIP : Extra_VCF_Filter_Params=LEGACY, NOT USED ###
-					########################################################
+						########################################################
+						# 13 SKIP : Operator=no standard on this, not captured #
+						# 14 SKIP : Extra_VCF_Filter_Params=LEGACY, NOT USED ###
+						########################################################
 
-			# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
+				# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
 
-				TITV_BED=${FAMILY_ARRAY[3]}
+					TITV_BED=${FAMILY_ARRAY[3]}
 
-			# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
-			# Used for limited where to run base quality score recalibration on where to create gvcf files.
+				# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
+				# Used for limited where to run base quality score recalibration on where to create gvcf files.
 
-				BAIT_BED=${FAMILY_ARRAY[4]}
+					BAIT_BED=${FAMILY_ARRAY[4]}
 
-			# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
+				# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
 
-				TARGET_BED=${FAMILY_ARRAY[5]}
+					TARGET_BED=${FAMILY_ARRAY[5]}
 
-			# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in BQSR
+				# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in BQSR
 
-				DBSNP=${FAMILY_ARRAY[6]}
+					DBSNP=${FAMILY_ARRAY[6]}
 
-					#####################################################
-					# 19 SKIP : KNOWN_INDEL_FILES=used for BQSR masking #
-					#####################################################
+						#####################################################
+						# 19 SKIP : KNOWN_INDEL_FILES=used for BQSR masking #
+						#####################################################
 
-			# 20 family that sample belongs to
+				# 20 family that sample belongs to
 
-				FAMILY=${FAMILY_ARRAY[7]}
+					FAMILY=${FAMILY_ARRAY[7]}
 
-					#######################
-					# 21 SKIP : MOM #######
-					# 22 SKIP : DAD #######
-					# 23 SKIP : GENDER ####
-					# 24 SKIP : PHENOTYPE #
-					#######################
+						#######################
+						# 21 SKIP : MOM #######
+						# 22 SKIP : DAD #######
+						# 23 SKIP : GENDER ####
+						# 24 SKIP : PHENOTYPE #
+						#######################
 
-			# OLD ARRAY, DELETE LATER
-				# FAMILY_PROJECT=${FAMILY_ARRAY[0]}
-				# FAMILY_SGE_SAMPLE=${FAMILY_ARRAY[1]}
-				# FAMILY_FAMILY=${FAMILY_ARRAY[2]}
-				# FAMILY_REF_GENOME=${FAMILY_ARRAY[3]}
-				# FAMILY_DBSNP=${FAMILY_ARRAY[4]}
+				# OLD ARRAY, DELETE LATER
+					# FAMILY_PROJECT=${FAMILY_ARRAY[0]}
+					# FAMILY_SGE_SAMPLE=${FAMILY_ARRAY[1]}
+					# FAMILY_FAMILY=${FAMILY_ARRAY[2]}
+					# FAMILY_REF_GENOME=${FAMILY_ARRAY[3]}
+					# FAMILY_DBSNP=${FAMILY_ARRAY[4]}
 		}
 
 	#########################################################
@@ -2072,7 +2072,7 @@ done
 	# create a hold_id variable for genotype gvcfs scatter step per family #
 	########################################################################
 
-		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER()
+		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER ()
 		{
 			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' \
 				$SAMPLE_SHEET \
@@ -2123,15 +2123,15 @@ done
 # run step to gather per chromosome per family vcfs #
 #####################################################
 
-for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
 	| sort \
 	| uniq)
 do
-	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
 	CREATE_FAMILY_ARRAY
+	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
 	CALL_GENOTYPE_GVCF_GATHER
-	echo sleep 1s
+	echo sleep 0.1s
 done
 
 ########################################################
@@ -2233,11 +2233,11 @@ done
 				$SUBMIT_STAMP
 		}
 
-####################
-# run step do VQSR #
-####################
+########################
+# run steps to do VQSR #
+########################
 
-for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
 	| sort \
 	| uniq)
@@ -2262,7 +2262,7 @@ done
 		echo \
 		qsub \
 			$QSUB_ARGS \
-		-N P01_VARIANT_ANNOTATOR_$FAMILY_$PROJECT_$CHROMOSOME \
+		-N P01_VARIANT_ANNOTATOR_$FAMILY"_"$PROJECT"_"$CHROMOSOME \
 			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".VARIANT_ANNOTATOR_$CHROMOSOME.log" \
 		-hold_jid L01_APPLY_VQSR_INDEL_$FAMILY"_"$PROJECT \
 		$SCRIPT_DIR/P01_VARIANT_ANNOTATOR_SCATTER.sh \
@@ -2278,15 +2278,31 @@ done
 			$SUBMIT_STAMP
 	}
 
-# for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt | sort | uniq);
-# do
-# CREATE_FAMILY_ARRAY
-# 	for CHROMOSOME in {{1..22},{X,Y}}
-# 		do
-# 		CALL_VARIANT_ANNOTATOR
-# 		echo sleep 1s
-# 	done
-# done
+########################
+# run steps to do VQSR #
+########################
+
+for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+	| sort \
+	| uniq);
+do
+	CREATE_FAMILY_ARRAY
+		for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+						| sed -r 's/[[:space:]]+/\t/g' \
+						| sed 's/chr//g' \
+						| grep -v "MT" \
+						| cut -f 1 \
+						| sort \
+						| uniq \
+						| singularity exec $ALIGNMENT_CONTAINER datamash \
+							collapse 1 \
+						| sed 's/,/ /g');
+			do
+				CALL_VARIANT_ANNOTATOR
+				echo sleep 0.1s
+		done
+done
 
 # ##############################################################################################
 # ##### GATHER UP THE PER FAMILY PER CHROMOSOME ANNOTATED VCF FILES INTO A SINGLE VCF FILE #####
