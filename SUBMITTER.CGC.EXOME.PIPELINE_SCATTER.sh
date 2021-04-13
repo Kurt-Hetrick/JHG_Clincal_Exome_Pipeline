@@ -1932,6 +1932,7 @@ done
 
 	############################################
 	# create a list of all samples in a family #
+	# *list is for gatk3, *args is for gatk4 ###
 	############################################
 
 		CREATE_FAMILY_SAMPLE_LIST ()
@@ -1940,7 +1941,9 @@ done
 			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
 				| sort \
 				| uniq \
-			>| $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.list"
+			>| $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.list" \
+			&& cp $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.list" \
+			$CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.args"
 		}
 
 	#################################################################################
@@ -2374,31 +2377,61 @@ done
 			echo sleep 0.1s
 		done
 
-# #################################################################################
-# ########### RUNNING FILTER TO FAMILY ALL SITES BY CHROMOSOME ####################
-# #################################################################################
+####################################################
+####################################################
+######### THIS MIGHT NOT BE NEEDED: START ##########
+####################################################
+####################################################
 
-# CALL_FILTER_TO_FAMILY_ALL_SITES ()
-# {
-# echo \
-# qsub \
-# -N P.01-A.03_FILTER_TO_FAMILY_ALL_SITES_${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}_$CHROMOSOME \
-# -hold_jid P.01_VARIANT_ANNOTATOR_${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}_$CHROMOSOME \
-# -o $CORE_PATH/${FAMILY_ONLY_ARRAY[0]}/${FAMILY_ONLY_ARRAY[1]}/LOGS/${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}.FILTER_TO_FAMILY_ALL_SITES_$CHROMOSOME.log \
-# $SCRIPT_DIR/P.01-A.03_FILTER_TO_FAMILY_ALL_SITES_CHR.sh \
-# $JAVA_1_8 $GATK_DIR $CORE_PATH \
-# ${FAMILY_ONLY_ARRAY[0]} ${FAMILY_ONLY_ARRAY[1]} ${FAMILY_ONLY_ARRAY[2]} $CHROMOSOME
-# }
+##################################################################
+##### RUNNING FILTER TO FAMILY ALL SITES BY CHROMOSOME ###########
+# USE GATK4 HERE BECAUSE IT HANDLES SPANNING DELETIONS CORRECTLY #
+##################################################################
 
-# for FAMILY in $(awk 'BEGIN {FS="\t"} {print $1}' $PED_FILE | sort | uniq );
-# do
-# CREATE_FAMILY_ONLY_ARRAY
-# 	for CHROMOSOME in {{1..22},{X,Y}}
-# 		do
-# 		CALL_FILTER_TO_FAMILY_ALL_SITES
-# 		echo sleep 1s
-# 		done
-# 	done
+	CALL_FILTER_TO_FAMILY_ALL_SITES ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+		-N P01-A03_FILTER_TO_FAMILY_ALL_SITES_$FAMILY"_"$PROJECT"_"$CHROMOSOME \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_TO_FAMILY_ALL_SITES_$CHROMOSOME.log" \
+		-hold_jid P01_VARIANT_ANNOTATOR_$FAMILY"_"$PROJECT"_"$CHROMOSOME \
+		$SCRIPT_DIR/P01-A03_FILTER_TO_FAMILY_ALL_SITES_CHR.sh \
+			$ALIGNMENT_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$FAMILY \
+			$REF_GENOME \
+			$CHROMOSOME \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
+
+####################################################
+# run steps to filter all sites vcf to family only #
+####################################################
+
+for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+	| sort \
+	| uniq);
+do
+	CREATE_FAMILY_ARRAY
+	for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+					| sed -r 's/[[:space:]]+/\t/g' \
+					| sed 's/chr//g' \
+					| grep -v "MT" \
+					| cut -f 1 \
+					| sort \
+					| uniq \
+					| singularity exec $ALIGNMENT_CONTAINER datamash \
+						collapse 1 \
+					| sed 's/,/ /g');
+	do
+		CALL_FILTER_TO_FAMILY_ALL_SITES
+		echo sleep 1s
+	done
+done
 	
 # #####################################################################################################
 # ##### GATHER UP THE PER FAMILY PER CHROMOSOME FILTER TO FAMILY VCF FILES INTO A SINGLE VCF FILE #####

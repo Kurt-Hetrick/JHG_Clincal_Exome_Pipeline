@@ -45,7 +45,7 @@
 
 START_PERFORM_BQSR=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
-# construct command line
+	# construct command line
 
 		CMD="singularity exec $ALIGNMENT_CONTAINER java -jar" \
 		CMD=$CMD" /gatk/gatk.jar" \
