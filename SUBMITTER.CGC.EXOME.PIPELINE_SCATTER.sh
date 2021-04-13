@@ -2362,20 +2362,20 @@ done
 				$SUBMIT_STAMP
 		}
 
-	############################################
-	# run steps to do variant annotator gather #
-	############################################
+############################################
+# run steps to do variant annotator gather #
+############################################
 
-		for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
-			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-			| sort \
-			| uniq)
-		do
-			CREATE_FAMILY_ARRAY
-			BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION
-			CALL_VARIANT_ANNOTATOR_GATHER
-			echo sleep 0.1s
-		done
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+		~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+		| sort \
+		| uniq)
+	do
+		CREATE_FAMILY_ARRAY
+		BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION
+		CALL_VARIANT_ANNOTATOR_GATHER
+		echo sleep 0.1s
+	done
 
 ####################################################
 ####################################################
@@ -2433,41 +2433,81 @@ do
 	done
 done
 	
-# #####################################################################################################
-# ##### GATHER UP THE PER FAMILY PER CHROMOSOME FILTER TO FAMILY VCF FILES INTO A SINGLE VCF FILE #####
-# #####################################################################################################
+#####################################################################################################
+##### GATHER UP THE PER FAMILY PER CHROMOSOME FILTER TO FAMILY VCF FILES INTO A SINGLE VCF FILE #####
+#####################################################################################################
 
-# BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF ()
-# {
-# 	for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET | sort | uniq )
-# 	do
-# 	HOLD_ID_PATH="-hold_jid "
-# 	for CHROMOSOME in {{1..22},{X,Y}};
-#  	do
-#  		HOLD_ID_PATH=$HOLD_ID_PATH"P.01-A.03_FILTER_TO_FAMILY_ALL_SITES_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
-#  	done
-#  done
-# }
+	###########################################################
+	# gather up per chromosome family only all sites vcf file #
+	###########################################################
 
-# CALL_FILTER_TO_FAMILY_VCF_GATHER ()
-# {
-# echo \
-# qsub \
-# -N T.03-1_FILTER_TO_FAMILY_ALL_SITES_GATHER_$FAMILY_${FAMILY_ARRAY[0]} \
-#  ${HOLD_ID_PATH} \
-#  -o $CORE_PATH/$PROJECT/${FAMILY_ARRAY[2]}/LOGS/$FAMILY_${FAMILY_ARRAY[0]}.FILTER_TO_FAMILY_ALL_SITES_GATHER.log \
-#  $SCRIPT_DIR/T.03-1_FILTER_TO_FAMILY_ALL_SITES_GATHER.sh \
-#  $JAVA_1_8 $GATK_DIR $CORE_PATH \
-#  ${FAMILY_ARRAY[0]} ${FAMILY_ARRAY[2]} ${FAMILY_ARRAY[3]}
-# }
+		BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF ()
+		{
+			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' \
+							$SAMPLE_SHEET \
+							| sort \
+							| uniq )
+				do
+					HOLD_ID_PATH="-hold_jid "
+					for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+										| sed -r 's/[[:space:]]+/\t/g' \
+										| sed 's/chr//g' \
+										| grep -v "MT" \
+										| cut -f 1 \
+										| sort \
+										| uniq \
+										| singularity exec $ALIGNMENT_CONTAINER datamash \
+											collapse 1 \
+										| sed 's/,/ /g');
+					do
+						HOLD_ID_PATH=$HOLD_ID_PATH"P01-A03_FILTER_TO_FAMILY_ALL_SITES_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
+					done
+			done
+		}
 
-# for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt | sort | uniq)
-#  do
-# 	BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF
-# 	CREATE_FAMILY_ARRAY
-# 	CALL_FILTER_TO_FAMILY_VCF_GATHER
-# 	echo sleep 1s
-#  done
+	######################################################
+	# gather up per chromosome family only all sites vcf #
+	######################################################
+
+		CALL_FILTER_TO_FAMILY_VCF_GATHER ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N T03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_TO_FAMILY_ALL_SITES_GATHER.log" \
+			${HOLD_ID_PATH} \
+			$SCRIPT_DIR/T03-A01-FILTER_TO_FAMILY_ALL_SITES_GATHER.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$BAIT_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+########################################################################
+# run steps to gather up per chromosome family only all sites vcf file #
+########################################################################
+
+for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
+	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+	| sort \
+	| uniq);
+do
+	CREATE_FAMILY_ARRAY
+	BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF
+	CALL_FILTER_TO_FAMILY_VCF_GATHER
+	echo sleep 0.1s
+done
+
+####################################################
+####################################################
+######### THIS MIGHT NOT BE NEEDED: END ##########
+####################################################
+####################################################
 
 # #################################################################################
 # ########### RUNNING FILTER TO SAMPLE ALL SITES BY CHROMOSOME ####################

@@ -35,17 +35,17 @@
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
 	SUBMIT_STAMP=$8
 
-## gather up vcf files that have had extra annotations added to them
+# gather up per chromosome family only all sites vcf.
 
-START_VARIANT_ANNOTATOR_GATHER=`date '+%s'`
+START_GATHER_FAMILY_ALL_SITES=`date '+%s'`
 
 	# construct command line
 
-		CMD="singularity exec $GATK_3_7_0_CONTAINER java -cp" \
-			CMD=$CMD" /usr/GenomeAnalysisTK.jar" \
-		CMD=$CMD" org.broadinstitute.gatk.tools.CatVariants" \
-			CMD=$CMD" -R $REF_GENOME" \
-			CMD=$CMD" --assumeSorted" \
+		CMD="singularity exec $GATK_3_7_0_CONTAINER java -cp"
+			CMD=$CMD" /usr/GenomeAnalysisTK.jar"
+		CMD=$CMD" org.broadinstitute.gatk.tools.CatVariants"
+			CMD=$CMD" -R $REF_GENOME"
+			CMD=$CMD" --assumeSorted"
 
 			# grab uniq list of chromosomes from bait bed file and sort by karyotype order (sort -V)
 
@@ -58,10 +58,10 @@ START_VARIANT_ANNOTATOR_GATHER=`date '+%s'`
 									| uniq \
 									| sort -V) ;
 			do
-				CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".VQSR.ANNOTATED."$CHROMOSOME".vcf""
+				CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/$FAMILY".VQSR.ANNOTATED.JUST_FAMILY."$CHROMOSOME".vcf""
 			done
 
-		CMD=$CMD" --outputFile $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".VQSR.ANNOTATED.vcf.gz""
+			CMD=$CMD" --outputFile $CORE_PATH/$PROJECT/TEMP/$FAMILY".VQSR.ANNOTATED.JUST_FAMILY.vcf.gz""
 
 	# write command line to file and execute the command line
 
@@ -83,11 +83,11 @@ START_VARIANT_ANNOTATOR_GATHER=`date '+%s'`
 			exit $SCRIPT_STATUS
 		fi
 
-END_VARIANT_ANNOTATOR_GATHER=`date '+%s'`
+END_GATHER_FAMILY_ALL_SITES=`date '+%s'`
 
 # write out timing metrics to file
 
-	echo $FAMILY"_"$PROJECT",P.01-A.01,VARIANT_ANNOTATOR_GATHER,"$HOSTNAME","$START_VARIANT_ANNOTATOR_GATHER","$END_VARIANT_ANNOTATOR_GATHER \
+	echo $FAMILY"_"$PROJECT",T.01,GATHER_FAMILY_ALL_SITES"$CHROMOSOME"_VCF,"$HOSTNAME","$START_GATHER_FAMILY_ALL_SITES","$END_GATHER_FAMILY_ALL_SITES \
 	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
 # exit with the signal from the program
