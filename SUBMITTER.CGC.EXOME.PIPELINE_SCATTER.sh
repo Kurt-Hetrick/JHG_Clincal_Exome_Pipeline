@@ -2509,11 +2509,11 @@ done
 ####################################################
 ####################################################
 
-##############################################################################
-##############################################################################
-########## THIS MIGHT BE BETTER TO DO FROM THE FILE ABOVE, HONESTLY ##########
-##############################################################################
-##############################################################################
+#####################################################################################
+#####################################################################################
+########## THIS MIGHT BE BETTER TO DO FROM THE FILE ABOVE, HONESTLY: START ##########
+#####################################################################################
+#####################################################################################
 
 #################################################################################
 ########### RUNNING FILTER TO SAMPLE ALL SITES BY CHROMOSOME ####################
@@ -2571,64 +2571,77 @@ do
 		done
 done
 
-# #####################################################################################################
-# ##### GATHER UP THE PER SAMPLE PER CHROMOSOME FILTER TO SAMPLE VCF FILES INTO A SINGLE VCF FILE #####
-# #####################################################################################################
+#####################################################################################################
+##### GATHER UP THE PER SAMPLE PER CHROMOSOME FILTER TO SAMPLE VCF FILES INTO A SINGLE VCF FILE #####
+#####################################################################################################
 
-# BUILD_HOLD_ID_PATH_FILTER_TO_SAMPLE_VCF ()
-# {
-# 	for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET | sort | uniq )
-# 	do
-# 	HOLD_ID_PATH="-hold_jid "
-# 	for CHROMOSOME in {{1..22},{X,Y}};
-#  	do
-#  		HOLD_ID_PATH=$HOLD_ID_PATH"P.01-A.04_FILTER_TO_SAMPLE_ALL_SITES_"$SAMPLE"_"$PROJECT"_"$CHROMOSOME","
-#  	done
-#  done
-# }
+	##############################################################################
+	# build hold_jid for gather of per chromosome per sample all sites vcf files #
+	##############################################################################
 
-# # CALL_FILTER_TO_SAMPLE_VCF_GATHER ()
-# # {
-# # echo \
-# # qsub \
-# # -N T.06-1_FILTER_TO_SAMPLE_ALL_SITES_GATHER_${SAMPLE_INFO_ARRAY_2[1]}_${SAMPLE_INFO_ARRAY_2[2]}_${SAMPLE_INFO_ARRAY_2[0]} \
-# #  ${HOLD_ID_PATH} \
-# #  -o $CORE_PATH/${SAMPLE_INFO_ARRAY_2[0]}/${SAMPLE_INFO_ARRAY_2[2]}/${SAMPLE_INFO_ARRAY_2[1]}/LOGS/${SAMPLE_INFO_ARRAY_2[1]}_${SAMPLE_INFO_ARRAY_2[2]}_${SAMPLE_INFO_ARRAY_2[0]}.FILTER_TO_SAMPLE_ALL_SITES_GATHER.log \
-# #  $SCRIPT_DIR/T.06-1_FILTER_TO_SAMPLE_ALL_SITES_GATHER.sh \
-# #  $JAVA_1_8 $GATK_DIR $CORE_PATH \
-# #  ${SAMPLE_INFO_ARRAY_2[0]} ${SAMPLE_INFO_ARRAY_2[2]} ${SAMPLE_INFO_ARRAY_2[1]} ${SAMPLE_INFO_ARRAY_2[3]}
-# # }
+		BUILD_HOLD_ID_PATH_FILTER_TO_SAMPLE_VCF ()
+		{
+			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' \
+									$SAMPLE_SHEET \
+									| sort \
+									| uniq )
+			do
+				HOLD_ID_PATH="-hold_jid "
+				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+									| sed -r 's/[[:space:]]+/\t/g' \
+									| sed 's/chr//g' \
+									| grep -v "MT" \
+									| cut -f 1 \
+									| sort \
+									| uniq \
+									| singularity exec $ALIGNMENT_CONTAINER datamash \
+										collapse 1 \
+									| sed 's/,/ /g');
+				do
+					HOLD_ID_PATH=$HOLD_ID_PATH"P01-A04_FILTER_TO_SAMPLE_ALL_SITES_"$SAMPLE"_"$PROJECT"_"$CHROMOSOME","
+				done
+			done
+		}
 
-# # SAMPLE_INFO_ARRAY_2=(`awk 'BEGIN {FS="\t"; OFS="\t"} {split($8,smtag,"[@]"); if (smtag[1]"_"smtag[2]=="'$SAMPLE'") \
-# # print $1,$20,$8,$12,$16,smtag[1]"_"smtag[2]}'
+	###########################################
+	# call gather of all sites for sample vcf #
+	###########################################
 
-# CALL_FILTER_TO_SAMPLE_VCF_GATHER ()
-# {
-# echo \
-# qsub \
-# -N T.06-1_FILTER_TO_SAMPLE_ALL_SITES_GATHER_${SAMPLE_INFO_ARRAY_2[1]}_${SAMPLE}_${SAMPLE_INFO_ARRAY_2[0]} \
-#  ${HOLD_ID_PATH} \
-#  -o $CORE_PATH/${SAMPLE_INFO_ARRAY_2[0]}/${SAMPLE_INFO_ARRAY_2[1]}/${SAMPLE_INFO_ARRAY_2[2]}/LOGS/${SAMPLE_INFO_ARRAY_2[1]}_${SAMPLE_INFO_ARRAY_2[2]}_${SAMPLE_INFO_ARRAY_2[0]}.FILTER_TO_SAMPLE_ALL_SITES_GATHER.log \
-#  $SCRIPT_DIR/T.06-1_FILTER_TO_SAMPLE_ALL_SITES_GATHER.sh \
-#  $JAVA_1_8 $GATK_DIR $CORE_PATH \
-#  ${SAMPLE_INFO_ARRAY_2[0]} ${SAMPLE_INFO_ARRAY_2[1]} ${SAMPLE_INFO_ARRAY_2[2]} ${SAMPLE_INFO_ARRAY_2[3]}
-# }
+		CALL_FILTER_TO_SAMPLE_VCF_GATHER ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N T06-A01_FILTER_TO_SAMPLE_ALL_SITES_GATHER_$SM_TAG"_"$FAMILY"_"$PROJECT \
+			 ${HOLD_ID_PATH} \
+			 -o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"_"$FAMILY"_"$PROJECT".FILTER_TO_SAMPLE_ALL_SITES_GATHER.log" \
+			 $SCRIPT_DIR/T06-A01_FILTER_TO_SAMPLE_ALL_SITES_GATHER.sh \
+			 $GATK_3_7_0_CONTAINER \
+			 $CORE_PATH \
+			 $PROJECT \
+			 $FAMILY \
+			 $SM_TAG \
+			 $REF_GENOME \
+			 $BAIT_BED \
+			 $SAMPLE_SHEET \
+			 $SUBMIT_STAMP
+		}
 
-# # for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $8}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt | sort | uniq)
-# #  do
-# #  	BUILD_HOLD_ID_PATH_FILTER_TO_SAMPLE_VCF
-# # 	CREATE_SAMPLE_INFO_ARRAY_2
-# # 	CALL_FILTER_TO_SAMPLE_VCF_GATHER
-# # 	echo sleep 1s
-# #  done
+##################################################
+# run steps to gather all sites for a sample vcf #
+##################################################
 
-# for SAMPLE in $(awk 'BEGIN {FS=","} NR>1 {if ($8~"@") {split($8,smtag,"[@]"); print smtag[1]"_"smtag[2]} else print $8"_"}' $SAMPLE_SHEET | sort | uniq );
-#  do
-#  	BUILD_HOLD_ID_PATH_FILTER_TO_SAMPLE_VCF
-# 	CREATE_SAMPLE_INFO_ARRAY_2
-# 	CALL_FILTER_TO_SAMPLE_VCF_GATHER
-# 	echo sleep 1s
-#  done
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			|awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		BUILD_HOLD_ID_PATH_FILTER_TO_SAMPLE_VCF
+		CALL_FILTER_TO_SAMPLE_VCF_GATHER
+		echo sleep 1s
+	done
 
 # ###########################################################################################
 # ########### RUNNING FILTER TO SAMPLE ALL SITES BY CHROMOSOME ON TARGET ####################
