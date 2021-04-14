@@ -2509,54 +2509,67 @@ done
 ####################################################
 ####################################################
 
-# #################################################################################
-# ########### RUNNING FILTER TO SAMPLE ALL SITES BY CHROMOSOME ####################
-# #################################################################################
+##############################################################################
+##############################################################################
+########## THIS MIGHT BE BETTER TO DO FROM THE FILE ABOVE, HONESTLY ##########
+##############################################################################
+##############################################################################
 
-# # CREATE_SAMPLE_INFO_ARRAY_2 ()
-# # {
-# # SAMPLE_INFO_ARRAY_2=(`awk 'BEGIN {FS="\t"; OFS="\t"} $8=="'$SAMPLE'" {split($8,smtag,"[@]"); print $1,$8,$20,$12,$18,smtag[1]"_"smtag[2]}' \
-# # ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
-# # }
+#################################################################################
+########### RUNNING FILTER TO SAMPLE ALL SITES BY CHROMOSOME ####################
+#################################################################################
 
-# # for SAMPLE in $(awk 'BEGIN {FS=","} NR>1 {print $8}' $SAMPLE_SHEET | sort | uniq );
-# # do
-# # CREATE_SAMPLE_INFO_ARRAY_2
-# # 	for CHROMOSOME in {{1..22},{X,Y}}
-# # 		do
-# # 		CALL_FILTER_TO_SAMPLE_ALL_SITES
-# # 		echo sleep 1s
-# # 		done
-# # 	done
+	##################################################################
+	# FILTER SAMPLE ALL SITES ########################################
+	# USE GATK4 HERE BECAUSE IT HANDLES SPANNING DELETIONS CORRECTLY #
+	##################################################################
 
-# CREATE_SAMPLE_INFO_ARRAY_2 ()
-# {
-# SAMPLE_INFO_ARRAY_2=(`awk 'BEGIN {FS="\t"; OFS="\t"} {split($8,smtag,"[@]"); if (smtag[1]"_"smtag[2]=="'$SAMPLE'") \
-# print $1,$20,$8,$12,$16,smtag[1]"_"smtag[2]}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt`)
-# }
+		CALL_FILTER_TO_SAMPLE_ALL_SITES ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N P01-A04-FILTER_TO_SAMPLE_ALL_SITES_$SGE_SM_TAG"_"$PROJECT"_"$CHROMOSOME \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-FILTER_TO_SAMPLE_ALL_SITES_"$CHROMOSOME".log" \
+			-hold_jid P01_VARIANT_ANNOTATOR_$FAMILY"_"$PROJECT"_"$CHROMOSOME \
+			$SCRIPT_DIR/P01-A04-FILTER_TO_SAMPLE_ALL_SITES_CHR.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$CHROMOSOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
-# CALL_FILTER_TO_SAMPLE_ALL_SITES ()
-# {
-# echo \
-# qsub \
-# -N P.01-A.04_FILTER_TO_SAMPLE_ALL_SITES_${SAMPLE}_${SAMPLE_INFO_ARRAY_2[0]}_$CHROMOSOME \
-# -hold_jid P.01_VARIANT_ANNOTATOR_${SAMPLE_INFO_ARRAY_2[1]}_${SAMPLE_INFO_ARRAY_2[0]}_$CHROMOSOME \
-# -o $CORE_PATH/${SAMPLE_INFO_ARRAY_2[0]}/${SAMPLE_INFO_ARRAY_2[1]}/${SAMPLE_INFO_ARRAY_2[2]}/LOGS/${SAMPLE_INFO_ARRAY_2[1]}_${SAMPLE_INFO_ARRAY_2[2]}_${SAMPLE_INFO_ARRAY_2[0]}.FILTER_TO_SAMPLE_ALL_SITES_$CHROMOSOME.log \
-# $SCRIPT_DIR/P.01-A.04_FILTER_TO_SAMPLE_ALL_SITES_CHR.sh \
-# $JAVA_1_8 $GATK_DIR $CORE_PATH \
-# ${SAMPLE_INFO_ARRAY_2[0]} ${SAMPLE_INFO_ARRAY_2[1]} ${SAMPLE_INFO_ARRAY_2[2]} ${SAMPLE_INFO_ARRAY_2[3]} $CHROMOSOME
-# }
+##########################################################
+# run steps to filter vcf down to all sites for a sample #
+##########################################################
 
-# for SAMPLE in $(awk 'BEGIN {FS=","} NR>1 {if ($8~"@") {split($8,smtag,"[@]"); print smtag[1]"_"smtag[2]} else print $8"_"}' $SAMPLE_SHEET | sort | uniq );
-# do
-# CREATE_SAMPLE_INFO_ARRAY_2
-# 	for CHROMOSOME in {{1..22},{X,Y}}
-# 		do
-# 		CALL_FILTER_TO_SAMPLE_ALL_SITES
-# 		echo sleep 1s
-# 		done
-# 	done
+for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+		|awk 'BEGIN {FS=","} NR>1 {print $8}' \
+		| sort \
+		| uniq );
+do
+	CREATE_SAMPLE_ARRAY
+		for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+			| sed -r 's/[[:space:]]+/\t/g' \
+			| sed 's/chr//g' \
+			| grep -v "MT" \
+			| cut -f 1 \
+			| sort \
+			| uniq \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				collapse 1 \
+			| sed 's/,/ /g');
+		do
+			CALL_FILTER_TO_SAMPLE_ALL_SITES
+			echo sleep 0.1s
+		done
+done
 
 # #####################################################################################################
 # ##### GATHER UP THE PER SAMPLE PER CHROMOSOME FILTER TO SAMPLE VCF FILES INTO A SINGLE VCF FILE #####
