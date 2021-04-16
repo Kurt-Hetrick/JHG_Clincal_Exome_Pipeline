@@ -25,14 +25,13 @@
 # INPUT VARIABLES
 
 	CNV_CONTAINER=$1
-	ALIGNMENT_CONTAINER=$2
-	CORE_PATH=$3
+	CORE_PATH=$2
 
-	PROJECT=$4
-	FAMILY=$5
-	SM_TAG=$6
+	PROJECT=$3
+	FAMILY=$4
+	SM_TAG=$5
 
-	CODING_BED=$7
+	CODING_BED=$6
 		CODING_BED_NAME=$(basename $CODING_BED .bed)
 		CODING_MD5=$(md5sum $CODING_BED | cut -c 1-7)
 
@@ -48,7 +47,7 @@
 		CHR_LENGTH_ARRAY=(`awk 'BEGIN {OFS="\t"} $1=="'$CHROMOSOME'" {print $1,($3-$2)}' \
 			$CORE_PATH/$PROJECT/TEMP/$SM_TAG"-"$CODING_BED_NAME"-"$CODING_MD5".exomeDepth.input.merged.bed" \
 			| sort -k 2,2n \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec $CNV_CONTAINER datamash \
 				-g 1 sum 2`)
 
 			CHROMOSOME_BED=${CHR_LENGTH_ARRAY[0]}

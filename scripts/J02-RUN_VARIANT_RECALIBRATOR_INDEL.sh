@@ -70,9 +70,9 @@ START_VARIANT_RECALIBRATOR_INDEL=`date '+%s'`
 			CMD=$CMD" -tranche 95.0" \
 			CMD=$CMD" -tranche 90.0" \
 			CMD=$CMD" --input:VCF $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.vcf"" \
-			CMD=$CMD" -recalFile $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.INDEL.recal"" \
-			CMD=$CMD" -tranchesFile $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.INDEL.tranches"" \
-			CMD=$CMD" -rscriptFile $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.INDEL.R"" \
+			CMD=$CMD" -recalFile $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.INDEL.recal"" \
+			CMD=$CMD" -tranchesFile $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.INDEL.tranches"" \
+			CMD=$CMD" -rscriptFile $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.INDEL.R"" \
 			CMD=$CMD" --maxGaussians 4" \
 
 	# write command line to file and execute the command line

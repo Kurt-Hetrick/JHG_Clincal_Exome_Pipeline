@@ -24,33 +24,40 @@
 
 # INPUT VARIABLES
 
-	GATK_3_7_0_CONTAINER=$1
+	ALIGNMENT_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
-	REF_GENOME=$5
-	SAMPLE_SHEET=$6
+	CODING_BED=$5
+		CODING_BED_NAME=$(basename $CODING_BED .bed)
+		CODING_MD5=$(md5sum $CODING_BED | cut -c 1-7)
+	PADDING_LENGTH=$6
+	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
-	SUBMIT_STAMP=$7
+	SUBMIT_STAMP=$8
 
-# APPLY VQSR SNP MODEL TO THE VCF
+## gather up vcf files that have had extra annotations added to them
 
-START_APPLY_RECALIBRATION_SNP=`date '+%s'`
+START_FILTER_FAMILY_TO_BAIT_PLUS_PAD=`date '+%s'`
 
 	# construct command line
 
-		CMD="singularity exec $GATK_3_7_0_CONTAINER java -jar" \
-			CMD=$CMD" /usr/GenomeAnalysisTK.jar" \
-		CMD=$CMD" --analysis_type ApplyRecalibration" \
-			CMD=$CMD" --reference_sequence $REF_GENOME" \
-			CMD=$CMD" --disable_auto_index_creation_and_locking_when_reading_rods" \
-			CMD=$CMD" --mode SNP" \
-			CMD=$CMD" --ts_filter_level 99.9" \
-			CMD=$CMD" --input:VCF $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.vcf"" \
-			CMD=$CMD" --recal_file $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.SNV.recal"" \
-			CMD=$CMD" --tranches_file $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.SNV.tranches"" \
-			CMD=$CMD" --out $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".VQSR.SNP.vcf""
+		CMD="singularity exec $ALIGNMENT_CONTAINER bedtools"
+			CMD=$CMD" intersect"
+				CMD=$CMD" -header"
+				CMD=$CMD" -a $CORE_PATH/$PROJECT/TEMP/$FAMILY".VQSR.ANNOTATED.JUST_FAMILY.vcf.gz""
+				CMD=$CMD" -b $CORE_PATH/$PROJECT/TEMP/$FAMILY"_"$CODING_BED_NAME"-"$CODING_MD5"-"$PADDING_LENGTH"-BP-PAD.bed""
+		CMD=$CMD" | singularity exec $ALIGNMENT_CONTAINER bgzip"
+			CMD=$CMD" -@ $THREADS"
+			CMD=$CMD" -c"
+		# THIS OUTPUT MIGHT END UP IN TEMP
+		CMD=$CMD" >| $CORE_PATH/$PROJECT/$FAMILY/VCF/$FAMILY".VQSR.ANNOTATED.ALL.SITES.vcf.gz""
+			CMD=$CMD" &&"
+		CMD=$CMD" singularity exec $ALIGNMENT_CONTAINER tabix"
+			CMD=$CMD" -p vcf"
+			CMD=$CMD" -f"
+		CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/VCF/$FAMILY".VQSR.ANNOTATED.ALL.SITES.vcf.gz""
 
 	# write command line to file and execute the command line
 
@@ -67,16 +74,16 @@ START_APPLY_RECALIBRATION_SNP=`date '+%s'`
 
 		if [ "$SCRIPT_STATUS" -ne 0 ]
 		 then
-			echo $SM_TAG $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
+			echo $FAMILY $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
 			>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt"
 			exit $SCRIPT_STATUS
 		fi
 
-END_APPLY_RECALIBRATION_SNP=`date '+%s'`
+END_FILTER_FAMILY_TO_BAIT_PLUS_PAD=`date '+%s'`
 
 # write out timing metrics to file
 
-	echo $FAMILY"_"$PROJECT",K.01,APPLY_RECALIBRATION_SNP,"$HOSTNAME","$START_APPLY_RECALIBRATION_SNP","$END_APPLY_RECALIBRATION_SNP \
+	echo $FAMILY"_"$PROJECT",P.01-A.01,FILTER_FAMILY_TO_BAIT_PLUS_PAD,"$HOSTNAME","$START_FILTER_FAMILY_TO_BAIT_PLUS_PAD","$END_FILTER_FAMILY_TO_BAIT_PLUS_PAD \
 	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
 
 # exit with the signal from the program

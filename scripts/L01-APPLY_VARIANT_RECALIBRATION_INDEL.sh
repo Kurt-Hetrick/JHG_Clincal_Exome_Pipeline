@@ -50,8 +50,8 @@ START_APPLY_RECALIBRATION_INDEL=`date '+%s'`
 			CMD=$CMD" --mode INDEL" \
 			CMD=$CMD" --ts_filter_level 99.9" \
 			CMD=$CMD" --input:VCF $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".VQSR.SNP.vcf"" \
-			CMD=$CMD" --recal_file $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.INDEL.recal"" \
-			CMD=$CMD" --tranches_file $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.INDEL.tranches"" \
+			CMD=$CMD" --recal_file $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.INDEL.recal"" \
+			CMD=$CMD" --tranches_file $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.INDEL.tranches"" \
 			CMD=$CMD" --out $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".VQSR.SNP_INDEL.vcf""
 
 	# write command line to file and execute the command line

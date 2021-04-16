@@ -83,9 +83,9 @@ START_VARIANT_RECALIBRATOR_SNP=`date '+%s'`
 			CMD=$CMD" -tranche 95.0" \
 			CMD=$CMD" -tranche 90.0" \
 			CMD=$CMD" --input:VCF $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".RAW.vcf"" \
-			CMD=$CMD" -recalFile $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.SNV.recal"" \
-			CMD=$CMD" -tranchesFile $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.SNV.tranches"" \
-			CMD=$CMD" -rscriptFile $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.SNV.R"" \
+			CMD=$CMD" -recalFile $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.SNV.recal"" \
+			CMD=$CMD" -tranchesFile $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.SNV.tranches"" \
+			CMD=$CMD" -rscriptFile $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.SNV.R"" \
 			CMD=$CMD" --maxGaussians $MAX_GAUSSIANS" \
 			CMD=$CMD" &&" \
 			# Move the tranches PDF to TEMP so that it can be trashed.

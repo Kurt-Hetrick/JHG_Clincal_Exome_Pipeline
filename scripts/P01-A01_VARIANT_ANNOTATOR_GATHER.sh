@@ -61,7 +61,7 @@ START_VARIANT_ANNOTATOR_GATHER=`date '+%s'`
 				CMD=$CMD" --variant $CORE_PATH/$PROJECT/TEMP/CONTROLS_PLUS_$FAMILY".VQSR.ANNOTATED."$CHROMOSOME".vcf""
 			done
 
-		CMD=$CMD" --outputFile $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".VQSR.ANNOTATED.vcf.gz""
+		CMD=$CMD" --outputFile $CORE_PATH/$PROJECT/$FAMILY/VCF/RAW/CONTROLS_PLUS_$FAMILY".VQSR.ANNOTATED.vcf.gz""
 
 	# write command line to file and execute the command line
 

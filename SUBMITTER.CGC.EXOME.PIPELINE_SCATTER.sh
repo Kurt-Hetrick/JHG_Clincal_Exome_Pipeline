@@ -168,7 +168,7 @@
 
 	MT_COVERAGE_R_SCRIPT="$SCRIPT_DIR/mito_coverage_graph.r"
 
-	CNV_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/exome_depth-dev.simg"
+	CNV_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/cnv_exomedepth-dev.simg"
 
 	EXOME_DEPTH_R_SCRIPT="$SCRIPT_DIR/runExomeDepth.r"
 
@@ -414,6 +414,7 @@
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/MEAN_QUALITY_BY_CYCLE/{METRICS,PDF} \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ANEUPLOIDY_CHECK \
 			$CORE_PATH/$PROJECT/$FAMILY/{LOGS,VCF,RELATEDNESS,PCA} \
+			$CORE_PATH/$PROJECT/$FAMILY/VCF/{RAW,VQSR} \
 			$CORE_PATH/$PROJECT/TEMP/$SM_TAG_ANNOVAR \
 			$CORE_PATH/$PROJECT/TEMP/{VCF_PREP,PLINK,KING} \
 			$CORE_PATH/$PROJECT/{TEMP,FASTQ,REPORTS,LOGS,COMMAND_LINES} \
@@ -1572,7 +1573,6 @@ done
 			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
 			$SCRIPT_DIR/F02-A01_PCT_CNV_COVERAGE_PER_CHR.sh \
 				$CNV_CONTAINER \
-				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
 				$FAMILY \
@@ -2377,6 +2377,15 @@ done
 		echo sleep 0.1s
 	done
 
+########################################################################################
+########## TODO ########################################################################
+########################################################################################
+# ADD STEP TO FILTER ABOVE OUTPUT TO BAIT/CODING PLUS USER DEFINED PAD, PASS ONLY, ETC #
+# FOR CONTROLS PLUS SAMPLES ############################################################
+# THIS WOULD BE THE INPUT INTO BCFTOOLS ROH. PROBABLY ONLY A TEMP FILE #################
+# MIGHT MAKE THIS WHOLE THING A SEPARATE WORKFLOW ######################################
+########################################################################################
+
 ##################################################################
 ##### RUNNING FILTER TO FAMILY ALL SITES BY CHROMOSOME ###########
 # USE GATK4 HERE BECAUSE IT HANDLES SPANNING DELETIONS CORRECTLY #
@@ -2468,16 +2477,40 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N T03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_$FAMILY"_"$PROJECT \
+			-N P01-A03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_$FAMILY"_"$PROJECT \
 				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_TO_FAMILY_ALL_SITES_GATHER.log" \
 			${HOLD_ID_PATH} \
-			$SCRIPT_DIR/T03-A01-FILTER_TO_FAMILY_ALL_SITES_GATHER.sh \
+			$SCRIPT_DIR/P01-A03-A01-FILTER_TO_FAMILY_ALL_SITES_GATHER.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
 				$FAMILY \
 				$REF_GENOME \
 				$BAIT_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	############################################################
+	# filter family only all sites vcf to coding plus user pad #
+	# the output for this might get moved to temp ##############
+	############################################################
+
+		CALL_FILTER_FAMILY_TO_CODING_PLUS_PAD ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N Q01_FILTER_FAMILY_CODING_PLUS_PAD_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_FAMILY_CODING_PLUS_PAD.log" \
+			-hold_jid P01-A03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_$FAMILY"_"$PROJECT \
+			$SCRIPT_DIR/Q01-FILTER_FAMILY_CODING_PLUS_PAD.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$CODING_BED \
+				$PADDING_LENGTH \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
 		}
@@ -2495,7 +2528,15 @@ do
 	BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF
 	CALL_FILTER_TO_FAMILY_VCF_GATHER
 	echo sleep 0.1s
+	CALL_FILTER_FAMILY_TO_CODING_PLUS_PAD
+	echo sleep 0.1s
 done
+
+################################################################################
+########## FILTER FAMILY ALL SITES VCF TO BAIT PLUS PAD FOR ALL BASES ##########
+################################################################################
+
+
 
 #########################################
 ########## TO BE REIMPLEMENTED ##########
