@@ -2362,6 +2362,39 @@ done
 				$SUBMIT_STAMP
 		}
 
+	#####################################################################
+	# FILTER TO JUST PASSING BIALLELIC SNV SITES ON THE CODING BED FILE #
+	# TEMPORARY FILE USED FOR PCA AND RELATEDNESS #######################
+	#####################################################################
+
+		CALL_PASS_BIALLELIC_SNV_COHORT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N Q02-FILTER_COHORT_SNV_PASS_BIALLELIC_$FAMILY"_"$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_COHORT_SNV_PASS_BIALLELIC.log" \
+			-hold_jid P01-A01_VARIANT_ANNOTATOR_GATHER_$FAMILY"_"$PROJECT \
+			$SCRIPT_DIR/Q02-FILTER_COHORT_SNV_PASS_BIALLELIC.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$CODING_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+########################################################################################
+########## TODO ########################################################################
+########################################################################################
+# ADD STEP TO FILTER ABOVE OUTPUT TO BAIT/CODING PLUS USER DEFINED PAD, PASS ONLY, ETC #
+# FOR CONTROLS PLUS SAMPLES ############################################################
+# THIS WOULD BE THE INPUT INTO BCFTOOLS ROH. PROBABLY ONLY A TEMP FILE #################
+# MIGHT MAKE THIS WHOLE THING A SEPARATE WORKFLOW ######################################
+########################################################################################
+
 ############################################
 # run steps to do variant annotator gather #
 ############################################
@@ -2375,16 +2408,9 @@ done
 		BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION
 		CALL_VARIANT_ANNOTATOR_GATHER
 		echo sleep 0.1s
+		CALL_PASS_BIALLELIC_SNV_COHORT
+		echo sleep 0.1s
 	done
-
-########################################################################################
-########## TODO ########################################################################
-########################################################################################
-# ADD STEP TO FILTER ABOVE OUTPUT TO BAIT/CODING PLUS USER DEFINED PAD, PASS ONLY, ETC #
-# FOR CONTROLS PLUS SAMPLES ############################################################
-# THIS WOULD BE THE INPUT INTO BCFTOOLS ROH. PROBABLY ONLY A TEMP FILE #################
-# MIGHT MAKE THIS WHOLE THING A SEPARATE WORKFLOW ######################################
-########################################################################################
 
 ##################################################################
 ##### RUNNING FILTER TO FAMILY ALL SITES BY CHROMOSOME ###########
@@ -2531,12 +2557,6 @@ do
 	CALL_FILTER_FAMILY_TO_CODING_PLUS_PAD
 	echo sleep 0.1s
 done
-
-################################################################################
-########## FILTER FAMILY ALL SITES VCF TO BAIT PLUS PAD FOR ALL BASES ##########
-################################################################################
-
-
 
 #########################################
 ########## TO BE REIMPLEMENTED ##########
