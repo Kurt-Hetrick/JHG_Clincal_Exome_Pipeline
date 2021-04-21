@@ -53,7 +53,6 @@
 	SAMPLE_SHEET=${20}
 		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
 	SUBMIT_STAMP=${21}
-		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
 
 # Need to convert data in sample manifest to Iso 8601 date since we are not using bwa mem to populate this.
 # Picard AddOrReplaceReadGroups is much more stringent here.

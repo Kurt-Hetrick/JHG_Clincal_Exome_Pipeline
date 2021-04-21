@@ -174,6 +174,8 @@
 
 	FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="$SCRIPT_DIR/FORMAT_AND_ZOOM_ANNOTSV.r"
 
+	PCA_RELATEDNESS_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/pca-relatedness-0.0.1.simg"
+
 	# PIPELINE PROGRAMS TO BE IMPLEMENTED
 	JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
 	SAMTOOLS_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/samtools-0.1.18"
@@ -200,11 +202,11 @@
 		MILLS_1KG_GOLD_INDEL="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/Mills_and_1000G_gold_standard.indels.b37.vcf"
 		PHASE3_1KG_AUTOSOMES="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/ALL.autosomes.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz"
 		DBSNP_129="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/dbsnp_138.b37.excluding_sites_after_129.vcf"
-		CONTROL_PED_FILE="$CONTROL_REPO/TWIST_CONTROL_SET1.200601.ped"
 
 		# where the control data set resides.
 
 		CONTROL_REPO="/mnt/clinical/ddl/NGS/Exome_Data/TWIST_CONTROL_SET1.200601_PIPELINE_2_0_0"
+		CONTROL_PED_FILE="$CONTROL_REPO/TWIST_CONTROL_SET1.200601.ped"
 
 		# SFAFASFA
 
@@ -2386,6 +2388,32 @@ done
 				$SUBMIT_STAMP
 		}
 
+	################################
+	# RUN PCA AND KINSHIP WORKFLOW #
+	# USES KING AND PLINK ##########
+	################################
+
+		CALL_PCA_RELATEDNESS ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N Q02-A01-PCA_RELATEDNESS_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.PCA_RELATEDNESS.log \
+			-hold_jid Q02-FILTER_COHORT_SNV_PASS_BIALLELIC_${FAMILY}_${PROJECT} \
+			$SCRIPT_DIR/Q02-A01-PCA_RELATEDNESS.sh \
+				$GATK_3_7_0_CONTAINER \
+				$PCA_RELATEDNESS_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$PED_FILE \
+				$CONTROL_PED_FILE \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 ########################################################################################
 ########## TODO ########################################################################
 ########################################################################################
@@ -2395,9 +2423,9 @@ done
 # MIGHT MAKE THIS WHOLE THING A SEPARATE WORKFLOW ######################################
 ########################################################################################
 
-############################################
-# run steps to do variant annotator gather #
-############################################
+###############################################################
+# run steps to do variant annotator gather and pca/relatednes #
+###############################################################
 
 	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 		~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
@@ -2409,6 +2437,8 @@ done
 		CALL_VARIANT_ANNOTATOR_GATHER
 		echo sleep 0.1s
 		CALL_PASS_BIALLELIC_SNV_COHORT
+		echo sleep 0.1s
+		CALL_PCA_RELATEDNESS
 		echo sleep 0.1s
 	done
 
@@ -2561,19 +2591,6 @@ done
 #########################################
 ########## TO BE REIMPLEMENTED ##########
 #########################################
-
-# # FILTER TO JUST PASSING BIALLELIC SNV SITES
-# # TEMPORARY FILE USED FOR PCA AND RELATEDNESS
-
-# awk 'BEGIN {OFS="\t"} {print $1,$20,$12}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1,1 -k 2,2 \
-# | uniq \
-# | awk '{print "qsub","-N","S.03_FILTER_COHORT_SNV_ONLY_PASS_BIALLELIC_"$2"_"$1,\
-# "-hold_jid","P.01-A.01_VARIANT_ANNOTATOR_GATHER_"$2"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/LOGS/"$2"_"$1".FILTER_COHORT_SNV_ONLY_PASS_BIALLELIC.log",\
-# "'$SCRIPT_DIR'""/S.03_FILTER_COHORT_SNV_ONLY_PASS_BIALLELIC.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
 
 # # RUN HUAS WORKFLOW FOR PCA AND RELATEDNESS
 
