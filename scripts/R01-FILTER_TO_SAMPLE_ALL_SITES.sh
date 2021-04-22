@@ -40,15 +40,15 @@ START_FILTER_TO_SAMPLE_ALL_SITES=`date '+%s'`
 
 	# construct command line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER java -jar" \
-			CMD=$CMD" /gatk/gatk.jar" \
-		CMD=$CMD" SelectVariants" \
-			CMD=$CMD" --remove-unused-alternates" \
-			CMD=$CMD" --keep-original-ac" \
-			CMD=$CMD" --keep-original-dp" \
-			CMD=$CMD" --variant $CORE_PATH/$PROJECT/$FAMILY/VCF/${FAMILY}.VQSR.ANNOTATED.ALL.SITES.vcf.gz" \
-			CMD=$CMD" --sample-name $SM_TAG" \
-			CMD=$CMD" --output $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/VCF/FILTERED_ON_BAIT_${SM_TAG}.ALL_SITES.vcf.gz"
+		CMD="singularity exec $ALIGNMENT_CONTAINER java -Dsamjdk.compression_level=6 -jar"
+			CMD=$CMD" /gatk/gatk.jar"
+		CMD=$CMD" SelectVariants"
+			CMD=$CMD" --remove-unused-alternates"
+			CMD=$CMD" --keep-original-ac"
+			CMD=$CMD" --keep-original-dp"
+			CMD=$CMD" --variant $CORE_PATH/$PROJECT/$FAMILY/VCF/${FAMILY}.VQSR.ANNOTATED.ALL.SITES.vcf.gz"
+			CMD=$CMD" --sample-name $SM_TAG"
+			CMD=$CMD" --output $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/VCF/FILTERED_ON_BAIT/${SM_TAG}.ALL_SITES.vcf.gz"
 
 	# write command line to file and execute the command line
 
