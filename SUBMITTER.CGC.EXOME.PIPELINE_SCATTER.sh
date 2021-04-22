@@ -2614,6 +2614,29 @@ done
 				$SUBMIT_STAMP
 		}
 
+	##################################################################################
+	# subset sample variant sites to from coding/bait bed file plus user defined pad #
+	##################################################################################
+
+		EXTRACT_SAMPLE_VARIANTS ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N S01-FILTER_TO_SAMPLE_VARIANTS_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_TO_SAMPLE_VARIANTS.log \
+			-hold_jid R01-FILTER_TO_SAMPLE_ALL_SITES_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/S01-FILTER_TO_SAMPLE_VARIANTS.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 ##################################################################
 # run vcf sample subset steps #
 ##################################################################
@@ -2626,6 +2649,8 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 do
 	CREATE_SAMPLE_ARRAY
 	EXTRACT_SAMPLE_ALL_SITES
+	echo sleep 0.1s
+	EXTRACT_SAMPLE_VARIANTS
 	echo sleep 0.1s
 done
 
