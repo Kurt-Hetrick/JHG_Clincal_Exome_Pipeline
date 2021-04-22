@@ -2496,9 +2496,9 @@ done
 ##### GATHER UP THE PER FAMILY PER CHROMOSOME FILTER TO FAMILY VCF FILES INTO A SINGLE VCF FILE #####
 #####################################################################################################
 
-	###########################################################
-	# gather up per chromosome family only all sites vcf file #
-	###########################################################
+	#################################################################################
+	# create job hold id to gather up per chromosome family only all sites vcf file #
+	#################################################################################
 
 		BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF ()
 		{
@@ -2588,25 +2588,46 @@ do
 	echo sleep 0.1s
 done
 
-#########################################
-########## TO BE REIMPLEMENTED ##########
-#########################################
+#################################
+### SUBSETTING TO SAMPLE VCFS ###
+#################################
 
-# # RUN HUAS WORKFLOW FOR PCA AND RELATEDNESS
+	#####################################################################################
+	# subset sample all sites to from family coding/bait bed file plus user defined pad #
+	#####################################################################################
 
-# awk 'BEGIN {OFS="\t"} {print $1,$20,$12}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1,1 -k 2,2 \
-# | uniq \
-# | awk '{print "qsub","-N","S.03-A.01_PCA_RELATEDNESS_"$2"_"$1,\
-# "-hold_jid","S.03_FILTER_COHORT_SNV_ONLY_PASS_BIALLELIC_"$2"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/"$2"/LOGS/"$2"_"$1".PCA_RELATEDNESS.log",\
-# "'$SCRIPT_DIR'""/S.03-A.01_PCA_RELATEDNESS.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'","'$VCFTOOLS_DIR'","'$PLINK2_DIR'","'$KING_DIR'",$1,$2,$3,"'$PED_FILE'","'$CONTROL_PED_FILE'""\n""sleep 1s"}'
+		EXTRACT_SAMPLE_ALL_SITES ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N R01-FILTER_TO_SAMPLE_ALL_SITES_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_TO_SAMPLE_ALL_SITES.log \
+			-hold_jid Q01_FILTER_FAMILY_CODING_PLUS_PAD_${FAMILY}_${PROJECT} \
+			$SCRIPT_DIR/R01-FILTER_TO_SAMPLE_ALL_SITES.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
-# #################################
-# ### SUBSETTING TO SAMPLE VCFS ###
-# #################################
+##################################################################
+# run vcf sample subset steps #
+##################################################################
+
+for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+	| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+	| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	| sort \
+	| uniq );
+do
+	CREATE_SAMPLE_ARRAY
+	EXTRACT_SAMPLE_ALL_SITES
+	echo sleep 0.1s
+done
 
 # ## SUBSET TO SAMPLE VARIANTS ONLY ON BAIT
 
