@@ -178,10 +178,6 @@
 
 	# PIPELINE PROGRAMS TO BE IMPLEMENTED
 	JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
-	SAMTOOLS_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/samtools-0.1.18"
-	VCFTOOLS_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/vcftools_0.1.12b/bin"
-	PLINK2_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/PLINK2"
-	KING_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/KING/Linux-king19"
 	CIDRSEQSUITE_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/CIDRSeqSuiteSoftware_Version_4_0/"
 	ANNOVAR_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/ANNOVAR/2013_09_11"
 
@@ -329,6 +325,7 @@
 			# 12  Genome_Ref=the reference genome used in the analysis pipeline
 
 				REF_GENOME=${SAMPLE_ARRAY[5]}
+					REF_DICT=$(echo $REF_GENOME | sed 's/fasta$/dict/g; s/fa$/dict/g')
 
 				#####################################
 				# 13  Operator: SKIP ################
@@ -396,12 +393,9 @@
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CNV_OUTPUT \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/HC_CRAM \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/INDEL/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/SNV/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MIXED/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/VCF/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/GVCF \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/{ALIGNMENT_SUMMARY,ANNOVAR,PICARD_DUPLICATES,TI_TV,VERIFYBAMID,VERIFYBAMID_AUTO,RG_HEADER,QUALITY_YIELD,ERROR_SUMMARY} \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/{ALIGNMENT_SUMMARY,ANNOVAR,PICARD_DUPLICATES,TI_TV,VERIFYBAMID,VERIFYBAMID_AUTO,RG_HEADER,QUALITY_YIELD,ERROR_SUMMARY,VCF_METRICS} \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/{METRICS,SUMMARY} \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/{METRICS,SUMMARY} \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASECALL_Q_SCORE_DISTRIBUTION/{METRICS,PDF} \
@@ -2641,6 +2635,31 @@ done
 	# subset sample variant sites to from coding/bait bed file plus user defined pad #
 	##################################################################################
 
+		VCF_METRICS_BAIT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N T02-VCF_METRICS_BAIT_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-VCF_METRICS_BAIT.log \
+			-hold_jid S01-FILTER_TO_SAMPLE_VARIANTS_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/T02-VCF_METRICS_BAIT.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_DICT \
+				$DBSNP \
+				$THREADS \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	##################################################################################
+	# subset sample variant sites to from coding/bait bed file plus user defined pad #
+	##################################################################################
+
 		EXTRACT_SAMPLE_ALL_SITES_ON_TARGET ()
 		{
 			echo \
@@ -2698,6 +2717,8 @@ do
 	EXTRACT_SAMPLE_ALL_SITES
 	echo sleep 0.1s
 	EXTRACT_SAMPLE_VARIANTS
+	echo sleep 0.1s
+	VCF_METRICS_BAIT
 	echo sleep 0.1s
 	EXTRACT_SAMPLE_ALL_SITES_ON_TARGET
 	echo sleep 0.1s
