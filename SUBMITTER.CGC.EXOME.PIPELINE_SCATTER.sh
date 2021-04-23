@@ -2637,6 +2637,53 @@ done
 				$SUBMIT_STAMP
 		}
 
+	##################################################################################
+	# subset sample variant sites to from coding/bait bed file plus user defined pad #
+	##################################################################################
+
+		EXTRACT_SAMPLE_ALL_SITES_ON_TARGET ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N T01-FILTER_TO_SAMPLE_ALL_SITES_TARGET_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_TO_SAMPLE_ALL_SITES_TARGET.log \
+			-hold_jid S01-FILTER_TO_SAMPLE_ALL_SITES_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/T01-FILTER_TO_SAMPLE_ALL_SITES_TARGET.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$TARGET_BED \
+				$PADDING_LENGTH \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	##################################################################################
+	# subset sample variant sites to from coding/bait bed file plus user defined pad #
+	##################################################################################
+
+		EXTRACT_SAMPLE_VARIANTS_ON_TARGET ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N U01-FILTER_TO_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_TO_SAMPLE_VARIANTS_TARGET.log \
+			-hold_jid T01-FILTER_TO_SAMPLE_ALL_SITES_TARGET_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/U01-FILTER_TO_SAMPLE_VARIANTS_TARGET.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 ##################################################################
 # run vcf sample subset steps #
 ##################################################################
@@ -2652,39 +2699,17 @@ do
 	echo sleep 0.1s
 	EXTRACT_SAMPLE_VARIANTS
 	echo sleep 0.1s
+	EXTRACT_SAMPLE_ALL_SITES_ON_TARGET
+	echo sleep 0.1s
+	EXTRACT_SAMPLE_VARIANTS_ON_TARGET
+	echo sleep 0.1s
 done
-
-# ## SUBSET TO SAMPLE VARIANTS ONLY ON BAIT
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.07_FILTER_TO_SAMPLE_VARIANTS_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","P.01-A.01_VARIANT_ANNOTATOR_GATHER_"$2"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/LOGS/"$3"_"$1".FILTER_TO_VARIANTS.log",\
-# "'$SCRIPT_DIR'""/S.07_FILTER_TO_SAMPLE_VARIANTS.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4"\n""sleep 3s"}'
-
-# ## SUBSET TO SAMPLE VARIANTS ONLY ON TARGET
-
-#############################
-##### INPUT FOR ANNOVAR #####
-#############################
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.16_FILTER_TO_SAMPLE_VARIANTS_TARGET_"smtag[1]"_"smtag[2]"_"$1,\
-# "-hold_jid","P.01-A.01_VARIANT_ANNOTATOR_GATHER_"$2"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/LOGS/"$3"_"$1".FILTER_TO_VARIANTS_TARGET.log",\
-# "'$SCRIPT_DIR'""/S.16_FILTER_TO_SAMPLE_VARIANTS_TARGET.sh",\
-# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4"\n""sleep 3s"}'
 
 # ###################
 # ##### ANNOVAR #####
 # ###################
+
+# PROBABLY WANT TO DECOMPOSE VARIANTS TO GET RID OF STAR ALLELES
 
 # ## RUN ANNOVAR
 
