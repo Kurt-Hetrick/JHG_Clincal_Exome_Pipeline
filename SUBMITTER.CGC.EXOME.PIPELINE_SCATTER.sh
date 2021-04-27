@@ -2588,6 +2588,28 @@ done
 				$SUBMIT_STAMP
 		}
 
+	############################################################
+	# filter family only all sites vcf to target plus user pad #
+	############################################################
+
+		CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD_VARIANTS ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N Q03-A01-FILTER_TO_FAMILY_TARGET_PLUS_PAD_VARIANTS_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.FILTER_TO_FAMILY_TARGET_PLUS_PAD_VARIANTS.log \
+			-hold_jid Q03_FILTER_FAMILY_TARGET_PLUS_PAD_${FAMILY}_${PROJECT} \
+			$SCRIPT_DIR/Q03-A01-FILTER_TO_FAMILY_TARGET_PLUS_PAD_VARIANTS.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 ########################################################################
 # run steps to gather up per chromosome family only all sites vcf file #
 ########################################################################
@@ -2604,6 +2626,8 @@ do
 	CALL_FILTER_FAMILY_TO_CODING_PLUS_PAD
 	echo sleep 0.1s
 	CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD
+	echo sleep 0.1s
+	CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD_VARIANTS
 	echo sleep 0.1s
 done
 
@@ -2839,68 +2863,6 @@ done
 # "'$SCRIPT_DIR'""/X.01-X.01-END_PROJECT_TASKS.sh",\
 # "'$CORE_PATH'","'$DATAMASH_DIR'",$1"\n""sleep 1s"}'
 
-# ###########################################################################################
-# ########### RUNNING FILTER TO FAMILY ALL SITES BY CHROMOSOME ON TARGET ####################
-# ###########################################################################################
-
-	# CALL_FILTER_TO_FAMILY_ON_TARGET_VARIANT ()
-	# {
-	# echo \
-	# qsub \
-	# -N P.01-A.06_FILTER_TO_FAMILY_TARGET_VARIANT_${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}_$CHROMOSOME \
-	# -hold_jid P.01_VARIANT_ANNOTATOR_${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}_$CHROMOSOME \
-	# -o $CORE_PATH/${FAMILY_ONLY_ARRAY[0]}/${FAMILY_ONLY_ARRAY[1]}/LOGS/${FAMILY_ONLY_ARRAY[1]}_${FAMILY_ONLY_ARRAY[0]}.FILTER_TO_FAMILY_ALL_SITES_$CHROMOSOME.log \
-	# $SCRIPT_DIR/P.01-A.06_FILTER_TO_FAMILY_ON_TARGET_VARIANT_ONLY_CHR.sh \
-	# $JAVA_1_8 $GATK_DIR $CORE_PATH \
-	# ${FAMILY_ONLY_ARRAY[0]} ${FAMILY_ONLY_ARRAY[1]} ${FAMILY_ONLY_ARRAY[2]} ${FAMILY_ONLY_ARRAY[4]} $CHROMOSOME
-	# }
-
-	# for FAMILY in $(awk 'BEGIN {FS="\t"} {print $1}' $PED_FILE | sort | uniq );
-	# do
-	# CREATE_FAMILY_ONLY_ARRAY
-	# 	for CHROMOSOME in {{1..22},{X,Y}}
-	# 		do
-	# 		CALL_FILTER_TO_FAMILY_ON_TARGET_VARIANT
-	# 		echo sleep 1s
-	# 		done
-	# 	done
-	
-# ###############################################################################################################
-# ##### GATHER UP THE PER FAMILY PER CHROMOSOME ON TARGET FILTER TO FAMILY VCF FILES INTO A SINGLE VCF FILE #####
-# ###############################################################################################################
-
-	# BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF_TARGET_VARIANT ()
-	# {
-	# 	for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET | sort | uniq )
-	# 	do
-	# 	HOLD_ID_PATH="-hold_jid "
-	# 	for CHROMOSOME in {{1..22},{X,Y}};
-	#  	do
-	#  		HOLD_ID_PATH=$HOLD_ID_PATH"P.01-A.06_FILTER_TO_FAMILY_TARGET_VARIANT_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
-	#  	done
-	#  done
-	# }
-
-	# CALL_FILTER_TO_FAMILY_VCF_GATHER_TARGET_VARIANT ()
-	# {
-	# echo \
-	# qsub \
-	# -N T.09-1_FILTER_TO_FAMILY_ON_TARGET_VARIANT_GATHER_$FAMILY_${FAMILY_ARRAY[0]} \
-	#  ${HOLD_ID_PATH} \
-	#  -o $CORE_PATH/$PROJECT/${FAMILY_ARRAY[2]}/LOGS/$FAMILY_${FAMILY_ARRAY[0]}.FILTER_TO_FAMILY_ON_TARGET_VARIANT_GATHER.log \
-	#  $SCRIPT_DIR/T.09-1_FILTER_TO_FAMILY_ON_TARGET_VARIANT_ONLY_GATHER.sh \
-	#  $JAVA_1_8 $GATK_DIR $CORE_PATH \
-	#  ${FAMILY_ARRAY[0]} ${FAMILY_ARRAY[2]} ${FAMILY_ARRAY[3]}
-	# }
-
-	# for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt | sort | uniq)
-	#  do
-	# 	BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF_TARGET_VARIANT
-	# 	CREATE_FAMILY_ARRAY
-	# 	CALL_FILTER_TO_FAMILY_VCF_GATHER_TARGET_VARIANT
-	# 	echo sleep 1s
-	#  done
-
 ##########################################################
 ########## THESE CAN PROBABLY BE REMOVED: START ##########
 ##########################################################
@@ -2982,7 +2944,3 @@ done
 	# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".RUN_TITV_NOVEL.log",\
 	# "'$SCRIPT_DIR'""/S.09-A.03-A.01_TITV_NOVEL.sh",\
 	# "'$SAMTOOLS_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
-
-########################################################
-########## THESE CAN PROBABLY BE REMOVED: END ##########
-########################################################
