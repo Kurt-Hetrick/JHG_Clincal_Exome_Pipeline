@@ -2565,6 +2565,29 @@ done
 				$SUBMIT_STAMP
 		}
 
+	############################################################
+	# filter family only all sites vcf to target plus user pad #
+	############################################################
+
+		CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N Q03_FILTER_FAMILY_TARGET_PLUS_PAD_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.FILTER_FAMILY_TARGET_PLUS_PAD.log \
+			-hold_jid P01-A03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_${FAMILY}_${PROJECT} \
+			$SCRIPT_DIR/Q03-FILTER_FAMILY_TARGET_PLUS_PAD.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$TARGET_BED \
+				$PADDING_LENGTH \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 ########################################################################
 # run steps to gather up per chromosome family only all sites vcf file #
 ########################################################################
@@ -2579,6 +2602,8 @@ do
 	CALL_FILTER_TO_FAMILY_VCF_GATHER
 	echo sleep 0.1s
 	CALL_FILTER_FAMILY_TO_CODING_PLUS_PAD
+	echo sleep 0.1s
+	CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD
 	echo sleep 0.1s
 done
 
