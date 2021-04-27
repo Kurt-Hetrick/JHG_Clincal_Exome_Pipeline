@@ -2705,6 +2705,32 @@ done
 				$SUBMIT_STAMP
 		}
 
+	#####################################################################
+	# generate vcf metrics for sample variant sites from ti/tv bed file #
+	#####################################################################
+
+		VCF_METRICS_TITV ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N T03-VCF_METRICS_TITV_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-VCF_METRICS_TITV.log \
+			-hold_jid S01-FILTER_TO_SAMPLE_VARIANTS_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/T03-VCF_METRICS_TITV.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_DICT \
+				$TITV_BED \
+				$DBSNP_129 \
+				$THREADS \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 	##################################################################################
 	# subset sample variant sites to from coding/bait bed file plus user defined pad #
 	##################################################################################
@@ -2794,6 +2820,8 @@ do
 	echo sleep 0.1s
 	VCF_METRICS_BAIT
 	echo sleep 0.1s
+	VCF_METRICS_TITV
+	echo sleep 0.1s
 	EXTRACT_SAMPLE_ALL_SITES_ON_TARGET
 	echo sleep 0.1s
 	EXTRACT_SAMPLE_VARIANTS_ON_TARGET
@@ -2862,85 +2890,3 @@ done
 # "-o","'$CORE_PATH'/"$1"/LOGS/"$1".END_PROJECT_TASKS.log",\
 # "'$SCRIPT_DIR'""/X.01-X.01-END_PROJECT_TASKS.sh",\
 # "'$CORE_PATH'","'$DATAMASH_DIR'",$1"\n""sleep 1s"}'
-
-##########################################################
-########## THESE CAN PROBABLY BE REMOVED: START ##########
-##########################################################
-
-	# ####################
-	# ### TITV SECTION ###
-	# ####################
-
-	# # BREAK DOWN TO ALL PASSING SNV THAT FALL IN TITV BED FILE
-
-	# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12,$15}' \
-	# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	# | sort -k 1 -k 2 -k 3 \
-	# | uniq \
-	# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.09-A.01_FILTER_TO_SAMPLE_TITV_VCF_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-hold_jid","S.09_FILTER_TO_SNV_ONLY_PASS_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".FILTER_TO_TITV_VCF.log",\
-	# "'$SCRIPT_DIR'""/S.09-A.01_FILTER_TO_SAMPLE_TITV_VCF.sh",\
-	# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4,$5"\n""sleep 1s"}'
-
-	# # BREAK DOWN TO ALL PASSING SNV THAT FALL IN TITV BED FILE AND OVERLAP WITH DBSNP 129
-
-	# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12,$15}' \
-	# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	# | sort -k 1 -k 2 -k 3 \
-	# | uniq \
-	# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.09-A.02_FILTER_TO_SAMPLE_TITV_VCF_KNOWN_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-hold_jid","S.09_FILTER_TO_SNV_ONLY_PASS_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".FILTER_TO_TITV_VCF_KNOWN.log",\
-	# "'$SCRIPT_DIR'""/S.09-A.02_FILTER_TO_SAMPLE_TITV_VCF_KNOWN.sh",\
-	# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4,$5,"'$DBSNP_129'""\n""sleep 1s"}'
-
-	# # BREAK DOWN TO ALL PASSING SNV THAT FALL IN TITV BED FILE AND DO NOT OVERLAP WITH DBSNP 129
-
-	# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$12,$15}' \
-	# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	# | sort -k 1 -k 2 -k 3 \
-	# | uniq \
-	# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.09-A.03_FILTER_TO_SAMPLE_TITV_VCF_NOVEL_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-hold_jid","S.09_FILTER_TO_SNV_ONLY_PASS_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".FILTER_TO_TITV_VCF_NOVEL.log",\
-	# "'$SCRIPT_DIR'""/S.09-A.03_FILTER_TO_SAMPLE_TITV_VCF_NOVEL.sh",\
-	# "'$JAVA_1_8'","'$GATK_DIR'","'$CORE_PATH'",$1,$2,$3,$4,$5,"'$DBSNP_129'""\n""sleep 1s"}'
-
-	# ### RUN TITV FOR THE PASSING SNVS THAT FALL IN UCSC CODING REGIONS THAT TOUCH EITHER THE BED OR TARGET FILE
-
-	# ## ALL SNVS TITV
-
-	# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-	# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	# | sort -k 1 -k 2 -k 3 \
-	# | uniq \
-	# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.09-A.01-A.01_TITV_ALL_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-hold_jid","S.09-A.01_FILTER_TO_SAMPLE_TITV_VCF_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".RUN_TITV_ALL.log",\
-	# "'$SCRIPT_DIR'""/S.09-A.01-A.01_TITV_ALL.sh",\
-	# "'$SAMTOOLS_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
-
-	# ## ALL KNOWN SNVS TITV
-
-	# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-	# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	# | sort -k 1 -k 2 -k 3 \
-	# | uniq \
-	# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.09-A.02-A.01_TITV_KNOWN_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-hold_jid","S.09-A.02_FILTER_TO_SAMPLE_TITV_VCF_KNOWN_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".RUN_TITV_KNOWN.log",\
-	# "'$SCRIPT_DIR'""/S.09-A.02-A.01_TITV_KNOWN.sh",\
-	# "'$SAMTOOLS_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
-
-	# ## ALL NOVEL SNVS TITV
-
-	# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-	# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	# | sort -k 1 -k 2 -k 3 \
-	# | uniq \
-	# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.09-A.03-A.01_TITV_NOVEL_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-hold_jid","S.09-A.03_FILTER_TO_SAMPLE_TITV_VCF_NOVEL_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-	# "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".RUN_TITV_NOVEL.log",\
-	# "'$SCRIPT_DIR'""/S.09-A.03-A.01_TITV_NOVEL.sh",\
-	# "'$SAMTOOLS_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 1s"}'
