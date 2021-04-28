@@ -1,0 +1,25 @@
+FROM ubuntu:16.04
+
+ENV VT_URL https://github.com/atks/vt/archive/0.5772.tar.gz
+ENV VT_MD5 = "5815fca9bfd1c56563a57db0927767e7"
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update -qq && \
+	apt-get install -qq \
+	bzip2 \
+	gcc \
+	g++ \
+	make \
+	python \
+	zlib1g-dev \
+	wget
+
+RUN wget -nv $VT_URL && \
+	tar -xvf 0.5772.tar.gz && \
+	cd vt-0.5772 && \
+	make && \
+	mv vt /usr/bin && \
+	cd .. && \
+	rm -rf 0.5772 \
+		vt-0.5772

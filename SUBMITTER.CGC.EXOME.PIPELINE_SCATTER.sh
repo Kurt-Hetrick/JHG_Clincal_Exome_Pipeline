@@ -176,6 +176,8 @@
 
 	PCA_RELATEDNESS_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/pca-relatedness-0.0.1.simg"
 
+	VT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/vt-0.5772.ca352e2c.0.simg"
+
 	# PIPELINE PROGRAMS TO BE IMPLEMENTED
 	JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
 	CIDRSEQSUITE_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/CIDRSeqSuiteSoftware_Version_4_0/"
@@ -2731,9 +2733,9 @@ done
 				$SUBMIT_STAMP
 		}
 
-	##################################################################################
-	# subset sample variant sites to from coding/bait bed file plus user defined pad #
-	##################################################################################
+	#########################################################################
+	# subset sample to all sites from target bed file plus user defined pad #
+	#########################################################################
 
 		EXTRACT_SAMPLE_ALL_SITES_ON_TARGET ()
 		{
@@ -2755,9 +2757,9 @@ done
 				$SUBMIT_STAMP
 		}
 
-	##################################################################################
-	# subset sample variant sites to from coding/bait bed file plus user defined pad #
-	##################################################################################
+	########################################################################
+	# subset sample variant sites to target bed file plus user defined pad #
+	########################################################################
 
 		EXTRACT_SAMPLE_VARIANTS_ON_TARGET ()
 		{
@@ -2769,6 +2771,29 @@ done
 			-hold_jid T01-FILTER_TO_SAMPLE_ALL_SITES_TARGET_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/U01-FILTER_TO_SAMPLE_VARIANTS_TARGET.sh \
 				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	#####################################################################################
+	# decompose on target plus user defined pad sample variant sites to target bed file #
+	#####################################################################################
+
+		DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N U01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DECOMPOSE_SAMPLE_VARIANTS_TARGET.log \
+			-hold_jid U01-FILTER_TO_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/U01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET.sh \
+				$VT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
 				$FAMILY \
@@ -2825,6 +2850,8 @@ do
 	EXTRACT_SAMPLE_ALL_SITES_ON_TARGET
 	echo sleep 0.1s
 	EXTRACT_SAMPLE_VARIANTS_ON_TARGET
+	echo sleep 0.1s
+	DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET
 	echo sleep 0.1s
 	VCF_METRICS_TARGET
 	echo sleep 0.1s
