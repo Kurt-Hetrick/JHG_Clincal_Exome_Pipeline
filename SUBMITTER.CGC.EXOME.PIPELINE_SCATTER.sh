@@ -178,10 +178,60 @@
 
 	VT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/vt-0.5772.ca352e2c.0.simg"
 
+	ANNOVAR_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/annovarwrangler-20210126.simg"
+
 	# PIPELINE PROGRAMS TO BE IMPLEMENTED
-	JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
-	CIDRSEQSUITE_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/CIDRSeqSuiteSoftware_Version_4_0/"
-	ANNOVAR_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/ANNOVAR/2013_09_11"
+		# JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
+		# CIDRSEQSUITE_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/CIDRSeqSuiteSoftware_Version_4_0/"
+		# ANNOVAR_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/ANNOVAR/2013_09_11"
+
+	# ANNOVAR PARAMETERS AND INPUTS
+
+		ANNOVAR_DATABASE_FILE="$SCRIPT_DIR/../resources/CFTR.final.csv"
+		ANNOVAR_REF_BUILD="hg19"
+
+		ANNOVAR_INFO_FIELD_KEYS="VariantType," \
+			ANNOVAR_INFO_FIELD_KEYS=$ANNOVAR_INFO_FIELD_KEYS"DP" \
+
+		ANNOVAR_HEADER_MAPPINGS="af=gnomad211_exome_AF," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_popmax=gnomad211_exome_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_male=gnomad211_exome_AF_male," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_female=gnomad211_exome_AF_female," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_raw=gnomad211_exome_AF_raw," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_afr=gnomad211_exome_AF_afr," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_sas=gnomad211_exome_AF_sas," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_amr=gnomad211_exome_AF_amr," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_eas=gnomad211_exome_AF_eas," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_nfe=gnomad211_exome_AF_nfe," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_fin=gnomad211_exome_AF_fin," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_asj=gnomad211_exome_AF_asj," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_oth=gnomad211_exome_AF_oth," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_topmed_af_popmax=gnomad211_exome_non_topmed_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_neuro_af_popmax=gnomad211_exome_non_neuro_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_cancer_af_popmax=gnomad211_exome_non_cancer_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"controls_af_popmax=gnomad211_exome_controls_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF=gnomad211_genome_AF," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_popmax=gnomad211_genome_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_male=gnomad211_genome_AF_male," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_female=gnomad211_genome_AF_female," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_raw=gnomad211_genome_AF_raw," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_afr=gnomad211_genome_AF_afr," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_sas=gnomad211_genome_AF_sas," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_amr=gnomad211_genome_AF_amr," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_eas=gnomad211_genome_AF_eas," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_nfe=gnomad211_genome_AF_nfe," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_fin=gnomad211_genome_AF_fin," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_asj=gnomad211_genome_AF_asj," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_oth=gnomad211_genome_AF_oth," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_topmed_AF_popmax=gnomad211_genome_non_topmed_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_neuro_AF_popmax=gnomad211_genome_non_neuro_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_cancer_AF_popmax=gnomad211_genome_non_cancer_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"controls_AF_popmax=gnomad211_genome_controls_AF_popmax"
+
+			ANNOVAR_VCF_COLUMNS="CHROM,"
+				ANNOVAR_VCF_COLUMNS=$ANNOVAR_VCF_COLUMNS"POS,"
+				ANNOVAR_VCF_COLUMNS=$ANNOVAR_VCF_COLUMNS"REF,"
+				ANNOVAR_VCF_COLUMNS=$ANNOVAR_VCF_COLUMNS"ALT"
 
 ##################
 # PIPELINE FILES #
@@ -413,11 +463,11 @@
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ANEUPLOIDY_CHECK \
 			$CORE_PATH/$PROJECT/$FAMILY/{LOGS,VCF,RELATEDNESS,PCA} \
 			$CORE_PATH/$PROJECT/$FAMILY/VCF/{RAW,VQSR} \
-			$CORE_PATH/$PROJECT/TEMP/$SM_TAG_ANNOVAR \
+			$CORE_PATH/$PROJECT/TEMP/${SM_TAG}_ANNOVAR_TARGET \
 			$CORE_PATH/$PROJECT/TEMP/{VCF_PREP,PLINK,KING} \
 			$CORE_PATH/$PROJECT/{TEMP,FASTQ,REPORTS,LOGS,COMMAND_LINES} \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/{COLLECTHSMETRICS_MT,MUTECT2_MT,HAPLOTYPES,ANNOVAR_MT,EKLIPSE} \
-			$CORE_PATH/$PROJECT/TEMP/$SM_TAG"_ANNOVAR_MT"
+			$CORE_PATH/$PROJECT/TEMP/${SM_TAG}_ANNOVAR_MT
 		}
 
 	# combine above functions into one...this is probably not necessary...
@@ -2803,6 +2853,34 @@ done
 				$SUBMIT_STAMP
 		}
 
+	#############################################################################
+	# run annovar on decomposed on target plus user defined pad sample vcf file #
+	#############################################################################
+
+		RUN_ANNOVAR_ON_TARGET ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N U01-A01-A01-RUN_ANNOVAR_TARGET_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_ANNOVAR_TARGET.log \
+			-hold_jid U01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/U01-A01-A01-RUN_ANNOVAR_TARGET.sh \
+				$ANNOVAR_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$ANNOVAR_DATABASE_FILE \
+				$ANNOVAR_REF_BUILD \
+				$ANNOVAR_INFO_FIELD_KEYS \
+				$ANNOVAR_HEADER_MAPPINGS \
+				$ANNOVAR_VCF_COLUMNS \
+				$THREADS \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 	############################################################################################
 	# generate vcf metrics for sample variant sites from target bed file plus user defined pad #
 	############################################################################################
@@ -2852,6 +2930,8 @@ do
 	EXTRACT_SAMPLE_VARIANTS_ON_TARGET
 	echo sleep 0.1s
 	DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET
+	echo sleep 0.1s
+	RUN_ANNOVAR_ON_TARGET
 	echo sleep 0.1s
 	VCF_METRICS_TARGET
 	echo sleep 0.1s
