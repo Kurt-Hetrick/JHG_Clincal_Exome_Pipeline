@@ -2937,6 +2937,36 @@ do
 	echo sleep 0.1s
 done
 
+# ######### FINISH UP #################
+
+# ### QC REPORT PREP ###
+
+# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$21,$22,$23,$24}' \
+# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+# | sort -k 1 -k 2 -k 3 \
+# | uniq \
+# | awk 'BEGIN {FS="\t"}
+# {split($3,smtag,"[@]"); print "qsub","-N","X.01-QC_REPORT_PREP_"$1"_"smtag[1]"_"smtag[2],\
+# "-hold_jid","S.16-A.01-A.01_REFORMAT_ANNOVAR_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
+# "-o","'$CORE_PATH'/"$1"/LOGS/"$3"_"$1".QC_REPORT_PREP.log",\
+# "'$SCRIPT_DIR'""/X.01-QC_REPORT_PREP.sh",\
+# "'$SAMTOOLS_DIR'","'$CORE_PATH'","'$DATAMASH_DIR'",$1,$2,$3,$4,$5,$6,$7"\n""sleep 1s"}'
+
+# ### END PROJECT TASKS ###
+
+# awk 'BEGIN {FS="\t"; OFS="\t"} {split($8,smtag,"[@]"); print $1,smtag[1]"_"smtag[2]}' \
+# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+# | sort -k 1 -k 2 \
+# | uniq \
+# | $DATAMASH_DIR/datamash -s -g 1 collapse 2 \
+# | awk 'BEGIN {FS="\t"}
+# gsub (/,/,",X.01-QC_REPORT_PREP_"$1"_",$2) \
+# {print "qsub","-N","X.01-X.01-END_PROJECT_TASKS_"$1,\
+# "-hold_jid","X.01-QC_REPORT_PREP_"$1"_"$2,\
+# "-o","'$CORE_PATH'/"$1"/LOGS/"$1".END_PROJECT_TASKS.log",\
+# "'$SCRIPT_DIR'""/X.01-X.01-END_PROJECT_TASKS.sh",\
+# "'$CORE_PATH'","'$DATAMASH_DIR'",$1"\n""sleep 1s"}'
+
 # ###################
 # ##### ANNOVAR #####
 # ###################
@@ -2968,32 +2998,3 @@ done
 # "'$SCRIPT_DIR'""/S.16-A.01-A.01_REFORMAT_ANNOVAR.sh",\
 # "'$ANNOVAR_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 3s"}'
 
-# ######### FINISH UP #################
-
-# ### QC REPORT PREP ###
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$21,$22,$23,$24}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk 'BEGIN {FS="\t"}
-# {split($3,smtag,"[@]"); print "qsub","-N","X.01-QC_REPORT_PREP_"$1"_"smtag[1]"_"smtag[2],\
-# "-hold_jid","S.16-A.01-A.01_REFORMAT_ANNOVAR_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/LOGS/"$3"_"$1".QC_REPORT_PREP.log",\
-# "'$SCRIPT_DIR'""/X.01-QC_REPORT_PREP.sh",\
-# "'$SAMTOOLS_DIR'","'$CORE_PATH'","'$DATAMASH_DIR'",$1,$2,$3,$4,$5,$6,$7"\n""sleep 1s"}'
-
-# ### END PROJECT TASKS ###
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {split($8,smtag,"[@]"); print $1,smtag[1]"_"smtag[2]}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 \
-# | uniq \
-# | $DATAMASH_DIR/datamash -s -g 1 collapse 2 \
-# | awk 'BEGIN {FS="\t"}
-# gsub (/,/,",X.01-QC_REPORT_PREP_"$1"_",$2) \
-# {print "qsub","-N","X.01-X.01-END_PROJECT_TASKS_"$1,\
-# "-hold_jid","X.01-QC_REPORT_PREP_"$1"_"$2,\
-# "-o","'$CORE_PATH'/"$1"/LOGS/"$1".END_PROJECT_TASKS.log",\
-# "'$SCRIPT_DIR'""/X.01-X.01-END_PROJECT_TASKS.sh",\
-# "'$CORE_PATH'","'$DATAMASH_DIR'",$1"\n""sleep 1s"}'
