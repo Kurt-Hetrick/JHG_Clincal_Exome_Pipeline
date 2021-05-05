@@ -43,9 +43,9 @@
 ##### "FAMILY","FATHER","MOTHER","LIMS_SEX","PHENOTYPE" ########################
 ################################################################################
 
-	if [ -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/$SM_TAG".RG_HEADER.txt" ]
+	if [ -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt ]
 		then
-			cat $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/$SM_TAG".RG_HEADER.txt" \
+			cat $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt \
 				| singularity exec $ALIGNMENT_CONTAINER datamash \
 					-s \
 					-g 1,2 \
@@ -64,16 +64,16 @@
 					$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"AFFECTED"}' \
 				| singularity exec $ALIGNMENT_CONTAINER datamash \
 					transpose \
-			>| $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+			>| $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-		elif [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/$SM_TAG".RG_HEADER.txt" && \
-			-f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram" ]];
+		elif [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt && \
+			-f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram ]];
 			then
 
 			# grab field number for SM_TAG
 
 				SM_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram" \
+				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
 					| cat -n \
@@ -83,7 +83,7 @@
 			# grab field number for PLATFORM_UNIT_TAG
 
 				PU_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram" \
+				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
 					| cat -n \
@@ -93,7 +93,7 @@
 			# grab field number for LIBRARY_TAG
 
 				LB_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram" \
+				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
 					| cat -n \
@@ -103,7 +103,7 @@
 			# grab field number for PROGRAM_TAG
 
 				PG_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram" \
+				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
 					| cat -n \
@@ -116,7 +116,7 @@
 
 				singularity exec $ALIGNMENT_CONTAINER samtools \
 					view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/$SM_TAG".cram" \
+				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep ^@RG \
 					| awk \
 						-v SM_FIELD="$SM_FIELD" \
@@ -145,44 +145,34 @@
 						$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"PHENOTYPE"}' \
 					| singularity exec $ALIGNMENT_CONTAINER datamash \
 						transpose \
-				>| $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+				>| $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 		else
 			echo -e "$PROJECT\t$SM_TAG\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" \
 				| singularity exec $ALIGNMENT_CONTAINER datamash \
 					transpose \
-			>| $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+			>| $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-# ########################################################
-# ##### GENDER CHECK FROM ANEUPLOIDY CHECK ###############
-# ########################################################
-# ##### THIS IS THE HEADER ###############################
-# ##### SM_TAG,X_AVG_DP,X_NORM_DP,Y_AVG_DP,Y_NORM_DP #####
-# ########################################################
+#################################################
+##### GENDER CHECK FROM ANEUPLOIDY CHECK ########
+#################################################
+##### THIS IS THE HEADER ########################
+##### X_AVG_DP,X_NORM_DP,Y_AVG_DP,Y_NORM_DP #####
+#################################################
 
-# awk 'BEGIN {OFS="\t"} $2=="X"&&$3=="whole" {print $6,$7} $2=="Y"&&$3=="whole" {print $6,$7}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ANEUPLOIDY_CHECK/$SM_TAG".chrom_count_report.txt" \
-# | paste - - \
-# | awk 'BEGIN {OFS="\t"} {print "'$SM_TAG'",$0}' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_GENDER_CHECK.TXT"
-
-# # # GRABBING CONCORDANCE. MULTI-SAMPLE # This will be just for the validation runs.
-# # 
-# # ls $CORE_PATH/$PROJECT/REPORTS/CONCORDANCE_MS/*_concordance.csv \
-# # | awk '{print "awk","1",$0}' \
-# # | bash \
-# # | sort -r \
-# # | uniq \
-# # | awk 'NR>1' \
-# # | sort \
-# # | sed 's/,/\t/g' \
-# # | awk 'BEGIN {print "SM_TAG","COUNT_DISC_HOM","COUNT_CONC_HOM","PERCENT_CONC_HOM",\
-# # "COUNT_DISC_HET","COUNT_CONC_HET","PERCENT_CONC_HET",\
-# # "PERCENT_TOTAL_CONC","COUNT_HET_BEADCHIP","SENSITIVITY_2_HET"} \
-# # {print $1,$5,$6,$7,$2,$3,$4,$8,$9,$10}' \
-# # | sed 's/ /\t/g' \
-# # >| $CORE_PATH/$PROJECT/TEMP/CONCORDANCE_MS.txt
-# # 
+	awk 'BEGIN {OFS="\t"} \
+		$2=="X"&&$3=="whole" {print "X",$6,$7} \
+		$2=="Y"&&$3=="whole" {print "Y",$6,$7}' \
+	$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ANEUPLOIDY_CHECK/${SM_TAG}.chrom_count_report.txt \
+		| paste - - \
+		| awk 'BEGIN {OFS="\t"} \
+			END {if ($1=="X"&&$4=="Y") print $2,$3,$5,$6 ; \
+			else if ($1=="X"&&$4=="") print $2,$3,"NaN","NaN" ; \
+			else if ($1=="Y"&&$4=="") print "NaN","NaN",$5,$6 ; \
+			else print "NaN","NaN","NaN","NaN"}' \
+		| singularity exec $ALIGNMENT_CONTAINER datamash \
+			transpose \
+	>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 # ##############################################################################################################################################
 # ##### VERIFY BAM ID ##########################################################################################################################
