@@ -135,13 +135,12 @@ END_CRAM=`date '+%s'` # capture time process stops for wall clock tracking purpo
 						-v SM_FIELD="$SM_FIELD" \
 						-v PU_FIELD="$PU_FIELD" \
 						-v LB_FIELD="$LB_FIELD" \
-						'BEGIN {OFS="\t"} {split($SM_FIELD,SMtag,":"); split($PU_FIELD,PU,":"); split($LB_FIELD,Library,":"); split(Library[2],Library_Unit,"_"); \
-						print "'$PROJECT'",SMtag[2],PU[2],Library[2],Library_Unit[1],Library_Unit[2],substr(Library_Unit[2],1,1),substr(Library_Unit[2],2,2),\
-						Library_Unit[3],Library_Unit[4],substr(Library_Unit[4],1,1),substr(Library_Unit[4],2,2)}' \
+						'BEGIN {OFS="\t"} {split($SM_FIELD,SMtag,":"); split($PU_FIELD,PU,":"); split($LB_FIELD,Library,":"); \
+						print "'$PROJECT'",SMtag[2],PU[2],Library[2]}' \
 					| awk 'BEGIN { FS = OFS = "\t" } { for(i=1; i<=NF; i++) if($i ~ /^ *$/) $i = "NA" }; 1' \
 				>| $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/$SM_TAG".RG_HEADER.txt"
 		else
-			echo -e "$PROJECT\t$SM_TAG\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" \
+			echo -e "$PROJECT\t$SM_TAG\tNA\tNA" \
 			| $DATAMASH_DIR/datamash transpose \
 			>| $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/$SM_TAG".RG_HEADER.txt"
 	fi
