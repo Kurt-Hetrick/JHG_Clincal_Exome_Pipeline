@@ -219,18 +219,30 @@
 			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
 	fi
 
-# ##########################################################################
-# ##### ALIGNMENT SUMMARY METRICS FOR READ 1 ###############################
-# ##########################################################################
-# ##### THIS THE HEADER ####################################################
-# ##### "SM_TAG","PCT_PF_READS_ALIGNED_R1","PF_HQ_ALIGNED_READS_R1" ########
-# ##### "PF_MISMATCH_RATE_R1","PF_HQ_ERROR_RATE_R1","PF_INDEL_RATE_R1" #####
-# ##### "PCT_READS_ALIGNED_IN_PAIRS_R1","PCT_ADAPTER_R1" ###################
-# ##########################################################################
+##########################################################################
+##### ALIGNMENT SUMMARY METRICS FOR READ 1 ###############################
+##########################################################################
+##### THIS THE HEADER ####################################################
+##### "PCT_PF_READS_ALIGNED_R1","PF_HQ_ALIGNED_READS_R1" #################
+##### "PF_MISMATCH_RATE_R1","PF_HQ_ERROR_RATE_R1","PF_INDEL_RATE_R1" #####
+##### "PCT_READS_ALIGNED_IN_PAIRS_R1","PCT_ADAPTER_R1" ###################
+##########################################################################
 
-# awk 'BEGIN {OFS="\t"} NR==8 {print "'$SM_TAG'",$7,$9,$13,$14,$15,$18,$22}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/$SM_TAG".alignment_summary_metrics.txt" \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_ALIGNMENT_SUMMARY_READ_1_METRICS.TXT"
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+
+		else
+			awk 'BEGIN {OFS="\t"} NR==8 {if ($1=="UNPAIRED") print "0","0","0","0","0","0","0"; \
+				else print $7*100,$9,$13,$14,$15,$18*100,$24*100}' \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+	fi
 
 # ##########################################################################
 # ##### ALIGNMENT SUMMARY METRICS FOR READ 2 ###############################
