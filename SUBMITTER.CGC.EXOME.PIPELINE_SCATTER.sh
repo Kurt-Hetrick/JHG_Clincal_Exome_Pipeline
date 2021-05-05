@@ -412,11 +412,11 @@
 
 			# 21 MOM
 
-				MOM=${SAMPLE_ARRAY[13]}
+				FATHER=${SAMPLE_ARRAY[13]}
 
 			# 22 DAD
 
-				DAD=${SAMPLE_ARRAY[14]}
+				MOTHER=${SAMPLE_ARRAY[14]}
 
 			# 23 GENDER
 
@@ -2906,6 +2906,37 @@ done
 				$SUBMIT_STAMP
 		}
 
+	##################################
+	# QC REPORT PREP FOR EACH SAMPLE #
+	##################################
+
+QC_REPORT_PREP ()
+{
+echo \
+qsub \
+	$QSUB_ARGS \
+-N X01-QC_REPORT_PREP_${SGE_SM_TAG}_${PROJECT} \
+	-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-QC_REPORT_PREP.log \
+-hold_jid \
+V01-VCF_METRICS_TARGET_${SGE_SM_TAG}_${PROJECT},\
+T03-VCF_METRICS_TITV_${SGE_SM_TAG}_${PROJECT},\
+T02-VCF_METRICS_BAIT_${SGE_SM_TAG}_${PROJECT},\
+H.04-A.01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT},\
+H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT},\
+H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_${PROJECT},\
+F.01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+$SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
+	$ALIGNMENT_CONTAINER \
+	$CORE_PATH \
+	$PROJECT \
+	$FAMILY \
+	$SM_TAG \
+	$FATHER \
+	$MOTHER \
+	$GENDER \
+	$PHENOTYPE
+}
+
 ###############################
 # run vcf sample subset steps #
 ###############################
@@ -2935,22 +2966,9 @@ do
 	echo sleep 0.1s
 	VCF_METRICS_TARGET
 	echo sleep 0.1s
+	QC_REPORT_PREP
+	echo sleep 0.1s
 done
-
-# ######### FINISH UP #################
-
-# ### QC REPORT PREP ###
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$21,$22,$23,$24}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 -k 3 \
-# | uniq \
-# | awk 'BEGIN {FS="\t"}
-# {split($3,smtag,"[@]"); print "qsub","-N","X.01-QC_REPORT_PREP_"$1"_"smtag[1]"_"smtag[2],\
-# "-hold_jid","S.16-A.01-A.01_REFORMAT_ANNOVAR_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-# "-o","'$CORE_PATH'/"$1"/LOGS/"$3"_"$1".QC_REPORT_PREP.log",\
-# "'$SCRIPT_DIR'""/X.01-QC_REPORT_PREP.sh",\
-# "'$SAMTOOLS_DIR'","'$CORE_PATH'","'$DATAMASH_DIR'",$1,$2,$3,$4,$5,$6,$7"\n""sleep 1s"}'
 
 # ### END PROJECT TASKS ###
 
@@ -2970,8 +2988,6 @@ done
 # ###################
 # ##### ANNOVAR #####
 # ###################
-
-# PROBABLY WANT TO DECOMPOSE VARIANTS TO GET RID OF STAR ALLELES
 
 # ## RUN ANNOVAR
 
