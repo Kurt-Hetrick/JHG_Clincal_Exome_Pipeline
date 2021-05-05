@@ -90,7 +90,7 @@ START_VARIANT_RECALIBRATOR_SNP=`date '+%s'`
 			CMD=$CMD" &&" \
 			# Move the tranches PDF to TEMP so that it can be trashed.
 			CMD=$CMD" mv -v" \
-			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/VCF/CONTROLS_PLUS_$FAMILY".HC.SNV.tranches.pdf"" \
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/VCF/VQSR/CONTROLS_PLUS_$FAMILY".HC.SNV.tranches.pdf"" \
 			CMD=$CMD" $CORE_PATH/$PROJECT/TEMP" \
 
 	# execute the command line
@@ -108,9 +108,10 @@ START_VARIANT_RECALIBRATOR_SNP=`date '+%s'`
 			then
 				until [[ $SCRIPT_STATUS -eq 0 || $MAX_GAUSSIANS -le 1 ]]
 					do
-						CMD=$(echo $CMD | sed 's/ --maxGaussians '"$MAX_GAUSSIANS"'//g')
-						MAX_GAUSSIANS=$[$MAX_GAUSSIANS-1]
-						CMD=$CMD" --maxGaussians $MAX_GAUSSIANS"
+						NEW_MAX_GAUSSIANS=$[$MAX_GAUSSIANS-1]
+						CMD=$(echo $CMD | sed 's/ --maxGaussians '"$MAX_GAUSSIANS"'/ --maxGaussians '"$NEW_MAX_GAUSSIANS"'/g')
+						MAX_GAUSSIANS=$NEW_MAX_GAUSSIANS
+						# CMD=$CMD" --maxGaussians $MAX_GAUSSIANS"
 						echo $CMD | bash
 						SCRIPT_STATUS=`echo $?`
 				done
