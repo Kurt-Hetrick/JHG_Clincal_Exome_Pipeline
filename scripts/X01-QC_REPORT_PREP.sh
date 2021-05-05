@@ -197,16 +197,27 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-# #############################################################################################
-# ##### INSERT SIZE ###########################################################################
-# #############################################################################################
-# ##### THIS IS THE HEADER ####################################################################
-# ##### "SM_TAG","MEDIAN_INSERT_SIZE","MEAN_INSERT_SIZE","STANDARD_DEVIATION_INSERT_SIZE" #####
-# #############################################################################################
+####################################################################################
+##### INSERT SIZE ##################################################################
+####################################################################################
+##### THIS IS THE HEADER ###########################################################
+##### "MEDIAN_INSERT_SIZE","MEAN_INSERT_SIZE","STANDARD_DEVIATION_INSERT_SIZE" #####
+####################################################################################
 
-# awk 'BEGIN {OFS="\t"} NR==8 {print "'$SM_TAG'",$1,$5,$6}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/METRICS/$SM_TAG".insert_size_metrics.txt" \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_INSERT_SIZE_METRICS.TXT"
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/METRICS/${SM_TAG}.insert_size_metrics.txt ]]
+		then
+			echo -e NaN'\t'NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+
+		else
+			awk 'BEGIN {OFS="\t"} NR==8 {print $1,$6,$7}' \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/METRICS/${SM_TAG}.insert_size_metrics.txt \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+	fi
 
 # ##########################################################################
 # ##### ALIGNMENT SUMMARY METRICS FOR READ 1 ###############################
