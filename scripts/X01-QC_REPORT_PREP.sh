@@ -463,17 +463,17 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-#######################################################################################################
-##### GRAB VCF METRICS FOR USER DEFINED PADDED BAIT REGION ############################################
-#######################################################################################################
-##### THIS IS THE HEADER ##############################################################################
-##### COUNT_PASS_BIALLELIC_SNV_BAIT,COUNT_FILTERED_SNV_BAIT,PERCENT_PASS_SNV_ON_BAIT_SNP138 ###########
-##### COUNT_PASS_BIALLELIC_INDEL_BAIT,COUNT_FILTERED_INDEL_BAIT,PERCENT_PASS_INDEL_ON_BAIT_SNP138 #####
-##### DBSNP_INS_DEL_RATIO_BAIT,NOVEL_INS_DEL_RATIO_BAIT ###############################################
-##### COUNT_PASS_MULTIALLELIC_SNV_BAIT,COUNT_PASS_IN_DB_SNP_MULTIALLELIC_BAIT #########################
-##### COUNT_PASS_COMPLEX_INDELS_BAIT,COUNT_PASS_IN_DB_SNP_COMPLEX_INDELS_BAIT #########################
-##### SNP_REFERENCE_BIAS,HET_HOMVAR_RATIO_BAIT,PCT_GQ0_VARIANTS_BAIT,COUNT_GQ0_VARIANTS_BAIT ##########
-#######################################################################################################
+############################################################################################################
+##### GRAB VCF METRICS FOR USER DEFINED PADDED BAIT REGION #################################################
+############################################################################################################
+##### THIS IS THE HEADER ###################################################################################
+##### COUNT_PASS_BIALLELIC_SNV_BAIT,COUNT_FILTERED_SNV_BAIT,PERCENT_PASS_SNV_ON_BAIT_SNP138 ################
+##### COUNT_PASS_BIALLELIC_INDEL_BAIT,COUNT_FILTERED_INDEL_BAIT,PERCENT_PASS_INDEL_ON_BAIT_SNP138 ##########
+##### DBSNP_INS_DEL_RATIO_BAIT,NOVEL_INS_DEL_RATIO_BAIT ####################################################
+##### COUNT_PASS_MULTIALLELIC_SNV_BAIT,COUNT_PASS_IN_DB_SNP_MULTIALLELIC_BAIT ##############################
+##### COUNT_PASS_COMPLEX_INDELS_BAIT,COUNT_PASS_IN_DB_SNP_COMPLEX_INDELS_BAIT ##############################
+##### SNP_REFERENCE_BIAS_BAIT,HET_HOMVAR_RATIO_BAIT,PCT_GQ0_VARIANTS_BAIT,COUNT_GQ0_VARIANTS_BAIT ##########
+############################################################################################################
 
 	# since I don't have have any examples of what failures look like, I can't really build that in
 
@@ -489,6 +489,36 @@
 					NR==8 \
 					{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
 				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					transpose \
+				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		fi
+
+###############################################################################################################
+##### GRAB VCF METRICS FOR USER DEFINED PADDED TARGET REGION ##################################################
+###############################################################################################################
+##### THIS IS THE HEADER ######################################################################################
+##### COUNT_PASS_BIALLELIC_SNV_TARGET,COUNT_FILTERED_SNV_TARGET,PERCENT_PASS_SNV_ON_TARGET_SNP138 #############
+##### COUNT_PASS_BIALLELIC_INDEL_TARGET,COUNT_FILTERED_INDEL_TARGET,PERCENT_PASS_INDEL_ON_TARGET_SNP138 #######
+##### DBSNP_INS_DEL_RATIO_TARGET,NOVEL_INS_DEL_RATIO_TARGET ###################################################
+##### COUNT_PASS_MULTIALLELIC_SNV_TARGET,COUNT_PASS_IN_DB_SNP_MULTIALLELIC_TARGET #############################
+##### COUNT_PASS_COMPLEX_INDELS_TARGET,COUNT_PASS_IN_DB_SNP_COMPLEX_INDELS_TARGET #############################
+##### SNP_REFERENCE_BIAS_TARGET,HET_HOMVAR_RATIO_TARGET,PCT_GQ0_VARIANTS_TARGET,COUNT_GQ0_VARIANTS_TARGET #####
+###############################################################################################################
+
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt ]]
+			then
+				echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					transpose \
+				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+			else
+				awk 'BEGIN {FS="\t";OFS="\t"} \
+					NR==8 \
+					{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
+				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt \
 				| singularity exec $ALIGNMENT_CONTAINER datamash \
 					transpose \
 				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
