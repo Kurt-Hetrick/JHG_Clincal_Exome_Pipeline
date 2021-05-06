@@ -53,12 +53,14 @@
 					unique 4 \
 					unique 5 \
 				| sed 's/,/;/g' \
-				| awk 'BEGIN {OFS="\t"} {print $0,\
-					"'$FAMILY'","'$FATHER'","'$MOTHER'","'$GENDER'","'$PHENOTYPE'"}' \
-				| awk 'BEGIN {OFS="\t"} $9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"MALE",$10} \
+				| awk 'BEGIN {OFS="\t"} \
+					{print $0,"'$FAMILY'","'$FATHER'","'$MOTHER'","'$GENDER'","'$PHENOTYPE'"}' \
+				| awk 'BEGIN {OFS="\t"} \
+					$9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"MALE",$10} \
 					$9=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"FEMALE",$10} \
 					$9!="1"&&$9!="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"UNKNOWN",$10}' \
-				| awk 'BEGIN {OFS="\t"} $10=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
+				| awk 'BEGIN {OFS="\t"} \
+					$10=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
 					$10=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
 					$10=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"UNAFFECTED"} \
 					$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"AFFECTED"}' \
@@ -123,10 +125,14 @@
 						-v PU_FIELD="$PU_FIELD" \
 						-v LB_FIELD="$LB_FIELD" \
 						-v PG_FIELD="$PG_FIELD" \
-						'BEGIN {OFS="\t"} {split($SM_FIELD,SMtag,":"); split($PU_FIELD,PU,":"); \
-						split($LB_FIELD,Library,":"); split($PG_FIELD,Pipeline,":"); \
+						'BEGIN {OFS="\t"} \
+						{split($SM_FIELD,SMtag,":"); \
+						split($PU_FIELD,PU,":"); \
+						split($LB_FIELD,Library,":"); \
+						split($PG_FIELD,Pipeline,":"); \
 						print "'$PROJECT'",SMtag[2],PU[2],Library[2],Pipeline[2]}' \
-					| awk 'BEGIN { FS = OFS = "\t" } { for(i=1; i<=NF; i++) if($i ~ /^ *$/) $i = "NA" }; 1' \
+					| awk 'BEGIN { FS = OFS = "\t" } \
+						{ for(i=1; i<=NF; i++) if($i ~ /^ *$/) $i = "NA" }; 1' \
 					| singularity exec $ALIGNMENT_CONTAINER datamash \
 						-s \
 						-g 1,2 \
@@ -134,12 +140,14 @@
 						unique 4 \
 						unique 5 \
 					| sed 's/,/;/g' \
-					| awk 'BEGIN {OFS="\t"} {print $0,\
-						"'$FAMILY'","'$FATHER'","'$MOTHER'","'$GENDER'","'$PHENOTYPE'"}' \
-					| awk 'BEGIN {OFS="\t"} $9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"MALE",$10} \
+					| awk 'BEGIN {OFS="\t"} \
+						{print $0,"'$FAMILY'","'$FATHER'","'$MOTHER'","'$GENDER'","'$PHENOTYPE'"}' \
+					| awk 'BEGIN {OFS="\t"} \
+						$9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"MALE",$10} \
 						$9=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"FEMALE",$10} \
 						$9!="1"&&$9!="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"UNKNOWN",$10}' \
-					| awk 'BEGIN {OFS="\t"} $10=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
+					| awk 'BEGIN {OFS="\t"} \
+						$10=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
 						$10=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
 						$10=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"UNPHENOTYPE"} \
 						$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"PHENOTYPE"}' \
@@ -190,7 +198,9 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
-			awk 'BEGIN {OFS="\t"} NR>1 {print $7*100,$4,$8,$9,($9-$8),$6}' \
+			awk 'BEGIN {OFS="\t"} \
+				NR>1 \
+				{print $7*100,$4,$8,$9,($9-$8),$6}' \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VERIFYBAMID/${SM_TAG}.selfSM \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
@@ -209,14 +219,16 @@
 			echo -e NaN'\t'NaN'\t'NaN \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
-			awk 'BEGIN {OFS="\t"} NR==8 {print $1,$6,$7}' \
+			awk 'BEGIN {OFS="\t"} \
+				NR==8 \
+				{print $1,$6,$7}' \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/METRICS/${SM_TAG}.insert_size_metrics.txt \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ##########################################################################
@@ -233,15 +245,17 @@
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
-			awk 'BEGIN {OFS="\t"} NR==8 {if ($1=="UNPAIRED") print "0","0","0","0","0","0","0"; \
+			awk 'BEGIN {OFS="\t"} \
+				NR==8 \
+				{if ($1=="UNPAIRED") print "0","0","0","0","0","0","0"; \
 				else print $7*100,$9,$13,$14,$15,$18*100,$24*100}' \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ##########################################################################
@@ -258,29 +272,50 @@
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
-			awk 'BEGIN {OFS="\t"} NR==9 {if ($1=="") print "0","0","0","0","0","0","0"; \
+			awk 'BEGIN {OFS="\t"} \
+				NR==9 \
+				{if ($1=="") print "0","0","0","0","0","0","0"; \
 				else print $7*100,$9,$13,$14,$15,$18*100,$24*100}' \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/$SM_TAG".QC_REPORT_TEMP.txt"
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-# #######################################################################################
-# ##### ALIGNMENT SUMMARY METRICS FOR PAIR ##############################################
-# #######################################################################################
-# ##### THIS THE HEADER #################################################################
-# ##### "SM_TAG","TOTAL_READS","RAW_GIGS","PCT_PF_READS_ALIGNED_PAIR" ###################
-# ##### "PF_MISMATCH_RATE_PAIR","PF_HQ_ERROR_RATE_PAIR","PF_INDEL_RATE_PAIR" ############
-# ##### "PCT_READS_ALIGNED_IN_PAIRS_PAIR","STRAND_BALANCE_PAIR","PCT_CHIMERAS_PAIR" #####
-# #######################################################################################
+#######################################################################################
+##### ALIGNMENT SUMMARY METRICS FOR PAIR ##############################################
+#######################################################################################
+##### THIS THE HEADER ####################################################################
+##### "TOTAL_READS","RAW_GIGS","PCT_PF_READS_ALIGNED_PAIR","PF_MISMATCH_RATE_PAIR" #######
+##### "PF_HQ_ERROR_RATE_PAIR","PF_INDEL_RATE_PAIR","PCT_READS_ALIGNED_IN_PAIRS_PAIR" #####
+##### "PCT_PF_READS_IMPROPER_PAIRS_PAIR","STRAND_BALANCE_PAIR","PCT_CHIMERAS_PAIR" #######
+##########################################################################################
 
 # awk 'BEGIN {OFS="\t"} NR==10 {print "'$SM_TAG'",$2,($2*$16/1000000000),$7,$13,$14,$15,$18,$20,$21}' \
 # $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/$SM_TAG".alignment_summary_metrics.txt" \
 # >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_ALIGNMENT_SUMMARY_READ_PAIR_METRICS.TXT"
+
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		else
+
+			awk 'BEGIN {OFS="\t"} \
+				NR==10 \
+				{if ($1=="") print "0","0","0","0","0","0","0","0","0","0" ; \
+				else print $2,($2*$16/1000000000),$7*100,$13,$14,$15,$18*100,$20*100,$22,$23*100}' \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+	fi
 
 # ###################################################################################################################
 # ##### MARK DUPLICATES REPORT ######################################################################################
