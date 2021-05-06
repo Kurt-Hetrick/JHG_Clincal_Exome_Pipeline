@@ -294,10 +294,6 @@
 ##### "PCT_PF_READS_IMPROPER_PAIRS_PAIR","STRAND_BALANCE_PAIR","PCT_CHIMERAS_PAIR" #######
 ##########################################################################################
 
-# awk 'BEGIN {OFS="\t"} NR==10 {print "'$SM_TAG'",$2,($2*$16/1000000000),$7,$13,$14,$15,$18,$20,$21}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/$SM_TAG".alignment_summary_metrics.txt" \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_ALIGNMENT_SUMMARY_READ_PAIR_METRICS.TXT"
-
 	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
@@ -306,7 +302,6 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
-
 			awk 'BEGIN {OFS="\t"} \
 				NR==10 \
 				{if ($1=="") print "0","0","0","0","0","0","0","0","0","0" ; \
@@ -317,16 +312,53 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-# ###################################################################################################################
-# ##### MARK DUPLICATES REPORT ######################################################################################
-# ###################################################################################################################
-# ##### THIS IS THE HEADER ##########################################################################################
-# ##### "SM_TAG","UNMAPPED_READS","READ_PAIR_OPTICAL_DUPLICATES","PERCENT_DUPLICATION","ESTIMATED_LIBRARY_SIZE" #####
-# ###################################################################################################################
+####################################################################################
+##### MARK DUPLICATES REPORT #######################################################
+####################################################################################
+##### THIS IS THE HEADER ###########################################################
+##### "UNMAPPED_READS","READ_PAIR_OPTICAL_DUPLICATES","PERCENT_DUPLICATION" ########
+##### "ESTIMATED_LIBRARY_SIZE","SECONDARY_OR_SUPPLEMENTARY_READS" ##################
+##### "READ_PAIR_DUPLICATES","READ_PAIRS_EXAMINED","PAIRED_DUP_RATE" ###############
+##### "UNPAIRED_READ_DUPLICATES","UNPAIRED_READS_EXAMINED","UNPAIRED_DUP_RATE" #####
+##### "PERCENT_DUPLICATION_OPTICAL" ################################################
+####################################################################################
 
-# awk 'BEGIN {OFS="\t"} NR==8 {print "'$SM_TAG'",$4,$7,$8,$9}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/$SM_TAG"_MARK_DUPLICATES.txt" \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_MARK_DUPLICATES_METRICS.TXT"
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt ]]
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+		else
+
+			MAX_RECORD=(`grep -n "^$" \
+					$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt \
+					| awk 'BEGIN {FS=":"} NR==2 {print $1}'`)
+
+			awk 'BEGIN {OFS="\t"} \
+				NR>7&&NR<'$MAX_RECORD' \
+				{if ($10!~/[0-9]/) print $5,$8,"NaN","NaN",$4,$7,$3,"NaN",$6,$2,"NaN" ; \
+				else if ($10~/[0-9]/&&$2=="0") print $5,$8,$9*100,$10,$4,$7,$3,($7/$3),$6,$2,"NaN" ; \
+				else print $5,$8,$9*100,$10,$4,$7,$3,($7/$3),$6,$2,($6/$2)}' \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				sum 1 \
+				sum 2 \
+				mean 4 \
+				sum 5 \
+				sum 6 \
+				sum 7 \
+				sum 9 \
+				sum 10 \
+			| awk 'BEGIN {OFS="\t"} \
+				{if ($3!~/[0-9]/) print $1,$2,"NaN","NaN",$4,$5,$6,"NaN",$7,$8,"NaN","NaN" ; \
+				else if ($3~/[0-9]/&&$1=="0") print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,"NaN",($2/$6)*100 ; \
+				else if ($3~/[0-9]/&&$1!="0"&&$8=="0") print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,"NaN",($2/$6)*100 ; \
+				else print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,($7/$8),($2/$6)*100}' \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+	fi
 
 # ##########################################################################################################################
 # ##### HYBRIDIZATION SELECTION REPORT #####################################################################################
