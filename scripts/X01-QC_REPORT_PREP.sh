@@ -397,19 +397,34 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 		fi
 
-# ##############################################
-# ##### BAIT BIAS REPORT FOR Cref and Gref #####
-# ##############################################
-# ##### THIS IS THE HEADER #####################
-# ##### SM_TAG,Cref_Q,Gref_Q ###################
-# ##############################################
+##############################################
+##### BAIT BIAS REPORT FOR Cref and Gref #####
+##############################################
+##### THIS IS THE HEADER #####################
+##### "Cref_Q","Gref_Q" ######################
+##############################################
 
-# grep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/SUMMARY/$SM_TAG".bait_bias_summary_metrics.txt" \
-# | sed '/^$/d' \
-# | awk 'BEGIN {OFS="\t"} $12=="Cref"||$12=="Gref"  {print $5}' \
-# | paste - - \
-# | awk 'BEGIN {OFS="\t"} {print "'$SM_TAG'",$0}' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_BAIT_BIAS.TXT"
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/SUMMARY/${SM_TAG}.bait_bias_summary_metrics.txt ]]
+		then
+			echo -e NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		else
+			grep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/SUMMARY/${SM_TAG}.bait_bias_summary_metrics.txt \
+				| sed '/^$/d' \
+				| awk 'BEGIN {OFS="\t"} $12=="Cref"||$12=="Gref" {print $5}' \
+				| paste - - \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					collapse 1 \
+					collapse 2 \
+				| sed 's/,/;/g' \
+				| awk 'BEGIN {OFS="\t"} {print $0}' \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+	fi
 
 # ############################################################
 # ##### PRE-ADAPTER BIAS REPORT FOR Deamination and OxoG #####
