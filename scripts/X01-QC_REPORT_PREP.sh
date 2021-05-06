@@ -329,8 +329,8 @@
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
-		else
 
+		else
 			MAX_RECORD=(`grep -n "^$" \
 					$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt \
 					| awk 'BEGIN {FS=":"} NR==2 {print $1}'`)
@@ -426,19 +426,34 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-# ############################################################
-# ##### PRE-ADAPTER BIAS REPORT FOR Deamination and OxoG #####
-# ############################################################
-# ##### THIS IS THE HEADER ###################################
-# ##### SM_TAG,Deamination_Q,OxoG_Q ##########################
-# ############################################################
+############################################################
+##### PRE-ADAPTER BIAS REPORT FOR Deamination and OxoG #####
+############################################################
+##### THIS IS THE HEADER ###################################
+##### Deamination_Q,OxoG_Q #################################
+############################################################
 
-# grep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/SUMMARY/$SM_TAG".pre_adapter_summary_metrics.txt" \
-# | sed '/^$/d' \
-# | awk 'BEGIN {OFS="\t"} $12=="Deamination"||$12=="OxoG"  {print $5}' \
-# | paste - - \
-# | awk 'BEGIN {OFS="\t"} {print "'$SM_TAG'",$0}' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_PRE_ADAPTER.TXT"
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/SUMMARY/${SM_TAG}.pre_adapter_summary_metrics.txt ]]
+		then
+			echo -e NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		else
+			grep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/SUMMARY/${SM_TAG}.pre_adapter_summary_metrics.txt \
+				| sed '/^$/d' \
+				| awk 'BEGIN {OFS="\t"} $12=="Deamination"||$12=="OxoG" {print $5}' \
+				| paste - - \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					collapse 1 \
+					collapse 2 \
+				| sed 's/,/;/g' \
+				| awk 'BEGIN {OFS="\t"} {print $0}' \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+	fi
 
 # ###########################################################################
 # ##### GENERATE COUNT PCT,IN DBSNP FOR ON BAIT SNVS ########################
