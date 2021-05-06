@@ -463,131 +463,34 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-# ###########################################################################
-# ##### GENERATE COUNT PCT,IN DBSNP FOR ON BAIT SNVS ########################
-# ###########################################################################
-# ##### THIS IS THE HEADER ##################################################
-# ##### "SM_TAG""\t""COUNT_SNV_ON_BAIT""\t""PERCENT_SNV_ON_BAIT_SNP138" ##### 
-# ###########################################################################
+#######################################################################################################
+##### GRAB VCF METRICS FOR USER DEFINED PADDED BAIT REGION ############################################
+#######################################################################################################
+##### THIS IS THE HEADER ##############################################################################
+##### COUNT_PASS_BIALLELIC_SNV_BAIT,COUNT_FILTERED_SNV_BAIT,PERCENT_PASS_SNV_ON_BAIT_SNP138 ###########
+##### COUNT_PASS_BIALLELIC_INDEL_BAIT,COUNT_FILTERED_INDEL_BAIT,PERCENT_PASS_INDEL_ON_BAIT_SNP138 #####
+##### DBSNP_INS_DEL_RATIO_BAIT,NOVEL_INS_DEL_RATIO_BAIT ###############################################
+##### COUNT_PASS_MULTIALLELIC_SNV_BAIT,COUNT_PASS_IN_DB_SNP_MULTIALLELIC_BAIT #########################
+##### COUNT_PASS_COMPLEX_INDELS_BAIT,COUNT_PASS_IN_DB_SNP_COMPLEX_INDELS_BAIT #########################
+##### SNP_REFERENCE_BIAS,HET_HOMVAR_RATIO_BAIT,PCT_GQ0_VARIANTS_BAIT,COUNT_GQ0_VARIANTS_BAIT ##########
+#######################################################################################################
 
-# zgrep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/SNV/FILTERED_ON_BAIT/$SM_TAG".SNV.ON_BAIT.PASS.vcf.gz" \
-# | awk '{SNV_COUNT++NR} {DBSNP_COUNT+=($3~"rs")} \
-# END {if (SNV_COUNT!="") {print "'$SM_TAG'",SNV_COUNT,(DBSNP_COUNT/SNV_COUNT)*100} \
-# else {print "'$SM_TAG'","0","NaN"}}' \
-# | sed 's/ /\t/g' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_BAIT_SNV_METRICS.TXT"
+	# since I don't have have any examples of what failures look like, I can't really build that in
 
-# ###############################################################################
-# ##### GENERATE COUNT PCT,IN DBSNP FOR ON TARGET SNVS ##########################
-# ###############################################################################
-# ##### THIS IS THE HEADER ######################################################
-# ##### "SM_TAG""\t""COUNT_SNV_ON_TARGET""\t""PERCENT_SNV_ON_TARGET_SNP138" ##### 
-# ###############################################################################
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt ]]
+			then
+				echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					transpose \
+				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-# zgrep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/SNV/FILTERED_ON_TARGET/$SM_TAG".SNV.ON_TARGET.PASS.vcf.gz" \
-# | awk '{SNV_COUNT++NR} {DBSNP_COUNT+=($3~"rs")} \
-# END {if (SNV_COUNT!="") {print "'$SM_TAG'",SNV_COUNT,(DBSNP_COUNT/SNV_COUNT)*100} \
-# else {print "'$SM_TAG'","0","NaN"}}' \
-# | sed 's/ /\t/g' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_TARGET_SNV_METRICS.TXT"
+			else
+				awk 'BEGIN {FS="\t";OFS="\t"} \
+					NR==8 \
+					{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
+				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					transpose \
+				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-# ##############################################################
-# ##### GRABBING TI/TV ON UCSC CODING EXONS, ALL ###############
-# ##############################################################
-# ##### THIS IS THE HEADER #####################################
-# ##### "SM_TAG""\t""ALL_TI_TV_COUNT""\t""ALL_TI_TV_RATIO" #####
-# ##############################################################
-
-# awk 'BEGIN {OFS="\t"} END {if ($2!="") {print "'$SM_TAG'",$2,$6} \
-# else {print "'$SM_TAG'","0","NaN"}}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/TI_TV/$SM_TAG"_All_.titv.txt" \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_TITV_ALL.TXT"
-
-# ##################################################################
-# ##### GRABBING TI/TV ON UCSC CODING EXONS, KNOWN #################
-# ##################################################################
-# ##### THIS IS THE HEADER #########################################
-# ##### "SM_TAG""\t""KNOWN_TI_TV_COUNT""\t""KNOWN_TI_TV_RATIO" #####
-# ##################################################################
-
-# awk 'BEGIN {OFS="\t"} END {if ($2!="") {print "'$SM_TAG'",$2,$6} \
-# else {print "'$SM_TAG'","0","NaN"}}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/TI_TV/$SM_TAG"_Known_.titv.txt" \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_TITV_KNOWN.TXT"
-
-# ##################################################################
-# ##### GRABBING TI/TV ON UCSC CODING EXONS, NOVEL #################
-# ##################################################################
-# ##### THIS IS THE HEADER #########################################
-# ##### "SM_TAG""\t""NOVEL_TI_TV_COUNT""\t""NOVEL_TI_TV_RATIO" #####
-# ##################################################################
-
-# awk 'BEGIN {OFS="\t"} END {if ($2!="") {print "'$SM_TAG'",$2,$6} \
-# else {print "'$SM_TAG'","0","NaN"}}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/TI_TV/$SM_TAG"_Novel_.titv.txt" \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_TITV_NOVEL.TXT"
-
-# ######################################################################################################################################
-# ##### INDEL METRICS ON BAIT ##########################################################################################################
-# ######################################################################################################################################
-# ##### THIS IS THE HEADER #############################################################################################################
-# ##### "SM_TAG","COUNT_ALL_INDEL_BAIT","ALL_INDEL_BAIT_PCT_SNP138","COUNT_BIALLELIC_INDEL_BAIT","BIALLELIC_INDEL_BAIT_PCT_SNP138" #####
-# ######################################################################################################################################
-
-# zgrep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/INDEL/FILTERED_ON_BAIT/$SM_TAG".INDEL.ON_BAIT.PASS.vcf.gz" \
-# | awk '{INDEL_COUNT++NR} \
-# {INDEL_BIALLELIC+=($5!~",")} \
-# {DBSNP_COUNT+=($3~"rs")} \
-# {DBSNP_COUNT_BIALLELIC+=($3~"rs"&&$5!~",")} \
-# END {if (INDEL_BIALLELIC==""&&INDEL_COUNT=="") print "'$SM_TAG'","0","NaN","0","NaN"; \
-# else if (INDEL_BIALLELIC==0&&INDEL_COUNT>=1) print "'$SM_TAG'",INDEL_COUNT,(DBSNP_COUNT/INDEL_COUNT)*100,"0","NaN"; \
-# else print "'$SM_TAG'",INDEL_COUNT,(DBSNP_COUNT/INDEL_COUNT)*100,INDEL_BIALLELIC,(DBSNP_COUNT_BIALLELIC/INDEL_BIALLELIC)*100}' \
-# | sed 's/ /\t/g' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_BAIT_INDEL_METRICS.TXT"
-
-# ##############################################################################################################################################
-# ##### INDEL METRICS ON TARGET ################################################################################################################
-# ##############################################################################################################################################
-# ##### THIS IS THE HEADER #####################################################################################################################
-# ##### "SM_TAG","COUNT_ALL_INDEL_TARGET","ALL_INDEL_TARGET_PCT_SNP138","COUNT_BIALLELIC_INDEL_TARGET","BIALLELIC_INDEL_TARGET_PCT_SNP138" #####
-# ##############################################################################################################################################
-
-# zgrep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/INDEL/FILTERED_ON_TARGET/$SM_TAG".INDEL.ON_TARGET.PASS.vcf.gz" \
-# | awk '{INDEL_COUNT++NR} \
-# {INDEL_BIALLELIC+=($5!~",")} \
-# {DBSNP_COUNT+=($3~"rs")} \
-# {DBSNP_COUNT_BIALLELIC+=($3~"rs"&&$5!~",")} \
-# END {if (INDEL_BIALLELIC==""&&INDEL_COUNT=="") print "'$SM_TAG'","0","NaN","0","NaN"; \
-# else if (INDEL_BIALLELIC==0&&INDEL_COUNT>=1) print "'$SM_TAG'",INDEL_COUNT,(DBSNP_COUNT/INDEL_COUNT)*100,"0","NaN"; \
-# else print "'$SM_TAG'",INDEL_COUNT,(DBSNP_COUNT/INDEL_COUNT)*100,INDEL_BIALLELIC,(DBSNP_COUNT_BIALLELIC/INDEL_BIALLELIC)*100}' \
-# | sed 's/ /\t/g' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_TARGET_INDEL_METRICS.TXT"
-
-# ################################################################################
-# ##### BASIC METRICS FOR MIXED VARIANT TYPES ON BAIT ############################
-# ################################################################################
-# ##### GENERATE COUNT PCT,IN DBSNP FOR ON BAIT MIXED VARIANT ####################
-# ##### THIS IS THE HEADER #######################################################
-# ##### "SM_TAG""\t""COUNT_MIXED_ON_BAIT""\t""PERCENT_MIXED_ON_BAIT_SNP138"} ##### 
-# ################################################################################
-
-# zgrep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MIXED/FILTERED_ON_BAIT/$SM_TAG".MIXED.ON_BAIT.PASS.vcf.gz" \
-# | awk '{MIXED_COUNT++NR} {DBSNP_COUNT+=($3~"rs")} \
-# END {if (MIXED_COUNT!="") print "'$SM_TAG'",MIXED_COUNT,(DBSNP_COUNT/MIXED_COUNT)*100 ; \
-# else print "'$SM_TAG'","0","NaN"}' \
-# | sed 's/ /\t/g' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_BAIT_MIXED_METRICS.TXT"
-
-# ###################################################################################
-# ##### GENERATE COUNT PCT,IN DBSNP FOR ON TARGET MIXED VARIANT #####################
-# ###################################################################################
-# ##### THIS IS THE HEADER ##########################################################
-# ##### "SM_TAG""\t""COUNT_MIXED_ON_TARGET""\t""PERCENT_MIXED_ON_TARGET_SNP138" ##### 
-# ###################################################################################
-
-# zgrep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MIXED/FILTERED_ON_TARGET/$SM_TAG".MIXED.ON_TARGET.PASS.vcf.gz" \
-# | awk '{MIXED_COUNT++NR} {DBSNP_COUNT+=($3~"rs")} \
-# END {if (MIXED_COUNT!="") print "'$SM_TAG'",MIXED_COUNT,(DBSNP_COUNT/MIXED_COUNT)*100 ; \
-# else print "'$SM_TAG'","0","NaN"}' \
-# | sed 's/ /\t/g' \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_TARGET_MIXED_METRICS.TXT"
+		fi
