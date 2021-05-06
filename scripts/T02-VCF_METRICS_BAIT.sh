@@ -43,14 +43,22 @@ START_VCF_METRICS_BAIT=`date '+%s'`
 
 	# construct command line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER java -jar" \
-			CMD=$CMD" /gatk/gatk.jar" \
-		CMD=$CMD" CollectVariantCallingMetrics" \
-			CMD=$CMD" --INPUT $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/VCF/FILTERED_ON_BAIT/${SM_TAG}.VARIANT_SITES.vcf" \
-			CMD=$CMD" --DBSNP $DBSNP" \
-			CMD=$CMD" --SEQUENCE_DICTIONARY $REF_DICT" \
-			CMD=$CMD" --OUTPUT $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT" \
+		CMD="singularity exec $ALIGNMENT_CONTAINER java -jar"
+			CMD=$CMD" /gatk/gatk.jar"
+		CMD=$CMD" CollectVariantCallingMetrics"
+			CMD=$CMD" --INPUT $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/VCF/FILTERED_ON_BAIT/${SM_TAG}.VARIANT_SITES.vcf"
+			CMD=$CMD" --DBSNP $DBSNP"
+			CMD=$CMD" --SEQUENCE_DICTIONARY $REF_DICT"
+			CMD=$CMD" --OUTPUT $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT"
 			CMD=$CMD" --THREAD_COUNT $THREADS"
+		CMD=$CMD" &&"
+			CMD=$CMD" mv -v"
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics"
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt"
+		CMD=$CMD" &&"
+			CMD=$CMD" mv -v"
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_summary_metrics"
+			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_summary_metrics.txt"
 
 	# write command line to file and execute the command line
 

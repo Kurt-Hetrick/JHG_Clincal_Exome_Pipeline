@@ -74,7 +74,8 @@
 
 			# grab field number for SM_TAG
 
-				SM_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools view -H \
+				SM_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools \
+					view -H \
 				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
@@ -84,7 +85,8 @@
 
 			# grab field number for PLATFORM_UNIT_TAG
 
-				PU_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools view -H \
+				PU_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools \
+					view -H \
 				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
@@ -94,7 +96,8 @@
 
 			# grab field number for LIBRARY_TAG
 
-				LB_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools view -H \
+				LB_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools \
+					view -H \
 				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
@@ -104,7 +107,8 @@
 
 			# grab field number for PROGRAM_TAG
 
-				PG_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools view -H \
+				PG_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools \
+					view -H \
 				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
@@ -333,7 +337,9 @@
 		else
 			MAX_RECORD=(`grep -n "^$" \
 					$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt \
-					| awk 'BEGIN {FS=":"} NR==2 {print $1}'`)
+					| awk 'BEGIN {FS=":"} \
+						NR==2 \
+						{print $1}'`)
 
 			awk 'BEGIN {OFS="\t"} \
 				NR>7&&NR<'$MAX_RECORD' \
@@ -352,8 +358,10 @@
 				sum 10 \
 			| awk 'BEGIN {OFS="\t"} \
 				{if ($3!~/[0-9]/) print $1,$2,"NaN","NaN",$4,$5,$6,"NaN",$7,$8,"NaN","NaN" ; \
-				else if ($3~/[0-9]/&&$1=="0") print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,"NaN",($2/$6)*100 ; \
-				else if ($3~/[0-9]/&&$1!="0"&&$8=="0") print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,"NaN",($2/$6)*100 ; \
+				else if ($3~/[0-9]/&&$1=="0") \
+					print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,"NaN",($2/$6)*100 ; \
+				else if ($3~/[0-9]/&&$1!="0"&&$8=="0") \
+					print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,"NaN",($2/$6)*100 ; \
 				else print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,($7/$8),($2/$6)*100}' \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
 				transpose \
