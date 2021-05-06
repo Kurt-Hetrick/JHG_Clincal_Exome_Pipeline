@@ -478,22 +478,21 @@
 	# since I don't have have any examples of what failures look like, I can't really build that in
 
 	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt ]]
-			then
-				echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
-					transpose \
-				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-			else
-				awk 'BEGIN {FS="\t";OFS="\t"} \
-					NR==8 \
-					{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
-					transpose \
-				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
-
-		fi
+		else
+			awk 'BEGIN {FS="\t";OFS="\t"} \
+				NR==8 \
+				{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+	fi
 
 ###############################################################################################################
 ##### GRAB VCF METRICS FOR USER DEFINED PADDED TARGET REGION ##################################################
@@ -508,19 +507,45 @@
 ###############################################################################################################
 
 	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt ]]
-			then
-				echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
-					transpose \
-				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-			else
-				awk 'BEGIN {FS="\t";OFS="\t"} \
-					NR==8 \
-					{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
-					transpose \
-				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+		else
+			awk 'BEGIN {FS="\t";OFS="\t"} \
+				NR==8 \
+				{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-		fi
+	fi
+
+##############################################
+##### GRAB VCF METRICS FOR TITV BED FILE #####
+##############################################
+##### THIS IS THE HEADER #####################
+##### ALL_TI_TV_COUNT,ALL_TI_TV_RATIO ########
+##### NOVEL_TI_TV_COUNT,NOVEL_TI_TV_RATIO ####
+##############################################
+
+	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TITV.variant_calling_detail_metrics.txt ]]
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		else
+			awk 'BEGIN {FS="\t";OFS="\t"} \
+				NR==8 \
+				{print $6,$11,$8,$12}' \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TITV.variant_calling_detail_metrics.txt \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+	fi
