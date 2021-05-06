@@ -360,21 +360,42 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-# ##########################################################################################################################
-# ##### HYBRIDIZATION SELECTION REPORT #####################################################################################
-# ##########################################################################################################################
-# ##### THIS IS THE HEADER #################################################################################################
-# ##### "SM_TAG","GENOME_SIZE","BAIT_TERRITORY","TARGET_TERRITORY","PCT_PF_UQ_READS_ALIGNED" ###############################
-# ##### "PF_UQ_GIGS_ALIGNED","PCT_SELECTED_BASES","MEAN_BAIT_COVERAGE","MEAN_TARGET_COVERAGE","MEDIAN_TARGET_COVERAGE" #####
-# ##### "ZERO_CVG_TARGETS_PCT","PCT_EXC_MAPQ","PCT_EXC_BASEQ","PCT_EXC_OVERLAP","PCT_EXC_OFF_TARGET" #######################
-# ##### "PCT_TARGET_BASES_20X","PCT_TARGET_BASES_30X","PCT_TARGET_BASES_40X","PCT_TARGET_BASES_50X" ########################
-# ##### "AT_DROPOUT","GC_DROPOUT","HET_SNP_SENSITIVITY","HET_SNP_Q"} #######################################################
-# ##########################################################################################################################
+#######################################################################################################
+##### HYBRIDIZATION SELECTION REPORT ##################################################################
+#######################################################################################################
+##### THIS IS THE HEADER ##############################################################################
+##### "GENOME_SIZE","BAIT_SET","BAIT_TERRITORY","TARGET_TERRITORY" ####################################
+##### "PCT_PF_UQ_READS_ALIGNED","PF_UQ_GIGS_ALIGNED","PCT_SELECTED_BASES","ON_BAIT_VS_SELECTED" #######
+##### "MEAN_BAIT_COVERAGE","MEAN_TARGET_COVERAGE","MEDIAN_TARGET_COVERAGE","MAX_TARGET_COVERAGE" ######
+##### "PCT_USABLE_BASES_ON_BAIT","ZERO_CVG_TARGETS_PCT" ###############################################
+##### "PCT_EXC_MAPQ","PCT_EXC_BASEQ","PCT_EXC_OVERLAP","PCT_EXC_OFF_TARGET" ###########################
+##### "PCT_TARGET_BASES_20X","PCT_TARGET_BASES_30X","PCT_TARGET_BASES_40X","PCT_TARGET_BASES_50X" #####
+##### "AT_DROPOUT","GC_DROPOUT","THEORETICAL_HET_SENSITIVITY","HET_SNP_Q" #############################
+#######################################################################################################
 
-# awk 'BEGIN {OFS="\t"} NR==8 {print "'$SM_TAG'",$2,$3,$4,$12,($14/1000000000),$19,$22,$23,$24,$28,$30,$31,$32,$33,\
-# $38,$39,$40,$41,$50,$51,$52,$53}' \
-# $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/HYB_SELECTION/$SM_TAG"_hybridization_selection_metrics.txt" \
-# >| $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_"$FAMILY"_HYB_SELECTION.TXT"
+	# this will take when there are no reads in the file...but i don't think that it will handle when there are reads, but none fall on target
+	# the next time i that happens i'll fix this to handle it.
+
+		if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/HYB_SELECTION/${SM_TAG}_hybridization_selection_metrics.txt ]]
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		else
+			awk 'BEGIN {FS="\t";OFS="\t"} \
+				NR==8 \
+				{if ($12=="?"&&$44=="") \
+					print $2,$1,$3,$4,"NaN",($14/1000000000),"NaN","NaN",$22,$23,$24,$25,"NaN",$29,"NaN","NaN","NaN","NaN",$39,$40,$41,$42,$51,$52,$53,$54 ; \
+				else if ($12!="?"&&$44=="") \
+					print $2,$1,$3,$4,$12*100,($14/1000000000),$19*100,$21,$22,$23,$24,$25,$26*100,$29*100,$31*100,$32*100,$33*100,$34*100,$39*100,$40*100,$41*100,$42*100,$51,$52,$53,$54 ; \
+				else print $2,$1,$3,$4,$12*100,($14/1000000000),$19*100,$21,$22,$23,$24,$25,$26*100,$29*100,$31*100,$32*100,$33*100,$34*100,$39*100,$40*100,$41*100,$42*100,$51,$52,$53,$54}' \
+			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/HYB_SELECTION/${SM_TAG}_hybridization_selection_metrics.txt \
+			| singularity exec $ALIGNMENT_CONTAINER datamash \
+				transpose \
+			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+		fi
 
 # ##############################################
 # ##### BAIT BIAS REPORT FOR Cref and Gref #####
