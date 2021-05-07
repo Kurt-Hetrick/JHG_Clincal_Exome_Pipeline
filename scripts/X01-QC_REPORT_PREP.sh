@@ -40,7 +40,7 @@
 ################################################################################
 ##### THIS IS THE HEADER #######################################################
 ##### "PROJECT","SM_TAG","PLATFORM_UNIT","LIBRARY_NAME","PIPELINE_VERSION" #####
-##### "FAMILY","FATHER","MOTHER","LIMS_SEX","PHENOTYPE" ########################
+##### "FAMILY","FATHER","MOTHER","EXPECTED_SEX","PHENOTYPE" ########################
 ################################################################################
 
 	if [ -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt ]
@@ -186,13 +186,13 @@
 			transpose \
 	>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-#########################################################################################
-##### VERIFY BAM ID #####################################################################
-#########################################################################################
-##### THIS IS THE HEADER ################################################################
-##### "VERIFYBAM_FREEMIX","VERIFYBAM_#SNPS","VERIFYBAM_FREELK1","VERIFYBAM_FREELK0" #####
-##### "VERIFYBAM_DIFF_LK0_LK1","VERIFYBAM_AVG_DP" #######################################
-#########################################################################################
+#############################################################################################
+##### VERIFY BAM ID #########################################################################
+#############################################################################################
+##### THIS IS THE HEADER ####################################################################
+##### "VERIFYBAM_FREEMIX_PCT","VERIFYBAM_#SNPS","VERIFYBAM_FREELK1","VERIFYBAM_FREELK0" #####
+##### "VERIFYBAM_DIFF_LK0_LK1","VERIFYBAM_AVG_DP" ###########################################
+#############################################################################################
 
 	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VERIFYBAMID/${SM_TAG}.selfSM ]]
 		then
@@ -438,7 +438,7 @@
 ##### PRE-ADAPTER BIAS REPORT FOR Deamination and OxoG #####
 ############################################################
 ##### THIS IS THE HEADER ###################################
-##### Deamination_Q,OxoG_Q #################################
+##### DEAMINATION_Q,OxoG_Q #################################
 ############################################################
 
 	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/SUMMARY/${SM_TAG}.pre_adapter_summary_metrics.txt ]]
@@ -463,17 +463,17 @@
 			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
-############################################################################################################
-##### GRAB VCF METRICS FOR USER DEFINED PADDED BAIT REGION #################################################
-############################################################################################################
-##### THIS IS THE HEADER ###################################################################################
-##### COUNT_PASS_BIALLELIC_SNV_BAIT,COUNT_FILTERED_SNV_BAIT,PERCENT_PASS_SNV_ON_BAIT_SNP138 ################
-##### COUNT_PASS_BIALLELIC_INDEL_BAIT,COUNT_FILTERED_INDEL_BAIT,PERCENT_PASS_INDEL_ON_BAIT_SNP138 ##########
-##### DBSNP_INS_DEL_RATIO_BAIT,NOVEL_INS_DEL_RATIO_BAIT ####################################################
-##### COUNT_PASS_MULTIALLELIC_SNV_BAIT,COUNT_PASS_IN_DB_SNP_MULTIALLELIC_BAIT ##############################
-##### COUNT_PASS_COMPLEX_INDELS_BAIT,COUNT_PASS_IN_DB_SNP_COMPLEX_INDELS_BAIT ##############################
-##### SNP_REFERENCE_BIAS_BAIT,HET_HOMVAR_RATIO_BAIT,PCT_GQ0_VARIANTS_BAIT,COUNT_GQ0_VARIANTS_BAIT ##########
-############################################################################################################
+#######################################################################################################
+##### GRAB VCF METRICS FOR USER DEFINED PADDED BAIT REGION ############################################
+#######################################################################################################
+##### THIS IS THE HEADER ##############################################################################
+##### COUNT_PASS_BIALLELIC_SNV_BAIT,COUNT_FILTERED_SNV_BAIT,PERCENT_PASS_SNV_SNP138_BAIT ##############
+##### COUNT_PASS_BIALLELIC_INDEL_BAIT,COUNT_FILTERED_INDEL_BAIT,PERCENT_PASS_INDEL_SNP138_BAIT ########
+##### DBSNP_INS_DEL_RATIO_BAIT,NOVEL_INS_DEL_RATIO_BAIT ###############################################
+##### COUNT_PASS_MULTIALLELIC_SNV_BAIT,COUNT_PASS_MULTIALLELIC_SNV_SNP138_BAIT ########################
+##### COUNT_PASS_COMPLEX_INDEL_BAIT,COUNT_PASS_COMPLEX_INDEL_SNP138_BAIT ##############################
+##### SNP_REFERENCE_BIAS_BAIT,HET_HOMVAR_RATIO_BAIT,PCT_GQ0_VARIANTS_BAIT,COUNT_GQ0_VARIANTS_BAIT #####
+#######################################################################################################
 
 	# since I don't have have any examples of what failures look like, I can't really build that in
 
@@ -498,11 +498,11 @@
 ##### GRAB VCF METRICS FOR USER DEFINED PADDED TARGET REGION ##################################################
 ###############################################################################################################
 ##### THIS IS THE HEADER ######################################################################################
-##### COUNT_PASS_BIALLELIC_SNV_TARGET,COUNT_FILTERED_SNV_TARGET,PERCENT_PASS_SNV_ON_TARGET_SNP138 #############
-##### COUNT_PASS_BIALLELIC_INDEL_TARGET,COUNT_FILTERED_INDEL_TARGET,PERCENT_PASS_INDEL_ON_TARGET_SNP138 #######
+##### COUNT_PASS_BIALLELIC_SNV_TARGET,COUNT_FILTERED_SNV_TARGET,PERCENT_PASS_SNV_SNP138_TARGET ################
+##### COUNT_PASS_BIALLELIC_INDEL_TARGET,COUNT_FILTERED_INDEL_TARGET,PERCENT_PASS_INDEL_SNP138_TARGET ##########
 ##### DBSNP_INS_DEL_RATIO_TARGET,NOVEL_INS_DEL_RATIO_TARGET ###################################################
-##### COUNT_PASS_MULTIALLELIC_SNV_TARGET,COUNT_PASS_IN_DB_SNP_MULTIALLELIC_TARGET #############################
-##### COUNT_PASS_COMPLEX_INDELS_TARGET,COUNT_PASS_IN_DB_SNP_COMPLEX_INDELS_TARGET #############################
+##### COUNT_PASS_MULTIALLELIC_SNV_TARGET,COUNT_PASS_MULTIALLELIC_SNV_SNP138_TARGET ############################
+##### COUNT_PASS_COMPLEX_INDEL_TARGET,COUNT_PASS_COMPLEX_INDEL_SNP138_TARGET ##################################
 ##### SNP_REFERENCE_BIAS_TARGET,HET_HOMVAR_RATIO_TARGET,PCT_GQ0_VARIANTS_TARGET,COUNT_GQ0_VARIANTS_TARGET #####
 ###############################################################################################################
 

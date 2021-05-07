@@ -2919,12 +2919,24 @@ qsub \
 	-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-QC_REPORT_PREP.log \
 -hold_jid \
 V01-VCF_METRICS_TARGET_${SGE_SM_TAG}_${PROJECT},\
+U01-A01-A01-RUN_ANNOVAR_TARGET_${SGE_SM_TAG}_${PROJECT},\
 T03-VCF_METRICS_TITV_${SGE_SM_TAG}_${PROJECT},\
 T02-VCF_METRICS_BAIT_${SGE_SM_TAG}_${PROJECT},\
+H.09-A.02-A.01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT},\
+H.09-A.01-RUN_EKLIPSE_${SGE_SM_TAG}_${PROJECT},\
+H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
+H.08-A.01-A.01-A01-HAPLOGREP2_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
+H.06-A.01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT},\
+H.05-A.03-A.01_FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT},\
+H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\
+H.05-A.02-A.01_FILTER_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\
 H.05-A.01_CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT},\
 H.04-A.01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT},\
+H.03-DOC_TARGET_${SGE_SM_TAG}_${PROJECT},\
 H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT},\
 H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_${PROJECT},\
+F02-A01_PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT},\
+F02-A02-A01_RUN_FORMAT_AND_ZOOM_ANNOTSV_$SGE_SM_TAG_${PROJECT},\
 F.01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 	$ALIGNMENT_CONTAINER \
@@ -2971,20 +2983,82 @@ do
 	echo sleep 0.1s
 done
 
-# ### END PROJECT TASKS ###
+#############################
+##### END PROJECT TASKS #####
+#############################
 
-# awk 'BEGIN {FS="\t"; OFS="\t"} {split($8,smtag,"[@]"); print $1,smtag[1]"_"smtag[2]}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-# | sort -k 1 -k 2 \
-# | uniq \
-# | $DATAMASH_DIR/datamash -s -g 1 collapse 2 \
-# | awk 'BEGIN {FS="\t"}
-# gsub (/,/,",X.01-QC_REPORT_PREP_"$1"_",$2) \
-# {print "qsub","-N","X.01-X.01-END_PROJECT_TASKS_"$1,\
-# "-hold_jid","X.01-QC_REPORT_PREP_"$1"_"$2,\
-# "-o","'$CORE_PATH'/"$1"/LOGS/"$1".END_PROJECT_TASKS.log",\
-# "'$SCRIPT_DIR'""/X.01-X.01-END_PROJECT_TASKS.sh",\
-# "'$CORE_PATH'","'$DATAMASH_DIR'",$1"\n""sleep 1s"}'
+# grab email addy
+
+	SEND_TO=`cat $SCRIPT_DIR/../email_lists.txt`
+
+# grab submitter's name
+
+	PERSON_NAME=`getent passwd | awk 'BEGIN {FS=":"} $1=="'$SUBMITTER_ID'" {print $5}'`
+
+# build hold id for qc report prep per sample, per project
+
+	BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP ()
+	{
+		HOLD_ID_PATH="-hold_jid "
+
+		for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} $1=="'$PROJECT'" {print $8}' \
+			| sort \
+			| uniq);
+		do
+			CREATE_SAMPLE_ARRAY
+			HOLD_ID_PATH=$HOLD_ID_PATH"X.01_QC_REPORT_PREP"_"$SGE_SM_TAG"_"$PROJECT"","
+			HOLD_ID_PATH=`echo $HOLD_ID_PATH | sed 's/@/_/g'`
+		done
+	}
+
+# run end project functions (qc report, file clean-up) for each project
+
+	PROJECT_WRAP_UP ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+			$STANDARD_QUEUE_QSUB_ARG \
+		-N X.01-X.01_END_PROJECT_TASKS"_"$PROJECT \
+			-o $CORE_PATH/$PROJECT/LOGS/$PROJECT"-END_PROJECT_TASKS.log" \
+		$HOLD_ID_PATH \
+		$SCRIPT_DIR/X.01-X.01-END_PROJECT_TASKS.sh \
+			$ALIGNMENT_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$SCRIPT_DIR \
+			$SUBMITTER_ID \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP \
+			$SEND_TO \
+			$THREADS
+	}
+
+# final loop
+
+for PROJECT in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $1}' \
+			| sort \
+			| uniq);
+	do
+		BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP
+		PROJECT_WRAP_UP
+done
+
+# MESSAGE THAT SAMPLE SHEET HAS FINISHED SUBMITTING
+
+printf "echo\n"
+
+printf "echo $SAMPLE_SHEET has finished submitting at `date`\n"
+
+# EMAIL WHEN DONE SUBMITTING
+
+printf "$SAMPLE_SHEET\nhas finished submitting at\n`date`\nby `whoami`" \
+	| mail -s "$PERSON_NAME has submitted SUBMITTER_JHG-DDL_EXOME_PIPELINE.sh" \
+		$SEND_TO
 
 # ###################
 # ##### ANNOVAR #####

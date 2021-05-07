@@ -4,9 +4,6 @@
 # tell sge to execute in bash
 #$ -S /bin/bash
 
-# tell sge to submit any of these queue when available
-#$ -q cgc.q
-
 # tell sge that you are in the users current working directory
 #$ -cwd
 
@@ -20,279 +17,388 @@
 #$ -j y
 
 # export all variables, useful to find out what compute node the program was executed on
-# redirecting stderr/stdout to file as a log.
 
-set
+	set
 
-CORE_PATH=$1
-DATAMASH=$2
+	echo
 
-PROJECT=$3
+# INPUT VARIABLES
 
-# Sorting concatenated sample meta by SM TAG and adding headers
+	ALIGNMENT_CONTAINER=$1
+	CORE_PATH=$2
 
-cat $CORE_PATH/$PROJECT/TEMP/*SAMPLE_META.txt \
-| sort -k 2,2 \
-| uniq \
-| awk 'BEGIN {print "PROJECT","SM_TAG","RG_PU","LIBRARY","FAMILY","FATHER","MOTHER","LIMS_SEX","PHENOTYPE"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/SAMPLE_META_HEADER.txt
+	PROJECT=$3
 
-# Sorting concatenated gender check report by SM TAG and adding headers
+	SCRIPT_DIR=$4
+	SUBMITTER_ID=$5
+	SAMPLE_SHEET=$6
+		SAMPLE_SHEET_NAME=(`basename $SAMPLE_SHEET .csv`)
+		SAMPLE_SHEET_FILE_NAME=(`basename $SAMPLE_SHEET`)
+	PED_FILE=$7
+	SUBMIT_STAMP=$8
+	SEND_TO=$9
+	THREADS=${10}
 
-cat $CORE_PATH/$PROJECT/TEMP/*GENDER_CHECK.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","X_AVG_DP","X_NORM_DP","Y_AVG_DP","Y_NORM_DP"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/GENDER_CHECK_HEADER.TXT
+		TIMESTAMP=`date '+%F.%H-%M-%S'`
 
-# Sorting concatenated verify bam ID report by SM TAG and adding headers
+	# grab submitter's name
 
-cat $CORE_PATH/$PROJECT/TEMP/*VERFIY_BAM_ID.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","VERIFYBAM_FREEMIX","VERIFYBAM_#SNPS","VERIFYBAM_FREELK1","VERIFYBAM_FREELK0","VERIFYBAM_DIFF_LK0_LK1","VERIFYBAM_AVG_DP"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/VERFIY_BAM_ID_HEADER.TXT
+		PERSON_NAME=`getent passwd | awk 'BEGIN {FS=":"} $1=="'$SUBMITTER_ID'" {print $5}'`
 
-# Sorting concatenated insert size report by SM TAG and adding headers
+# combining all the individual qc reports for the project and adding the header.
 
-cat $CORE_PATH/$PROJECT/TEMP/*INSERT_SIZE_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","MEDIAN_INSERT_SIZE","MEAN_INSERT_SIZE","STANDARD_DEVIATION_INSERT_SIZE"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/INSERT_SIZE_METRICS_HEADER.TXT
+	for SM_TAG in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} $1=="'$PROJECT'" {print $8}' \
+			| sort \
+			| uniq );
+	do
+		cat $CORE_PATH/$PROJECT/*/$SM_TAG/REPORTS/QC_REPORT_PREP/${SM_TAG}.QC_REPORT_PREP.txt
+	done \
+		| sort -k 2,2 \
+		| awk 'BEGIN {print "PROJECT",\
+			"SM_TAG",\
+			"PLATFORM_UNIT",\
+			"LIBRARY_NAME",\
+			"PIPELINE_VERSION",\
+			"FAMILY",\
+			"FATHER",\
+			"MOTHER",\
+			"EXPECTED_SEX",\
+			"PHENOTYPE",\
+			"X_AVG_DP",\
+			"X_NORM_DP",\
+			"Y_AVG_DP",\
+			"Y_NORM_DP",\
+			"VERIFYBAM_FREEMIX_PCT",\
+			"VERIFYBAM_#SNPS",\
+			"VERIFYBAM_FREELK1",\
+			"VERIFYBAM_FREELK0",\
+			"VERIFYBAM_DIFF_LK0_LK1",\
+			"VERIFYBAM_AVG_DP",\
+			"MEDIAN_INSERT_SIZE",\
+			"MEAN_INSERT_SIZE",\
+			"STANDARD_DEVIATION_INSERT_SIZE",\
+			"PCT_PF_READS_ALIGNED_R1",\
+			"PF_HQ_ALIGNED_READS_R1",\
+			"PF_MISMATCH_RATE_R1",\
+			"PF_HQ_ERROR_RATE_R1",\
+			"PF_INDEL_RATE_R1",\
+			"PCT_READS_ALIGNED_IN_PAIRS_R1",\
+			"PCT_ADAPTER_R1",\
+			"PCT_PF_READS_ALIGNED_R2",\
+			"PF_HQ_ALIGNED_READS_R2",\
+			"PF_MISMATCH_RATE_R2",\
+			"PF_HQ_ERROR_RATE_R2",\
+			"PF_INDEL_RATE_R2",\
+			"PCT_READS_ALIGNED_IN_PAIRS_R2",\
+			"PCT_ADAPTER_R2",\
+			"TOTAL_READS",\
+			"RAW_GIGS",\
+			"PCT_PF_READS_ALIGNED_PAIR",\
+			"PF_MISMATCH_RATE_PAIR",\
+			"PF_HQ_ERROR_RATE_PAIR",\
+			"PF_INDEL_RATE_PAIR",\
+			"PCT_READS_ALIGNED_IN_PAIRS_PAIR",\
+			"PCT_PF_READS_IMPROPER_PAIRS_PAIR",\
+			"STRAND_BALANCE_PAIR",\
+			"PCT_CHIMERAS_PAIR",\
+			"UNMAPPED_READS",\
+			"READ_PAIR_OPTICAL_DUPLICATES",\
+			"PERCENT_DUPLICATION",\
+			"ESTIMATED_LIBRARY_SIZE",\
+			"SECONDARY_OR_SUPPLEMENTARY_READS",\
+			"READ_PAIR_DUPLICATES",\
+			"READ_PAIRS_EXAMINED",\
+			"PAIRED_DUP_RATE",\
+			"UNPAIRED_READ_DUPLICATES",\
+			"UNPAIRED_READS_EXAMINED",\
+			"UNPAIRED_DUP_RATE",\
+			"PERCENT_DUPLICATION_OPTICAL",\
+			"GENOME_SIZE",\
+			"BAIT_SET",\
+			"BAIT_TERRITORY",\
+			"TARGET_TERRITORY",\
+			"PCT_PF_UQ_READS_ALIGNED",\
+			"PF_UQ_GIGS_ALIGNED",\
+			"PCT_SELECTED_BASES",\
+			"ON_BAIT_VS_SELECTED",\
+			"MEAN_BAIT_COVERAGE",\
+			"MEAN_TARGET_COVERAGE",\
+			"MEDIAN_TARGET_COVERAGE",\
+			"MAX_TARGET_COVERAGE",\
+			"PCT_USABLE_BASES_ON_BAIT",\
+			"ZERO_CVG_TARGETS_PCT",\
+			"PCT_EXC_MAPQ",\
+			"PCT_EXC_BASEQ",\
+			"PCT_EXC_OVERLAP",\
+			"PCT_EXC_OFF_TARGET",\
+			"PCT_TARGET_BASES_20X",\
+			"PCT_TARGET_BASES_30X",\
+			"PCT_TARGET_BASES_40X",\
+			"PCT_TARGET_BASES_50X",\
+			"AT_DROPOUT",\
+			"GC_DROPOUT",\
+			"THEORETICAL_HET_SENSITIVITY",\
+			"HET_SNP_Q",\
+			"Cref_Q",\
+			"Gref_Q",\
+			"DEAMINATION_Q",\
+			"OxoG_Q",\
+			"COUNT_PASS_BIALLELIC_SNV_BAIT",\
+			"COUNT_FILTERED_SNV_BAIT",\
+			"PERCENT_PASS_SNV_SNP138_BAIT",\
+			"COUNT_PASS_BIALLELIC_INDEL_BAIT",\
+			"COUNT_FILTERED_INDEL_BAIT",\
+			"PERCENT_PASS_INDEL_SNP138_BAIT",\
+			"DBSNP_INS_DEL_RATIO_BAIT",\
+			"NOVEL_INS_DEL_RATIO_BAIT",\
+			"COUNT_PASS_MULTIALLELIC_SNV_BAIT",\
+			"COUNT_PASS_MULTIALLELIC_SNV_SNP138_BAIT",\
+			"COUNT_PASS_COMPLEX_INDEL_BAIT",\
+			"COUNT_PASS_COMPLEX_INDEL_SNP138_BAIT",\
+			"SNP_REFERENCE_BIAS_BAIT",\
+			"HET_HOMVAR_RATIO_BAIT",\
+			"PCT_GQ0_VARIANTS_BAIT",\
+			"COUNT_GQ0_VARIANTS_BAIT",\
+			"COUNT_PASS_BIALLELIC_SNV_TARGET",\
+			"COUNT_FILTERED_SNV_TARGET",\
+			"PERCENT_PASS_SNV_SNP138_TARGET",\
+			"COUNT_PASS_BIALLELIC_INDEL_TARGET",\
+			"COUNT_FILTERED_INDEL_TARGET",\
+			"PERCENT_PASS_INDEL_SNP138_TARGET",\
+			"DBSNP_INS_DEL_RATIO_TARGET",\
+			"NOVEL_INS_DEL_RATIO_TARGET",\
+			"COUNT_PASS_MULTIALLELIC_SNV_TARGET",\
+			"COUNT_PASS_MULTIALLELIC_SNV_SNP138_TARGET",\
+			"COUNT_PASS_COMPLEX_INDEL_TARGET",\
+			"COUNT_PASS_COMPLEX_INDEL_SNP138_TARGET",\
+			"SNP_REFERENCE_BIAS_TARGET",\
+			"HET_HOMVAR_RATIO_TARGET",\
+			"PCT_GQ0_VARIANTS_TARGET",\
+			"COUNT_GQ0_VARIANTS_TARGET",\
+			"ALL_TI_TV_COUNT",\
+			"ALL_TI_TV_RATIO",\
+			"NOVEL_TI_TV_COUNT",\
+			"NOVEL_TI_TV_RATIO",\
+			{print $0}' \
+	| sed 's/ /,/g' \
+	| sed 's/\t/,/g' \
+	>| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".QC_REPORT."$TIMESTAMP".csv"
 
-# Sorting concatenated read 1 alignment summary metric report by SM TAG and adding headers
+# SAVE FOR 2MORROW
 
-cat $CORE_PATH/$PROJECT/TEMP/*ALIGNMENT_SUMMARY_READ_1_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","PCT_PF_READS_ALIGNED_R1","PF_HQ_ALIGNED_READS_R1",\
-"PF_MISMATCH_RATE_R1","PF_HQ_ERROR_RATE_R1","PF_INDEL_RATE_R1",\
-"PCT_READS_ALIGNED_IN_PAIRS_R1","PCT_ADAPTER_R1"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/ALIGNMENT_SUMMARY_READ_1_METRICS_HEADER.TXT
-
-# Sorting concatenated read 2 alignment summary metric report by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*ALIGNMENT_SUMMARY_READ_2_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","PCT_PF_READS_ALIGNED_R2","PF_HQ_ALIGNED_READS_R2",\
-"PF_MISMATCH_RATE_R2","PF_HQ_ERROR_RATE_R2","PF_INDEL_RATE_R2",\
-"PCT_READS_ALIGNED_IN_PAIRS_R2","PCT_ADAPTER_R2"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/ALIGNMENT_SUMMARY_READ_2_METRICS_HEADER.TXT
-
-# Sorting concatenated pair alignment summary metric report by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*ALIGNMENT_SUMMARY_READ_PAIR_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","TOTAL_READS","RAW_GIGS","PCT_PF_READS_ALIGNED_PAIR",\
-"PF_MISMATCH_RATE_PAIR","PF_HQ_ERROR_RATE_PAIR","PF_INDEL_RATE_PAIR",\
-"PCT_READS_ALIGNED_IN_PAIRS_PAIR","STRAND_BALANCE_PAIR","PCT_CHIMERAS_PAIR"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/ALIGNMENT_SUMMARY_READ_PAIR_METRICS_HEADER.TXT
-
-# Sorting concatenated pair mark duplicates report by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*MARK_DUPLICATES_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","UNMAPPED_READS",\
-"READ_PAIR_OPTICAL_DUPLICATES","PERCENT_DUPLICATION","ESTIMATED_LIBRARY_SIZE"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/MARK_DUPLICATES_METRICS_HEADER.TXT
-
-# Sorting concatenated pair hyb selection report by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*HYB_SELECTION.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","GENOME_SIZE","BAIT_TERRITORY","TARGET_TERRITORY",\
-"PCT_PF_UQ_READS_ALIGNED","PF_UQ_GIGS_ALIGNED","PCT_SELECTED_BASES","MEAN_BAIT_COVERAGE","MEAN_TARGET_COVERAGE","MEDIAN_TARGET_COVERAGE",\
-"ZERO_CVG_TARGETS_PCT","PCT_EXC_MAPQ","PCT_EXC_BASEQ","PCT_EXC_OVERLAP","PCT_EXC_OFF_TARGET",\
-"PCT_TARGET_BASES_20X","PCT_TARGET_BASES_30X","PCT_TARGET_BASES_40X","PCT_TARGET_BASES_50X",\
-"AT_DROPOUT","GC_DROPOUT","HET_SNP_SENSITIVITY","HET_SNP_Q"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/HYB_SELECTION_HEADER.TXT
-
-# Sorting concatenated bait bias report by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*BAIT_BIAS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","Cref_Q","Gref_Q"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/BAIT_BIAS_HEADER.TXT
-
-# Sorting concatenated pre adapter report by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*PRE_ADAPTER.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","DEAMINATION_Q","OxoG_Q"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/PRE_ADAPTER_HEADER.TXT
-
-# Sorting concatenated ON BAIT SNV metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*BAIT_SNV_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","COUNT_SNV_ON_BAIT","PERCENT_SNV_ON_BAIT_SNP138"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/BAIT_SNV_METRICS_HEADER.TXT
-
-# Sorting concatenated ON TARGET SNV metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*TARGET_SNV_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","COUNT_SNV_ON_TARGET","PERCENT_SNV_ON_TARGET_SNP138"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/TARGET_SNV_METRICS_HEADER.TXT
-
-# Sorting concatenated TITV FOR ALL CODING SNVS metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*TITV_ALL.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","ALL_TI_TV_COUNT","ALL_TI_TV_RATIO"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/TITV_ALL_HEADER.TXT
-
-# Sorting concatenated TITV FOR KNOWN CODING SNVS metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*TITV_KNOWN.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","KNOWN_TI_TV_COUNT","KNOWN_TI_TV_RATIO"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/TITV_KNOWN_HEADER.TXT
-
-# Sorting concatenated TITV FOR NOVEL CODING SNVS metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*TITV_NOVEL.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","NOVEL_TI_TV_COUNT","NOVEL_TI_TV_RATIO"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/TITV_NOVEL_HEADER.TXT
-
-# Sorting concatenated ON BAIT INDEL metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*BAIT_INDEL_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","COUNT_ALL_INDEL_BAIT","ALL_INDEL_BAIT_PCT_SNP138","COUNT_BIALLELIC_INDEL_BAIT","BIALLELIC_INDEL_BAIT_PCT_SNP138"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/BAIT_INDEL_METRICS_HEADER.TXT
-# Sorting concatenated ON BAIT INDEL metrics by SM TAG and adding headers
-
-# Sorting concatenated ON TARGET INDEL metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*TARGET_INDEL_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","COUNT_ALL_INDEL_TARGET","ALL_INDEL_TARGET_PCT_SNP138","COUNT_BIALLELIC_INDEL_TARGET","BIALLELIC_INDEL_TARGET_PCT_SNP138"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/TARGET_INDEL_METRICS_HEADER.TXT
-
-# Sorting concatenated ON BAIT MIXED metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*BAIT_MIXED_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","COUNT_MIXED_ON_BAIT","PERCENT_MIXED_ON_BAIT_SNP138"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/BAIT_MIXED_METRICS_HEADER.TXT
-
-# Sorting concatenated ON TARGET MIXED metrics by SM TAG and adding headers
-
-cat $CORE_PATH/$PROJECT/TEMP/*TARGET_MIXED_METRICS.TXT \
-| sort -k 1,1 \
-| uniq \
-| awk 'BEGIN {print "SM_TAG","COUNT_MIXED_ON_TARGET","PERCENT_MIXED_ON_TARGET_SNP138"} {print $0}' \
-| sed 's/ /\t/g' \
->| $CORE_PATH/$PROJECT/TEMP/TARGET_MIXED_METRICS_HEADER.TXT
-
-######################################################################################################
-
-# Joining all of the files together to make a QC report
-# TO DO CONCATENATE WITH THE CONTROLS
-
-TIMESTAMP=`date '+%F.%H-%M-%S'`s
-
-join -i -1 2 -2 1 $CORE_PATH/$PROJECT/TEMP/SAMPLE_META_HEADER.txt $CORE_PATH/$PROJECT/TEMP/GENDER_CHECK_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/VERFIY_BAM_ID_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/INSERT_SIZE_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/ALIGNMENT_SUMMARY_READ_1_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/ALIGNMENT_SUMMARY_READ_2_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/ALIGNMENT_SUMMARY_READ_PAIR_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/MARK_DUPLICATES_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/HYB_SELECTION_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/BAIT_BIAS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/PRE_ADAPTER_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/BAIT_SNV_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/TARGET_SNV_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/TITV_ALL_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/TITV_KNOWN_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/TITV_NOVEL_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/BAIT_INDEL_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/TARGET_INDEL_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/BAIT_MIXED_METRICS_HEADER.TXT \
-| join -i -j 1 /dev/stdin $CORE_PATH/$PROJECT/TEMP/TARGET_MIXED_METRICS_HEADER.TXT \
-| sed 's/ /,/g' \
->| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".QC_REPORT."$TIMESTAMP".csv"
-
-# Don't forget to add MD5s
+	# "PCT_A",\
+	# "PCT_C",\
+	# "PCT_G",\
+	# "PCT_T",\
+	# "PCT_N",\
+	# "PCT_A_to_C",\
+	# "PCT_A_to_G",\
+	# "PCT_A_to_T",\
+	# "PCT_C_to_A",\
+	# "PCT_C_to_G",\
+	# "PCT_C_to_T",\
 
 # Concatenate all aneuploidy reports together
 # TO DO CONCATENATE WITH THE CONTROLS...
 
-( cat $CORE_PATH/$PROJECT/*/*/REPORTS/ANEUPLOIDY_CHECK/*.chrom_count_report.txt | grep "^SM_TAG" | uniq ; \
-cat $CORE_PATH/$PROJECT/*/*/REPORTS/ANEUPLOIDY_CHECK/*.chrom_count_report.txt | grep -v "SM_TAG" ) \
-| sed 's/\t/,/g' \
->| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".ANEUPLOIDY_CHECK."$TIMESTAMP".csv"
+	( cat $CORE_PATH/$PROJECT/*/*/REPORTS/ANEUPLOIDY_CHECK/*.chrom_count_report.txt \
+		| grep "^SM_TAG" \
+		| uniq ; \
+	cat $CORE_PATH/$PROJECT/*/*/REPORTS/ANEUPLOIDY_CHECK/*.chrom_count_report.txt \
+		| grep -v "SM_TAG" ) \
+		| sed 's/\t/,/g' \
+	>| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".ANEUPLOIDY_CHECK."$TIMESTAMP".csv"
 
 # Concatenate all per chromosome verifybamID reports together
 # TO DO CONCATENATE WITH THE CONTROLS...
 
-( cat $CORE_PATH/$PROJECT/*/*/REPORTS/VERIFYBAMID_CHR/*.VERIFYBAMID.PER_CHR.txt | grep "^#" | uniq ; \
-cat $CORE_PATH/$PROJECT/*/*/REPORTS/VERIFYBAMID_CHR/*.VERIFYBAMID.PER_CHR.txt | grep -v "^#" ) \
-| sed 's/\t/,/g' \
->| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".PER_CHR_VERIFYBAMID."$TIMESTAMP".csv"
+	( cat $CORE_PATH/$PROJECT/*/*/REPORTS/VERIFYBAMID_CHR/*.VERIFYBAMID.PER_CHR.txt \
+		| grep "^#" \
+		| uniq ; \
+	cat $CORE_PATH/$PROJECT/*/*/REPORTS/VERIFYBAMID_CHR/*.VERIFYBAMID.PER_CHR.txt \
+		| grep -v "^#" ) \
+		| sed 's/\t/,/g' \
+	>| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".PER_CHR_VERIFYBAMID."$TIMESTAMP".csv"
 
-# Summarize Wall Clock times
+##############################################################
+##### CLEAN-UP OR NOT DEPENDING ON IF JOBS FAILED OR NOT #####
+##### RUN MD5 CHECK ON REMAINING FILES #######################
+##############################################################
 
-sed 's/,/\t/g' $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv" \
-| sort -k 1,1 -k 2,2 -k 3,3 \
-| awk 'BEGIN {OFS="\t"} {print $0,($6-$5),($6-$5)/60,($6-$5)/3600}' \
-| $DATAMASH/datamash -s -g 1,2 max 7 max 8 max 9 | tee $CORE_PATH/$PROJECT/TEMP/WALL.CLOCK.TIMES.BY.GROUP.txt \
-| $DATAMASH/datamash -g 1 sum 3 sum 4 sum 5 \
-| awk 'BEGIN {print "SAMPLE_PROJECT","WALL_CLOCK_SECONDS","WALL_CLOCK_MINUTES","WALL_CLOCK_HOURS"} {print $0}' \
-| sed -r 's/[[:space:]]+/,/g' \
->| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.BY_SAMPLE.csv"
+	# CREATE SAMPLE ARRAY, USED DURING PROJECT CLEANUP
 
-sed 's/\t/,/g' $CORE_PATH/$PROJECT/TEMP/WALL.CLOCK.TIMES.BY.GROUP.txt \
-| awk 'BEGIN {print "SAMPLE_PROJECT","TASK_GROUP","WALL_CLOCK_SECONDS","WALL_CLOCK_MINUTES","WALL_CLOCK_HOURS"} {print $0}' \
-| sed -r 's/[[:space:]]+/,/g' \
->| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.BY_SAMPLE_GROUP.csv"
+		CREATE_SAMPLE_ARRAY_FOR_FILE_CLEANUP ()
+		{
+			SAMPLE_ARRAY=(`awk 1 $SAMPLE_SHEET \
+				| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
+				| awk 'BEGIN {FS=",";OFS="\t"} \
+					$1=="'$PROJECT'"&&$8=="'$SM_TAG'" {print $1,$8,$2"_"$3"_"$4"*"}' \
+				| sort \
+				| uniq \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					-g 1,2 \
+					collapse 3`)
 
-md5sum $CORE_PATH/$PROJECT/LOGS/*log \
->> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".CIDR.Analysis.MD5.txt"
+				#  1  Project=the Seq Proj folder name
+				PROJECT_FILE_CLEANUP=${SAMPLE_ARRAY[0]}
 
-md5sum $CORE_PATH/$PROJECT/*/LOGS/*log \
->> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".CIDR.Analysis.MD5.txt"
+				#  8  SM_Tag=sample ID
+				SM_TAG_FILE_CLEANUP=${SAMPLE_ARRAY[1]}
 
-md5sum $CORE_PATH/$PROJECT/*/*/LOGS/*log \
->> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".CIDR.Analysis.MD5.txt"
+				# PLATFORM UNIT: COMPRISED OF;
+					#  2  FCID=flowcell that sample read group was performed on
+					#  3  Lane=lane of flowcell that sample read group was performed on]
+					#  4  Index=sample barcode
+				PLATFORM_UNIT=${SAMPLE_ARRAY[2]}
+		}
 
-echo Project finished at `date` >> $CORE_PATH/$PROJECT/REPORTS/PROJECT_START_END_TIMESTAMP.txt
+	# RUN MD5 IN PARALLEL USING 90% OF THE CPU PROCESSORS ON THE PIPELINE OUTPUT FILES
 
-# chmod 770 -R $CORE_PATH/$PROJECT
+		RUN_MD5_PARALLEL_OUTPUT_FILES ()
+		{
+			find $CORE_PATH/$PROJECT -type f \
+				| cut -f 2 \
+				| singularity exec $ALIGNMENT_CONTAINER \
+					parallel \
+						--no-notice \
+						-j $THREADS \
+						md5sum {} \
+			> $CORE_PATH/$PROJECT/REPORTS/"md5_output_files_"$PROJECT"_"$TIMESTAMP".txt"
+		}
+
+	# RUN MD5 IN PARALLEL USING 90% OF THE CPU PROCESSORS ON THE PIPELINE RESOURCE FILES
+
+		RUN_MD5_PARALLEL_RESOURCE_FILES ()
+		{
+			find \
+				$SCRIPT_DIR/../resources/ \
+				-type f \
+			| cut -f 2 \
+			| singularity exec $ALIGNMENT_CONTAINER \
+				parallel \
+					--no-notice \
+					-j $THREADS \
+					md5sum {} \
+			> $CORE_PATH/$PROJECT/REPORTS/"md5_pipeline_resources_"$PROJECT"_"$TIMESTAMP".txt"
+		}
+
+# IF THERE ARE NO FAILED JOBS THEN DELETE TEMP FILES STARTING WITH SM_TAG OR PLATFORM_UNIT
+# ELSE; DON'T DELETE ANYTHING BUT SUMMARIZE WHAT FAILED.
+# AFTER TEMP FILES ARE DELETED RUN MD5 IN PARALLEL
+
+	if [[ ! -f $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt" ]]
+		then
+			for SM_TAG in $(awk 'BEGIN {FS=","} \
+					$1=="'$PROJECT'" {print $8}' $SAMPLE_SHEET \
+					| sort \
+					| uniq)
+				do
+					CREATE_SAMPLE_ARRAY_FOR_FILE_CLEANUP
+					DELETION_PATH=" $CORE_PATH/$PROJECT_FILE_CLEANUP/TEMP/"
+
+					echo rm -rf $CORE_PATH/$PROJECT_FILE_CLEANUP/TEMP/$SM_TAG_FILE_CLEANUP*
+					echo rm -rf $CORE_PATH/$PROJECT_FILE_CLEANUP/TEMP/$PLATFORM_UNIT | sed "s|,|$DELETION_PATH|g"
+
+					rm -rf $CORE_PATH/$PROJECT_FILE_CLEANUP/TEMP/$SM_TAG_FILE_CLEANUP* | bash
+					echo rm -rf $CORE_PATH/$PROJECT_FILE_CLEANUP/TEMP/$PLATFORM_UNIT | sed "s|,|$DELETION_PATH|g" | bash
+			done
+
+			RUN_MD5_PARALLEL_OUTPUT_FILES
+			RUN_MD5_PARALLEL_RESOURCE_FILES
+
+			printf "\n$PERSON_NAME Was The Submitter\n\n \
+				REPORTS ARE AT:\n $CORE_PATH/$PROJECT/REPORTS/QC_REPORTS\n\n \
+				BATCH QC REPORT:\n $SAMPLE_SHEET_NAME".QC_REPORT.csv"\n\n \
+				FILE MD5 HASHSUMS:\n "md5_output_files_"$PROJECT"_"$TIMESTAMP".txt"\n \
+				"md5_pipeline_resources_"$PROJECT"_"$TIMESTAMP".txt"\n\n \
+				NO JOBS FAILED: TEMP FILES DELETED" \
+				| mail -s "$SAMPLE_SHEET FOR $PROJECT has finished processing SUBMITTER_JHG-DDL_EXOME_PIPELINE.sh" \
+					$SEND_TO
+
+		else
+			# CONSTRUCT MESSAGE TO BE SENT SUMMARIZING THE FAILED JOBS
+				printf "SO BAD THINGS HAPPENED AND THE TEMP FILES WILL NOT BE DELETED FOR:\n" \
+					>| $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "$SAMPLE_SHEET\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "FOR PROJECT:\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "$PROJECT\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "SOMEWHAT FULL LISTING OF FAILED JOBS ARE HERE:\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "$CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt"\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "###################################################################\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "BELOW ARE THE SAMPLES AND THE MINIMUM NUMBER OF JOBS THAT FAILED PER SAMPLE:\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "###################################################################\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				egrep -v CONCORDANCE $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt" \
+					| awk 'BEGIN {OFS="\t"} NF==6 {print $1}' \
+					| sort \
+					| singularity exec $ALIGNMENT_CONTAINER datamash -g 1 count 1 \
+				>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "###################################################################\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "FOR THE SAMPLES THAT HAVE FAILED JOBS, THIS IS ROUGHLY THE FIRST JOB THAT FAILED FOR EACH SAMPLE:\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "###################################################################\n" \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+				printf "SM_TAG NODE JOB_NAME USER EXIT LOG_FILE\n" | sed 's/ /\t/g' \
+						>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+			for sample in $(awk 'BEGIN {OFS="\t"} NF==6 {print $1}' $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt" | sort | uniq);
+				do
+					awk '$1=="'$sample'" {print $0 "\n" "\n"}' $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt" | head -n 1 \
+					>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+			done
+
+			sleep 2s
+
+			mail -s "FAILED JOBS: $PROJECT: $SAMPLE_SHEET_FILE_NAME" \
+			$SEND_TO \
+			< $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_EMAIL_SUMMARY.txt"
+
+	fi
+
+	sleep 2s
+
+####################################################
+##### Clean up the Wall Clock minutes tracker. #####
+####################################################
+
+	# clean up records that are malformed
+	# only keep jobs that ran longer than 3 minutes
+
+		awk 'BEGIN {FS=",";OFS=","} $1~/^[A-Z 0-9]/&&$2!=""&&$3!=""&&$4!=""&&$5!=""&&$6!=""&&$7==""&&$5!~/A-Z/&&$6!~/A-Z/&&($6-$5)>180 \
+		{print $1,$2,$3,$4,$5,$6,($6-$5)/60,strftime("%F",$5),strftime("%F",$6),strftime("%F.%H-%M-%S",$5),strftime("%F.%H-%M-%S",$6)}' \
+		$CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv" \
+		| sed 's/_'"$PROJECT"'/,'"$PROJECT"'/g' \
+		| awk 'BEGIN {print "SAMPLE,PROJECT,TASK_GROUP,TASK,HOST,EPOCH_START,EPOCH_END,WC_MIN,START_DATE,END_DATE,TIMESTAMP_START,TIMESTAMP_END"} \
+		{print $0}' \
+		>| $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.FIXED.csv"
+
+# put a stamp as to when the run was done
+
+	echo Project finished at `date` >> $CORE_PATH/$PROJECT/REPORTS/PROJECT_START_END_TIMESTAMP.txt
+
+# this is black magic that I don't know if it really helps. was having problems with getting the emails to send so I put a little delay in here.
+
+	sleep 2s
