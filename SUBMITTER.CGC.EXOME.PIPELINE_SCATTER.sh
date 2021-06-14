@@ -2480,14 +2480,27 @@ done
 				$SUBMIT_STAMP
 		}
 
-########################################################################################
-########## TODO ########################################################################
-########################################################################################
-# ADD STEP TO FILTER ABOVE OUTPUT TO BAIT/CODING PLUS USER DEFINED PAD, PASS ONLY, ETC #
-# FOR CONTROLS PLUS SAMPLES ############################################################
-# THIS WOULD BE THE INPUT INTO BCFTOOLS ROH. PROBABLY ONLY A TEMP FILE #################
-# MIGHT MAKE THIS WHOLE THING A SEPARATE WORKFLOW ######################################
-########################################################################################
+	####################
+	# RUN ROH ANALYSIS #
+	####################
+
+		BCFTOOLS_ROH ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N Q02-A02-A01-BCFTOOLS_ROH_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.BCFTOOLS_ROH.log \
+			-hold_jid Q02-A02-FILTER_REPEATMASK_${FAMILY}_${PROJECT} \
+			$SCRIPT_DIR/Q02-A02-A01-BCFTOOLS_ROH.sh \
+				$MITO_MUTECT2_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$THREADS \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
 #################################################################
 # run steps to do variant annotator gather, pca/relatednes, ROH #
@@ -2507,6 +2520,8 @@ done
 		CALL_PCA_RELATEDNESS
 		echo sleep 0.1s
 		FILTER_REPEATMASK
+		echo sleep 0.1s
+		BCFTOOLS_ROH
 		echo sleep 0.1s
 	done
 
