@@ -250,6 +250,14 @@
 		MILLS_1KG_GOLD_INDEL="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/Mills_and_1000G_gold_standard.indels.b37.vcf"
 		PHASE3_1KG_AUTOSOMES="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/ALL.autosomes.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz"
 		DBSNP_129="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/dbsnp_138.b37.excluding_sites_after_129.vcf"
+		UCSC_REPEATMASK="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINES/JHG_Clinical_Exome_Pipeline_Phase2/resources/ucsc_grch37_repeatmasker.sorted_no_alt_MT.bed"
+			# sortBed -i ucsc_grch37_repeatmasker.bed \
+			# | awk '$1!~"_"&&$1!~"chrM"' \
+			# | sed 's/^chr//g' \
+			# > ucsc_grch37_repeatmasker.sorted_no_alt_MT.bed
+		MDUST_REPEATMASK="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINES/JHG_Clinical_Exome_Pipeline_Phase2/resources/LCR-hs37d5.bed"
+			# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4271055/
+			# https://github.com/lh3/varcmp/tree/master/scripts
 
 		# where the control data set resides.
 
@@ -460,7 +468,7 @@
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/LOCAL_REALIGNMENT_INTERVALS \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/MEAN_QUALITY_BY_CYCLE/{METRICS,PDF} \
 			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/{ANEUPLOIDY_CHECK,QC_REPORT_PREP} \
-			$CORE_PATH/$PROJECT/$FAMILY/{LOGS,VCF,RELATEDNESS,PCA} \
+			$CORE_PATH/$PROJECT/$FAMILY/{LOGS,VCF,RELATEDNESS,PCA,ROH} \
 			$CORE_PATH/$PROJECT/$FAMILY/VCF/{RAW,VQSR} \
 			$CORE_PATH/$PROJECT/TEMP/${SM_TAG}_ANNOVAR_TARGET \
 			$CORE_PATH/$PROJECT/TEMP/{VCF_PREP,PLINK,KING} \
@@ -2448,6 +2456,30 @@ done
 				$SUBMIT_STAMP
 		}
 
+	###########################################################
+	# FILTER OUT REPEATMASKED REGIONS TO PERFORM ROH ANALYSIS #
+	###########################################################
+
+		FILTER_REPEATMASK ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N Q02-A02-FILTER_REPEATMASK_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.FILTER_REPEATMASK.log \
+			-hold_jid Q02-FILTER_COHORT_SNV_PASS_BIALLELIC_${FAMILY}_${PROJECT} \
+			$SCRIPT_DIR/Q02-A02-FILTER_REPEATMASK.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$REF_GENOME \
+				$UCSC_REPEATMASK \
+				$MDUST_REPEATMASK \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
 ########################################################################################
 ########## TODO ########################################################################
 ########################################################################################
@@ -2457,9 +2489,9 @@ done
 # MIGHT MAKE THIS WHOLE THING A SEPARATE WORKFLOW ######################################
 ########################################################################################
 
-###############################################################
-# run steps to do variant annotator gather and pca/relatednes #
-###############################################################
+#################################################################
+# run steps to do variant annotator gather, pca/relatednes, ROH #
+#################################################################
 
 	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
 		~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
@@ -2473,6 +2505,8 @@ done
 		CALL_PASS_BIALLELIC_SNV_COHORT
 		echo sleep 0.1s
 		CALL_PCA_RELATEDNESS
+		echo sleep 0.1s
+		FILTER_REPEATMASK
 		echo sleep 0.1s
 	done
 
