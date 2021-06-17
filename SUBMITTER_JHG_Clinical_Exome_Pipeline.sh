@@ -656,9 +656,9 @@
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N A.01-BWA_${SGE_SM_TAG}_${FCID}_${LANE}_${INDEX} \
+			-N A01-BWA_${SGE_SM_TAG}_${FCID}_${LANE}_${INDEX} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}_${FCID}_${LANE}_${INDEX}-BWA.log \
-			$SCRIPT_DIR/A.01_BWA.sh \
+			$SCRIPT_DIR/A01-BWA.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
@@ -748,7 +748,7 @@
 				"-j y",\
 				"-N","B.01-MARK_DUPLICATES_"$6"_"$1,\
 				"-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$1"-MARK_DUPLICATES.log",\
-				"-hold_jid","A.01-BWA_"$6"_"$4, \
+				"-hold_jid","A01-BWA_"$6"_"$4, \
 				"'$SCRIPT_DIR'""/B.01_MARK_DUPLICATES.sh",\
 				"'$ALIGNMENT_CONTAINER'",\
 				"'$CORE_PATH'",\

@@ -98,14 +98,14 @@
 
 			# look for illumina file naming convention for novaseq flowcells
 			# if it is found in the project/fastq folder under active, then use that one
-			FASTQ_1=`( echo du --max-depth=1 -a $FINDPATH/$SM_TAG"*" -a $FINDPATH/$FIXED_PLATFORM_UNIT"*" 2\> /dev/null \| grep "L00"$LANE"_R1_001.fastq" \| cut -f 2 | bash ; \
-				ls $CORE_PATH/$PROJECT/FASTQ/$FIXED_PLATFORM_UNIT"_1.fastq"* 2> /dev/null) | tail -n 1`
-			FASTQ_2=`( echo du --max-depth=1 -a $FINDPATH/$SM_TAG"*" -a $FINDPATH/$FIXED_PLATFORM_UNIT"*" 2\> /dev/null \| grep "L00"$LANE"_R2_001.fastq" \| cut -f 2 | bash ; \
-				ls $CORE_PATH/$PROJECT/FASTQ/$FIXED_PLATFORM_UNIT"_2.fastq"* 2> /dev/null) | tail -n 1`
+			FASTQ_1=`( echo du --max-depth=1 -a $FINDPATH/${SM_TAG}* -a $FINDPATH/${FIXED_PLATFORM_UNIT}* 2\> /dev/null \| grep L00${LANE}_R1_001.fastq \| cut -f 2 | bash ; \
+				ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_1.fastq* 2> /dev/null) | tail -n 1`
+			FASTQ_2=`( echo du --max-depth=1 -a $FINDPATH/${SM_TAG}* -a $FINDPATH/${FIXED_PLATFORM_UNIT}* 2\> /dev/null \| grep L00${LANE}_R2_001.fastq \| cut -f 2 | bash ; \
+				ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_2.fastq* 2> /dev/null) | tail -n 1`
 
 		else
-			FASTQ_1=`(ls $CORE_PATH/$PROJECT/FASTQ/$FIXED_PLATFORM_UNIT"_1.fastq"* 2> /dev/null ; ls $CORE_PATH/$PROJECT/FASTQ/$FIXED_PLATFORM_UNIT"_R1_000.fastq"* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/$SM_TAG"_R1_001.fastq"* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/$SM_TAG"_1.fastq"* 2> /dev/null)`
-			FASTQ_2=`(ls $CORE_PATH/$PROJECT/FASTQ/$FIXED_PLATFORM_UNIT"_2.fastq"* 2> /dev/null ; ls $CORE_PATH/$PROJECT/FASTQ/$FIXED_PLATFORM_UNIT"_R2_000.fastq"* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/$SM_TAG"_R2_001.fastq"* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/$SM_TAG"_2.fastq"* 2> /dev/null)`
+			FASTQ_1=`(ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_1.fastq* 2> /dev/null ; ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_R1_000.fastq* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/${SM_TAG}_R1_001.fastq* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/${SM_TAG}_1.fastq* 2> /dev/null)`
+			FASTQ_2=`(ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_2.fastq* 2> /dev/null ; ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_R2_000.fastq* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/${SM_TAG}_R2_001.fastq* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/${SM_TAG}_2.fastq* 2> /dev/null)`
 	fi
 
 # BWA POPULATES SEQUENCE DICTIONARY...MIGHT CONSIDER FILLING THIS MORE COMPLETELY...LOW PRIORITY
@@ -141,7 +141,7 @@
 		CMD=$CMD" INPUT=/dev/stdin" \
 		CMD=$CMD" CREATE_INDEX=true" \
 		CMD=$CMD" SORT_ORDER=queryname" \
-		CMD=$CMD" RGID=$FLOWCELL"_"$LANE" \
+		CMD=$CMD" RGID=${FLOWCELL}_${LANE}" \
 		CMD=$CMD" RGLB=$LIBRARY_NAME" \
 		CMD=$CMD" RGPL=$PLATFORM" \
 		CMD=$CMD" RGPU=$PLATFORM_UNIT" \
@@ -149,14 +149,14 @@
 		CMD=$CMD" RGSM=$SM_TAG" \
 		CMD=$CMD" RGCN=$CENTER" \
 		CMD=$CMD" RGDT=$ISO_8601" \
-		CMD=$CMD" RGPG="CIDR_WES-"$PIPELINE_VERSION" \
-		CMD=$CMD" RGDS=$BAIT_NAME","$TARGET_NAME","$TITV_NAME" \
-		CMD=$CMD" OUTPUT=$CORE_PATH/$PROJECT/TEMP/$PLATFORM_UNIT".bam""
+		CMD=$CMD" RGPG=CIDR_WES-${PIPELINE_VERSION}" \
+		CMD=$CMD" RGDS=${BAIT_NAME},${TARGET_NAME},${TITV_NAME}" \
+		CMD=$CMD" OUTPUT=$CORE_PATH/$PROJECT/TEMP/${PLATFORM_UNIT}.bam"
 
 	# write command line to file and execute the command line
 
-		echo $CMD >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
-		echo >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
+		echo $CMD >> $CORE_PATH/$PROJECT/COMMAND_LINES/${SM_TAG}_command_lines.txt
+		echo >> $CORE_PATH/$PROJECT/COMMAND_LINES/${SM_TAG}_command_lines.txt
 		echo $CMD | bash
 
 	# check the exit signal at this point.
@@ -172,7 +172,7 @@
 			if [ "$SCRIPT_STATUS" -ne 0 ]
 			 then
 				echo $SM_TAG $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
-				>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt"
+				>> $CORE_PATH/$PROJECT/TEMP/${SAMPLE_SHEET_NAME}_${SUBMIT_STAMP}_ERRORS.txt
 				exit $SCRIPT_STATUS
 			fi
 
@@ -180,8 +180,8 @@
 
 # write wall clock times to file
 
-	echo $SM_TAG"_"$PROJECT",A.01,BWA_MEM,"$HOSTNAME","$START_BWA_MEM","$END_BWA_MEM \
-	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
+	echo ${SM_TAG}_${PROJECT},A01,BWA_MEM,${HOSTNAME},${START_BWA_MEM},${END_BWA_MEM} \
+	>> $CORE_PATH/$PROJECT/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program
 
