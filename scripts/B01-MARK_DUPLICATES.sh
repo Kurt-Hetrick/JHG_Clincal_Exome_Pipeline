@@ -33,17 +33,17 @@
 	SEQUENCER_MODEL=$6
 	THREADS=$7
 	SAMPLE_SHEET=$8
-		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
+		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
 	SUBMIT_STAMP=$9
 
 	INPUT_BAM_FILE_STRING=${10}
-		INPUT=`echo $INPUT_BAM_FILE_STRING | sed 's/,/ /g'`
+		INPUT=`echo ${INPUT_BAM_FILE_STRING} | sed 's/,/ /g'`
 
 ## If NovaSeq is contained in the description field of the sample sheet then set the pixel distance appropriately
 ## Assumption: all read groups come from some sequencer model. otherwise pixel distance would be set to NovaSeq
 ## If mixing NovaSeq and non-NovaSeq then this workflow would need to change.
 
-	if [[ $SEQUENCER_MODEL == *"NovaSeq"* ]]
+	if [[ ${SEQUENCER_MODEL} == *"NovaSeq"* ]]
 		then
 			PIXEL_DISTANCE="2500"
 		else
@@ -61,29 +61,29 @@ START_MARK_DUPLICATES=`date '+%s'` # capture time process starts for wall clock 
 
 	# construct command line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER java -jar" \
-			CMD=$CMD" -Xmx16g" \
-			CMD=$CMD" -XX:ParallelGCThreads=$THREADS" \
-			CMD=$CMD" /gatk/picard.jar" \
-			CMD=$CMD" MarkDuplicates" \
-			CMD=$CMD" ASSUME_SORT_ORDER=queryname" \
-			CMD=$CMD" $INPUT" \
-			CMD=$CMD" OUTPUT=/dev/stdout" \
-			CMD=$CMD" VALIDATION_STRINGENCY=SILENT" \
-			CMD=$CMD" METRICS_FILE=$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/$SM_TAG"_MARK_DUPLICATES.txt"" \
-			CMD=$CMD" COMPRESSION_LEVEL=0" \
-			CMD=$CMD" OPTICAL_DUPLICATE_PIXEL_DISTANCE=$PIXEL_DISTANCE" \
-		CMD=$CMD" | singularity exec $ALIGNMENT_CONTAINER sambamba" \
-			CMD=$CMD" sort" \
-			CMD=$CMD" -t $THREADS" \
-			CMD=$CMD" -o $CORE_PATH/$PROJECT/TEMP/$SM_TAG".dup.bam"" \
-			CMD=$CMD" /dev/stdin"
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
+			CMD=${CMD}" -Xmx16g" \
+			CMD=${CMD}" -XX:ParallelGCThreads=${THREADS}" \
+			CMD=${CMD}" /gatk/picard.jar" \
+			CMD=${CMD}" MarkDuplicates" \
+			CMD=${CMD}" ASSUME_SORT_ORDER=queryname" \
+			CMD=${CMD}" ${INPUT}" \
+			CMD=${CMD}" OUTPUT=/dev/stdout" \
+			CMD=${CMD}" VALIDATION_STRINGENCY=SILENT" \
+			CMD=${CMD}" METRICS_FILE=${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt" \
+			CMD=${CMD}" COMPRESSION_LEVEL=0" \
+			CMD=${CMD}" OPTICAL_DUPLICATE_PIXEL_DISTANCE=${PIXEL_DISTANCE}" \
+		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} sambamba" \
+			CMD=${CMD}" sort" \
+			CMD=${CMD}" -t ${THREADS}" \
+			CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
+			CMD=${CMD}" /dev/stdin"
 
 	# write command line to file and execute the command line
 
-		echo $CMD >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
-		echo >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
-		echo $CMD | bash
+		echo ${CMD} >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${SM_TAG}_command_lines.txt
+		echo >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${SM_TAG}_command_lines.txt
+		echo ${CMD} | bash
 
 	# check the exit signal at this point.
 
@@ -92,20 +92,20 @@ START_MARK_DUPLICATES=`date '+%s'` # capture time process starts for wall clock 
 		# if exit does not equal 0 then exit with whatever the exit signal is at the end.
 		# also write to file that this job failed
 
-			if [ "$SCRIPT_STATUS" -ne 0 ]
-			 then
-				echo $SM_TAG $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
-				>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt"
-				exit $SCRIPT_STATUS
+			if [ "${SCRIPT_STATUS}" -ne 0 ]
+				then
+					echo ${SM_TAG} ${HOSTNAME} ${JOB_NAME} ${USER} ${SCRIPT_STATUS} ${SGE_STDERR_PATH} \
+					>> ${CORE_PATH}/${PROJECT}/TEMP/${SAMPLE_SHEET_NAME}_${SUBMIT_STAMP}_ERRORS.txt
+					exit ${SCRIPT_STATUS}
 			fi
 
 END_MARK_DUPLICATES=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 
 # write wall clock times to file
 
-	echo $SM_TAG"_"$PROJECT",C.01,MARK_DUPLICATES,"$HOSTNAME","$START_MARK_DUPLICATES","$END_MARK_DUPLICATES \
-	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
+	echo ${SM_TAG}_${PROJECT},B01,MARK_DUPLICATES,${HOSTNAME},${START_MARK_DUPLICATES},${END_MARK_DUPLICATES} \
+	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program
 
-	exit $SCRIPT_STATUS
+	exit ${SCRIPT_STATUS}

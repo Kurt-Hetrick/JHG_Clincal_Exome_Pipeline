@@ -30,8 +30,8 @@
 	FLOWCELL=$4 # flowcell that sample read group was performed on. 2nd column of sample manifest
 	LANE=$5 # lane of flowcell that sample read group was performed on. 3rd column of the sample manifest
 	INDEX=$6 # sample barcode. 4th column of the sample manifest
-		PLATFORM_UNIT=$FLOWCELL"_"$LANE"_"$INDEX
-		FIXED_PLATFORM_UNIT=`echo $PLATFORM_UNIT | sed 's/~/*/g'`
+		PLATFORM_UNIT=${FLOWCELL}_${LANE}_${INDEX}
+		FIXED_PLATFORM_UNIT=`echo ${PLATFORM_UNIT} | sed 's/~/*/g'`
 	PLATFORM=$7 # type of sequencing chemistry matching SAM specification. 5th column of the sample manifest.
 	LIBRARY_NAME=$8 # library group of the sample read group.
 						# Used during Marking Duplicates to determine if molecules are to be considered as part of the same library or not
@@ -43,33 +43,33 @@
 	REF_GENOME=${13} # the reference genome used in the analysis pipeline. field X of manifest.
 	PIPELINE_VERSION=${14}
 	BAIT_BED=${15}
-		BAIT_NAME=$(basename $BAIT_BED .bed)
+		BAIT_NAME=$(basename ${BAIT_BED} .bed)
 	TARGET_BED=${16}
-		TARGET_NAME=$(basename $TARGET_BED .bed)
+		TARGET_NAME=$(basename ${TARGET_BED} .bed)
 	TITV_BED=${17}
-		TITV_NAME=$(basename $TITV_BED .bed)
+		TITV_NAME=$(basename ${TITV_BED} .bed)
 	NOVASEQ_REPO=${18}
 	THREADS=${19}
 	SAMPLE_SHEET=${20}
-		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
+		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
 	SUBMIT_STAMP=${21}
 
 # Need to convert data in sample manifest to Iso 8601 date since we are not using bwa mem to populate this.
 # Picard AddOrReplaceReadGroups is much more stringent here.
 
-	if [[ $RUN_DATE = *"-"* ]];
+	if [[ ${RUN_DATE} = *"-"* ]];
 		then
 
 			# for when the date is this 2018-09-05
 
-				ISO_8601=`echo $RUN_DATE \
-					| awk '{print "'$RUN_DATE'" "T00:00:00-0500"}'`
+				ISO_8601=`echo ${RUN_DATE} \
+					| awk '{print "'${RUN_DATE}'" "T00:00:00-0500"}'`
 
 		else
 
 			# for when the data is like this 4/26/2018
 
-				ISO_8601=`echo $RUN_DATE \
+				ISO_8601=`echo ${RUN_DATE} \
 					| awk '{split ($0,DATES,"/"); \
 					if (length(DATES[1]) < 2 && length(DATES[2]) < 2) \
 					print DATES[3]"-0"DATES[1]"-0"DATES[2]"T00:00:00-0500"; \
@@ -89,23 +89,23 @@
 	## I concatenated them and then added 000 for the tile so added that to the end of the non novaseq fastq file look up
 # Well, all of the above would have been nice to follow, if things didn't change and I didn't get files from 4 different external sources...as a result...I have the mess down below to look for fastq files.
 
-	if [[ $SEQUENCER_MODEL == *"NovaSeq"* ]]
+	if [[ ${SEQUENCER_MODEL} == *"NovaSeq"* ]]
 		then
 
-			NOVASEQ_RUN_FOLDER=`ls $NOVASEQ_REPO | grep $FLOWCELL`
+			NOVASEQ_RUN_FOLDER=`ls ${NOVASEQ_REPO} | grep ${FLOWCELL}`
 
-			FINDPATH=$NOVASEQ_REPO/$NOVASEQ_RUN_FOLDER/FASTQ/$PROJECT
+			FINDPATH=${NOVASEQ_REPO}/${NOVASEQ_RUN_FOLDER}/FASTQ/${PROJECT}
 
 			# look for illumina file naming convention for novaseq flowcells
 			# if it is found in the project/fastq folder under active, then use that one
-			FASTQ_1=`( echo du --max-depth=1 -a $FINDPATH/${SM_TAG}* -a $FINDPATH/${FIXED_PLATFORM_UNIT}* 2\> /dev/null \| grep L00${LANE}_R1_001.fastq \| cut -f 2 | bash ; \
-				ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_1.fastq* 2> /dev/null) | tail -n 1`
-			FASTQ_2=`( echo du --max-depth=1 -a $FINDPATH/${SM_TAG}* -a $FINDPATH/${FIXED_PLATFORM_UNIT}* 2\> /dev/null \| grep L00${LANE}_R2_001.fastq \| cut -f 2 | bash ; \
-				ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_2.fastq* 2> /dev/null) | tail -n 1`
+			FASTQ_1=`( echo du --max-depth=1 -a ${FINDPATH}/${SM_TAG}* -a ${FINDPATH}/${FIXED_PLATFORM_UNIT}* 2\> /dev/null \| grep L00${LANE}_R1_001.fastq \| cut -f 2 | bash ; \
+				ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_1.fastq* 2> /dev/null) | tail -n 1`
+			FASTQ_2=`( echo du --max-depth=1 -a ${FINDPATH}/${SM_TAG}* -a ${FINDPATH}/${FIXED_PLATFORM_UNIT}* 2\> /dev/null \| grep L00${LANE}_R2_001.fastq \| cut -f 2 | bash ; \
+				ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_2.fastq* 2> /dev/null) | tail -n 1`
 
 		else
-			FASTQ_1=`(ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_1.fastq* 2> /dev/null ; ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_R1_000.fastq* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/${SM_TAG}_R1_001.fastq* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/${SM_TAG}_1.fastq* 2> /dev/null)`
-			FASTQ_2=`(ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_2.fastq* 2> /dev/null ; ls $CORE_PATH/$PROJECT/FASTQ/${FIXED_PLATFORM_UNIT}_R2_000.fastq* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/${SM_TAG}_R2_001.fastq* 2> /dev/null; ls $CORE_PATH/$PROJECT/FASTQ/${SM_TAG}_2.fastq* 2> /dev/null)`
+			FASTQ_1=`(ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_1.fastq* 2> /dev/null ; ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_R1_000.fastq* 2> /dev/null; ls ${CORE_PATH}/${PROJECT}/FASTQ/${SM_TAG}_R1_001.fastq* 2> /dev/null; ls ${CORE_PATH}/${PROJECT}/FASTQ/${SM_TAG}_1.fastq* 2> /dev/null)`
+			FASTQ_2=`(ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_2.fastq* 2> /dev/null ; ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_R2_000.fastq* 2> /dev/null; ls ${CORE_PATH}/${PROJECT}/FASTQ/${SM_TAG}_R2_001.fastq* 2> /dev/null; ls ${CORE_PATH}/${PROJECT}/FASTQ/${SM_TAG}_2.fastq* 2> /dev/null)`
 	fi
 
 # BWA POPULATES SEQUENCE DICTIONARY...MIGHT CONSIDER FILLING THIS MORE COMPLETELY...LOW PRIORITY
@@ -126,38 +126,40 @@
 
 	# construct cmd line
 
-		CMD="singularity exec $ALIGNMENT_CONTAINER bwa mem" \
-			CMD=$CMD" -K 100000000" \
-			CMD=$CMD" -Y" \
-			CMD=$CMD" -t $THREADS" \
-			CMD=$CMD" $REF_GENOME" \
-			CMD=$CMD" $FASTQ_1" \
-			CMD=$CMD" $FASTQ_2" \
-		CMD=$CMD" | singularity exec $ALIGNMENT_CONTAINER samblaster" \
-			CMD=$CMD" --addMateTags" \
-			CMD=$CMD" -a" \
-		CMD=$CMD" | singularity exec $ALIGNMENT_CONTAINER java -jar /gatk/picard.jar" \
-		CMD=$CMD" AddOrReplaceReadGroups" \
-		CMD=$CMD" INPUT=/dev/stdin" \
-		CMD=$CMD" CREATE_INDEX=true" \
-		CMD=$CMD" SORT_ORDER=queryname" \
-		CMD=$CMD" RGID=${FLOWCELL}_${LANE}" \
-		CMD=$CMD" RGLB=$LIBRARY_NAME" \
-		CMD=$CMD" RGPL=$PLATFORM" \
-		CMD=$CMD" RGPU=$PLATFORM_UNIT" \
-		CMD=$CMD" RGPM=$SEQUENCER_MODEL" \
-		CMD=$CMD" RGSM=$SM_TAG" \
-		CMD=$CMD" RGCN=$CENTER" \
-		CMD=$CMD" RGDT=$ISO_8601" \
-		CMD=$CMD" RGPG=CIDR_WES-${PIPELINE_VERSION}" \
-		CMD=$CMD" RGDS=${BAIT_NAME},${TARGET_NAME},${TITV_NAME}" \
-		CMD=$CMD" OUTPUT=$CORE_PATH/$PROJECT/TEMP/${PLATFORM_UNIT}.bam"
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} bwa" \
+			CMD=${CMD}" mem" \
+			CMD=${CMD}" -K 100000000" \
+			CMD=${CMD}" -Y" \
+			CMD=${CMD}" -t ${THREADS}" \
+			CMD=${CMD}" ${REF_GENOME}" \
+			CMD=${CMD}" ${FASTQ_1}" \
+			CMD=${CMD}" ${FASTQ_2}" \
+		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} samblaster" \
+			CMD=${CMD}" --addMateTags" \
+			CMD=${CMD}" -a" \
+		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
+			CMD=${CMD}" /gatk/picard.jar" \
+			CMD=${CMD}" AddOrReplaceReadGroups" \
+			CMD=${CMD}" INPUT=/dev/stdin" \
+			CMD=${CMD}" CREATE_INDEX=true" \
+			CMD=${CMD}" SORT_ORDER=queryname" \
+			CMD=${CMD}" RGID=${FLOWCELL}_${LANE}" \
+			CMD=${CMD}" RGLB=${LIBRARY_NAME}" \
+			CMD=${CMD}" RGPL=${PLATFORM}" \
+			CMD=${CMD}" RGPU=${PLATFORM_UNIT}" \
+			CMD=${CMD}" RGPM=${SEQUENCER_MODEL}" \
+			CMD=${CMD}" RGSM=${SM_TAG}" \
+			CMD=${CMD}" RGCN=${CENTER}" \
+			CMD=${CMD}" RGDT=${ISO_8601}" \
+			CMD=${CMD}" RGPG=CIDR_WES-${PIPELINE_VERSION}" \
+			CMD=${CMD}" RGDS=${BAIT_NAME},${TARGET_NAME},${TITV_NAME}" \
+			CMD=${CMD}" OUTPUT=${CORE_PATH}/${PROJECT}/TEMP/${PLATFORM_UNIT}.bam"
 
 	# write command line to file and execute the command line
 
-		echo $CMD >> $CORE_PATH/$PROJECT/COMMAND_LINES/${SM_TAG}_command_lines.txt
-		echo >> $CORE_PATH/$PROJECT/COMMAND_LINES/${SM_TAG}_command_lines.txt
-		echo $CMD | bash
+		echo ${CMD} >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${SM_TAG}_command_lines.txt
+		echo >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${SM_TAG}_command_lines.txt
+		echo ${CMD} | bash
 
 	# check the exit signal at this point.
 
@@ -169,11 +171,11 @@
 			### ...at first I didn't remember why would I chose that, but I am cool with it
 			### ...not good for debugging, but I don't want cmd lines and times when jobs crash tbh if the plan is to possibly distribute them
 
-			if [ "$SCRIPT_STATUS" -ne 0 ]
-			 then
-				echo $SM_TAG $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
-				>> $CORE_PATH/$PROJECT/TEMP/${SAMPLE_SHEET_NAME}_${SUBMIT_STAMP}_ERRORS.txt
-				exit $SCRIPT_STATUS
+			if [ "${SCRIPT_STATUS}" -ne 0 ]
+				then
+					echo ${SM_TAG} ${HOSTNAME} ${JOB_NAME} ${USER} ${SCRIPT_STATUS} ${SGE_STDERR_PATH} \
+					>> ${CORE_PATH}/${PROJECT}/TEMP/${SAMPLE_SHEET_NAME}_${SUBMIT_STAMP}_ERRORS.txt
+					exit ${SCRIPT_STATUS}
 			fi
 
 	END_BWA_MEM=`date '+%s'` # capture time process stops for wall clock tracking purposes.
@@ -181,8 +183,8 @@
 # write wall clock times to file
 
 	echo ${SM_TAG}_${PROJECT},A01,BWA_MEM,${HOSTNAME},${START_BWA_MEM},${END_BWA_MEM} \
-	>> $CORE_PATH/$PROJECT/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
+	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program
 
-	exit $SCRIPT_STATUS
+	exit ${SCRIPT_STATUS}
