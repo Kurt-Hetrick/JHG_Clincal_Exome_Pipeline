@@ -127,7 +127,7 @@
 	# construct cmd line
 
 		CMD="singularity exec ${ALIGNMENT_CONTAINER} bwa" \
-			CMD=${CMD}" mem" \
+		CMD=${CMD}" mem" \
 			CMD=${CMD}" -K 100000000" \
 			CMD=${CMD}" -Y" \
 			CMD=${CMD}" -t ${THREADS}" \
@@ -139,7 +139,7 @@
 			CMD=${CMD}" -a" \
 		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
 			CMD=${CMD}" /gatk/picard.jar" \
-			CMD=${CMD}" AddOrReplaceReadGroups" \
+		CMD=${CMD}" AddOrReplaceReadGroups" \
 			CMD=${CMD}" INPUT=/dev/stdin" \
 			CMD=${CMD}" CREATE_INDEX=true" \
 			CMD=${CMD}" SORT_ORDER=queryname" \

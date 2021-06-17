@@ -25,39 +25,36 @@
 # INPUT VARIABLES
 
 	ALIGNMENT_CONTAINER=$1
-
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
 	REF_GENOME=$6
-	KNOWN_INDEL_1=$7
-	KNOWN_INDEL_2=$8
-	DBSNP=$9
-	BAIT_BED=${10}
-		BAIT_BED_NAME=(`basename ${BAIT_BED} .bed`)
-	SAMPLE_SHEET=${11}
-		SAMPLE_SHEET_NAME=(`basename ${SAMPLE_SHEET} .csv`)
-	SUBMIT_STAMP=${12}
+	SAMPLE_SHEET=$7
+		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
+	SUBMIT_STAMP=$8
 
-## --BQSR using data only from the baited intervals
+## --write out bam file with a 4 bin qscore scheme, remove indel Q scores, emit original Q scores
+# have to change the way to specify this jar file eventually. gatk 4 devs are monsters.
 
-START_PERFORM_BQSR=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_APPLY_BQSR=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
 		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
 			CMD=${CMD}" /gatk/gatk.jar" \
-		CMD=${CMD}" BaseRecalibrator" \
+		CMD=${CMD}" ApplyBQSR" \
+			CMD=${CMD}" --add-output-sam-program-record" \
 			CMD=${CMD}" --use-original-qualities" \
-			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
+			CMD=${CMD}" --emit-original-quals" \
 			CMD=${CMD}" --reference ${REF_GENOME}" \
-			CMD=${CMD}" --known-sites ${KNOWN_INDEL_1}" \
-			CMD=${CMD}" --known-sites ${KNOWN_INDEL_2}" \
-			CMD=${CMD}" --known-sites ${DBSNP}" \
-			CMD=${CMD}" --intervals ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed" \
-			CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/COUNT_COVARIATES/GATK_REPORT/${SM_TAG}_PERFORM_BQSR.bqsr"
+			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
+			CMD=${CMD}" --bqsr-recal-file ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/COUNT_COVARIATES/GATK_REPORT/${SM_TAG}_PERFORM_BQSR.bqsr" \
+			CMD=${CMD}" --static-quantized-quals 10" \
+			CMD=${CMD}" --static-quantized-quals 20" \
+			CMD=${CMD}" --static-quantized-quals 30" \
+			CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam"
 
 	# write command line to file and execute the command line
 
@@ -79,11 +76,11 @@ START_PERFORM_BQSR=`date '+%s'` # capture time process starts for wall clock tra
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_PERFORM_BQSR=`date '+%s'` # capture time process stops for wall clock tracking purposes.
+END_APPLY_BQSR=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 
-# write wall clock times to file
+# write out timing metrics to file
 
-	echo ${SM_TAG}_${PROJECT},C01,PERFORM_BQSR,${HOSTNAME},${START_PERFORM_BQSR},${END_PERFORM_BQSR} \
+	echo ${SM_TAG}_${PROJECT},D01,APPLY_BQSR,${HOSTNAME},${START_APPLY_BQSR},${END_APPLY_BQSR} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program

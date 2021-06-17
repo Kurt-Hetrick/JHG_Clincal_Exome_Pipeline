@@ -65,7 +65,7 @@ START_MARK_DUPLICATES=`date '+%s'` # capture time process starts for wall clock 
 			CMD=${CMD}" -Xmx16g" \
 			CMD=${CMD}" -XX:ParallelGCThreads=${THREADS}" \
 			CMD=${CMD}" /gatk/picard.jar" \
-			CMD=${CMD}" MarkDuplicates" \
+		CMD=${CMD}" MarkDuplicates" \
 			CMD=${CMD}" ASSUME_SORT_ORDER=queryname" \
 			CMD=${CMD}" ${INPUT}" \
 			CMD=${CMD}" OUTPUT=/dev/stdout" \
