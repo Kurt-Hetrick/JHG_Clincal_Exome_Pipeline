@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-# INPUT VARIABLES
+###################
+# INPUT VARIABLES #
+###################
 
 	SAMPLE_SHEET=$1
 	PED_FILE=$2
@@ -29,14 +31,16 @@
 			fi
 
 	THREADS=$6 # optional. if no 6th argument present then default is 6.
-		# if you wangt to set this then you need to set 3rd,4th and 5th argument as well (even to default)
+		# if you want to set this then you need to set 3rd,4th and 5th argument as well (even to default)
 
 			if [[ ! $THREADS ]]
 				then
 				THREADS="6"
 			fi
 
-# CHANGE SCRIPT DIR TO WHERE YOU HAVE HAVE THE SCRIPTS BEING SUBMITTED
+########################################################################
+# CHANGE SCRIPT DIR TO WHERE YOU HAVE HAVE THE SCRIPTS BEING SUBMITTED #
+########################################################################
 
 	SUBMITTER_SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
@@ -72,8 +76,8 @@
 
 		module load gcc/7.2.0
 
-	# explicitly setting this b/c not everybody has had the $HOME directory transferred and I'm not going to through
-	# and figure out who does and does not have this set correctly
+	# explicitly setting this b/c not everybody has had the $HOME directory transferred
+	# and I'm not going to through and figure out who does and does not have this set correctly
 
 		umask 0007
 
@@ -294,9 +298,13 @@
 
 				REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountAllUniqBed48.rda"
 
-#################################
-##### MAKE A DIRECTORY TREE #####
-#################################
+###########################################################################
+##### PIPELINE AND PROJECT SET-UP #########################################
+###########################################################################
+##### MERGE SAMPLE_SHEET AND PED FILE AND CREATE A SAMPLE LEVEL ARRAY #####
+##### ARRAY IS USED TO PASS VARIABLES FOR SAMPLE LEVEL PROCESSES ##########
+##### MAKE A DIRECTORY TREE ###############################################
+###########################################################################
 
 	# make a directory in user home directory
 
@@ -316,7 +324,7 @@
 			| awk 'NR>1' \
 			| sed 's/,/\t/g' \
 			| sort -k 8,8 \
-			>| ~/CGC_PIPELINE_TEMP/SORTED.$MANIFEST_PREFIX.txt
+			>| ~/CGC_PIPELINE_TEMP/SORTED.${MANIFEST_PREFIX}.txt
 		}
 
 	# merge the sample sheet with the ped file
@@ -324,158 +332,167 @@
 		MERGE_PED_MANIFEST ()
 		{
 			awk 1 $PED_FILE \
-			| sed 's/\r//g' \
-			| sort -k 2,2 \
-			| join -1 8 -2 2 -e '-'  -t $'\t' \
-			-o '1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10,1.11,1.12,1.13,1.14,1.15,1.16,1.17,1.18,1.19,2.1,2.3,2.4,2.5,2.6' \
-			~/CGC_PIPELINE_TEMP/SORTED.$MANIFEST_PREFIX.txt /dev/stdin \
-			>| ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt
+				| sed 's/\r//g' \
+				| sort -k 2,2 \
+				| join -1 8 -2 2 -e '-'  -t $'\t' \
+				-o '1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10,1.11,1.12,1.13,1.14,1.15,1.16,1.17,1.18,1.19,2.1,2.3,2.4,2.5,2.6' \
+			~/CGC_PIPELINE_TEMP/SORTED.${MANIFEST_PREFIX}.txt /dev/stdin \
+			>| ~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt
 		}
 
-	# create an array from values of the merged sample sheet and ped file
-	## set $REF_PANEL_COUNTS based on gender
+###########################################################################
+### CREATE_SAMPLE_ARRAY ###################################################
+### create an array from values of the merged sample sheet and ped file ###
+### set $REF_PANEL_COUNTS based on gender #################################
+###########################################################################
 
-		CREATE_SAMPLE_ARRAY ()
-		{
-			SAMPLE_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} $8=="'$SAMPLE'" \
-				{split($19,INDEL,";"); \
-				print $1,$8,$9,$10,$11,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],$20,$21,$22,$23,$24}' \
-					~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-					| sort \
-					| uniq`)
+	CREATE_SAMPLE_ARRAY ()
+	{
+		SAMPLE_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
+			$8=="'$SAMPLE'" \
+			{split($19,INDEL,";"); \
+			print $1,$8,$9,$10,$11,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],\
+			$20,$21,$22,$23,$24}' \
+				~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+				| sort \
+				| uniq`)
 
-			#  1  Project=the Seq Proj folder name
+		#  1  Project=the Seq Proj folder name
 
-				PROJECT=${SAMPLE_ARRAY[0]}
+			PROJECT=${SAMPLE_ARRAY[0]}
 
-					################################################################################
-					# 2 SKIP : FCID=flowcell that sample read group was performed on ###############
-					# 3 SKIP : Lane=lane of flowcell that sample read group was performed on] ######
-					# 4 SKIP : Index=sample barcode ################################################
-					# 5 SKIP : Platform=type of sequencing chemistry matching SAM specification ####
-					# 6 SKIP : Library_Name=library group of the sample read group #################
-					# 7 SKIP : Date=should be the run set up date to match the seq run folder name #
-					################################################################################
+				################################################################################
+				# 2 SKIP : FCID=flowcell that sample read group was performed on ###############
+				# 3 SKIP : Lane=lane of flowcell that sample read group was performed on] ######
+				# 4 SKIP : Index=sample barcode ################################################
+				# 5 SKIP : Platform=type of sequencing chemistry matching SAM specification ####
+				# 6 SKIP : Library_Name=library group of the sample read group #################
+				# 7 SKIP : Date=should be the run set up date to match the seq run folder name #
+				################################################################################
 
-			#  8  SM_Tag=sample ID
+		#  8  SM_Tag=sample ID
 
-				SM_TAG=${SAMPLE_ARRAY[1]}
-					SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g') # If there is an @ in the qsub or holdId name it breaks
+			SM_TAG=${SAMPLE_ARRAY[1]}
 
-			#  9  Center=the center/funding mechanism
+				# If there is an @ in the qsub or holdId name it breaks
 
-				CENTER=${SAMPLE_ARRAY[2]}
+					SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g')
 
-			# 10  Description=Sequencer model and/or setting (setting e.g. "Rapid-Run")
-			## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq”
+		#  9  Center=the center/funding mechanism
 
-				SEQUENCER_MODEL=${SAMPLE_ARRAY[3]}
+			CENTER=${SAMPLE_ARRAY[2]}
 
-			# 11  Seq_Exp_ID=Zoom Gene List for filtering ExomeDepth output by gene symbol
+		# 10  Description=Sequencer model and/or setting (setting e.g. "Rapid-Run")
+		## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq”
 
-				ZOOM_LIST=${SAMPLE_ARRAY[4]}
+			SEQUENCER_MODEL=${SAMPLE_ARRAY[3]}
 
-					# if the zoom list file exists than the output file prefix is the input file prefix before .GeneList
+		# 11  Seq_Exp_ID=Zoom Gene List for filtering ExomeDepth output by gene symbol
 
-						if [ -f $ZOOM_LIST ]
-							then ZOOM_NAME=$(basename $ZOOM_LIST | sed 's/.GeneList.[0-9]*.csv//g')
-							else ZOOM_NAME="NA"
-						fi
+			ZOOM_LIST=${SAMPLE_ARRAY[4]}
 
-			# 12  Genome_Ref=the reference genome used in the analysis pipeline
+				# if the zoom list file exists than the output file prefix is the input file prefix before .GeneList
 
-				REF_GENOME=${SAMPLE_ARRAY[5]}
-					REF_DICT=$(echo $REF_GENOME | sed 's/fasta$/dict/g; s/fa$/dict/g')
-
-				#####################################
-				# 13  Operator: SKIP ################
-				# 14  Extra_VCF_Filter_Params: SKIP #
-				#####################################
-
-			# 15  TS_TV_BED_File=where ucsc coding exons overlap with bait and target bed files
-
-				TITV_BED=${SAMPLE_ARRAY[6]}
-
-			# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
-			# Used for limited where to run base quality score recalibration on where to create gvcf files.
-
-				BAIT_BED=${SAMPLE_ARRAY[7]}
-
-			# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
-
-				TARGET_BED=${SAMPLE_ARRAY[8]}
-
-			# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in base call quality score recalibration.
-
-				DBSNP=${SAMPLE_ARRAY[9]}
-
-			# 19  KNOWN_INDEL_FILES=used for BQSR masking, sensitivity in local realignment.
-
-				KNOWN_INDEL_1=${SAMPLE_ARRAY[10]}
-				KNOWN_INDEL_2=${SAMPLE_ARRAY[11]}
-
-			# 20 family that sample belongs to
-
-				FAMILY=${SAMPLE_ARRAY[12]}
-
-			# 21 MOM
-
-				FATHER=${SAMPLE_ARRAY[13]}
-
-			# 22 DAD
-
-				MOTHER=${SAMPLE_ARRAY[14]}
-
-			# 23 GENDER
-
-				GENDER=${SAMPLE_ARRAY[15]}
-
-				# set $REF_PANEL_COUNTS USED IN EXOMEDEPTH TO THE SEX SPECIFIC ONE
-
-					if [[ $GENDER = "1" ]];
-						then REF_PANEL_COUNTS=${REF_PANEL_MALE_READ_COUNT_RDA}
-					elif [[ $GENDER = "2" ]];
-						then REF_PANEL_COUNTS=${REF_PANEL_FEMALE_READ_COUNT_RDA}
-					else
-						REF_PANEL_COUNTS=${REF_PANEL_ALL_READ_COUNT_RDA}
+					if [ -f $ZOOM_LIST ]
+						then ZOOM_NAME=$(basename $ZOOM_LIST | sed 's/.GeneList.[0-9]*.csv//g')
+						else ZOOM_NAME="NA"
 					fi
 
-			# 24 PHENOTYPE
+		# 12  Genome_Ref=the reference genome used in the analysis pipeline
 
-				PHENOTYPE=${SAMPLE_ARRAY[16]}
-		}
+			REF_GENOME=${SAMPLE_ARRAY[5]}
 
-	# PROJECT DIRECTORY TREE CREATOR
+				# REFERENCE DICTIONARY IS A SUMMARY OF EACH CONTIG. PAIRED WITH REF GENOME
 
-		MAKE_PROJ_DIR_TREE ()
-		{
-			mkdir -p $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CNV_OUTPUT \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/HC_CRAM \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/VCF/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/GVCF \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/{ALIGNMENT_SUMMARY,ANNOVAR,PICARD_DUPLICATES,TI_TV,VERIFYBAMID,VERIFYBAMID_AUTO,RG_HEADER,QUALITY_YIELD,ERROR_SUMMARY,VCF_METRICS} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/{METRICS,SUMMARY} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/{METRICS,SUMMARY} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASECALL_Q_SCORE_DISTRIBUTION/{METRICS,PDF} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/{METRICS,PDF} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/COUNT_COVARIATES/{GATK_REPORT,PDF} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/GC_BIAS/{METRICS,PDF,SUMMARY} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/DEPTH_OF_COVERAGE/{TARGET_PADDED,CODING_PADDED} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/HYB_SELECTION/PER_TARGET_COVERAGE \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/{METRICS,PDF} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/LOCAL_REALIGNMENT_INTERVALS \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/MEAN_QUALITY_BY_CYCLE/{METRICS,PDF} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/{ANEUPLOIDY_CHECK,QC_REPORT_PREP} \
-			$CORE_PATH/$PROJECT/$FAMILY/{LOGS,VCF,RELATEDNESS,PCA,ROH} \
-			$CORE_PATH/$PROJECT/$FAMILY/VCF/{RAW,VQSR} \
-			$CORE_PATH/$PROJECT/TEMP/${SM_TAG}_ANNOVAR_TARGET \
-			$CORE_PATH/$PROJECT/TEMP/{VCF_PREP,PLINK,KING} \
-			$CORE_PATH/$PROJECT/{TEMP,FASTQ,REPORTS,LOGS,COMMAND_LINES} \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/{COLLECTHSMETRICS_MT,MUTECT2_MT,HAPLOTYPES,ANNOVAR_MT,EKLIPSE} \
-			$CORE_PATH/$PROJECT/TEMP/${SM_TAG}_ANNOVAR_MT
-		}
+					REF_DICT=$(echo $REF_GENOME | sed 's/fasta$/dict/g; s/fa$/dict/g')
+
+			#####################################
+			# 13  Operator: SKIP ################
+			# 14  Extra_VCF_Filter_Params: SKIP #
+			#####################################
+
+		# 15  TS_TV_BED_File=where ucsc coding exons overlap with bait and target bed files
+
+			TITV_BED=${SAMPLE_ARRAY[6]}
+
+		# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
+		# Used for limited where to run base quality score recalibration on where to create gvcf files.
+
+			BAIT_BED=${SAMPLE_ARRAY[7]}
+
+		# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
+
+			TARGET_BED=${SAMPLE_ARRAY[8]}
+
+		# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in base call quality score recalibration.
+
+			DBSNP=${SAMPLE_ARRAY[9]}
+
+		# 19  KNOWN_INDEL_FILES=used for BQSR masking, sensitivity in local realignment.
+
+			KNOWN_INDEL_1=${SAMPLE_ARRAY[10]}
+			KNOWN_INDEL_2=${SAMPLE_ARRAY[11]}
+
+		# 20 family that sample belongs to
+
+			FAMILY=${SAMPLE_ARRAY[12]}
+
+		# 21 MOM
+
+			FATHER=${SAMPLE_ARRAY[13]}
+
+		# 22 DAD
+
+			MOTHER=${SAMPLE_ARRAY[14]}
+
+		# 23 GENDER
+
+			GENDER=${SAMPLE_ARRAY[15]}
+
+			# set $REF_PANEL_COUNTS USED IN EXOMEDEPTH TO THE SEX SPECIFIC ONE
+
+				if [[ $GENDER = "1" ]];
+					then REF_PANEL_COUNTS=${REF_PANEL_MALE_READ_COUNT_RDA}
+				elif [[ $GENDER = "2" ]];
+					then REF_PANEL_COUNTS=${REF_PANEL_FEMALE_READ_COUNT_RDA}
+				else
+					REF_PANEL_COUNTS=${REF_PANEL_ALL_READ_COUNT_RDA}
+				fi
+
+		# 24 PHENOTYPE
+
+			PHENOTYPE=${SAMPLE_ARRAY[16]}
+	}
+
+######################################
+### PROJECT DIRECTORY TREE CREATOR ###
+######################################
+
+	MAKE_PROJ_DIR_TREE ()
+	{
+		mkdir -p \
+		$CORE_PATH/$PROJECT/{FASTQ,LOGS,COMMAND_LINES,REPORTS} \
+		$CORE_PATH/$PROJECT/$FAMILY/{LOGS,PCA,RELATEDNESS,ROH} \
+		$CORE_PATH/$PROJECT/$FAMILY/VCF/{RAW,VQSR} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/{CNV_OUTPUT,CRAM,GVCF,HC_CRAM,LOGS} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/{COLLECTHSMETRICS_MT,MUTECT2_MT,HAPLOTYPES,ANNOVAR_MT,EKLIPSE} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/{ALIGNMENT_SUMMARY,ANEUPLOIDY_CHECK,ANNOVAR,ERROR_SUMMARY,PICARD_DUPLICATES,QC_REPORT_PREP,QUALITY_YIELD,RG_HEADER,TI_TV,VCF_METRICS,VERIFYBAMID,VERIFYBAMID_AUTO} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/{METRICS,SUMMARY} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/{METRICS,PDF} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASECALL_Q_SCORE_DISTRIBUTION/{METRICS,PDF} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/COUNT_COVARIATES/{GATK_REPORT,PDF} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/DEPTH_OF_COVERAGE/{TARGET_PADDED,CODING_PADDED} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/GC_BIAS/{METRICS,PDF,SUMMARY} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/HYB_SELECTION/PER_TARGET_COVERAGE \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/{METRICS,PDF} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/LOCAL_REALIGNMENT_INTERVALS \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/MEAN_QUALITY_BY_CYCLE/{METRICS,PDF} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/{METRICS,SUMMARY} \
+		$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/VCF/{FILTERED_ON_BAIT,FILTERED_ON_TARGET} \
+		$CORE_PATH/$PROJECT/TEMP/{KING,PLINK,VCF_PREP} \
+		$CORE_PATH/$PROJECT/TEMP/${SM_TAG}_ANNOVAR_MT \
+		$CORE_PATH/$PROJECT/TEMP/${SM_TAG}_ANNOVAR_TARGET
+	}
 
 	# combine above functions into one...this is probably not necessary...
 
@@ -489,33 +506,39 @@
 		}
 
 ############################################
-# run steps for pipeline and project setup #
+# RUN STEPS FOR PIPELINE AND PROJECT SETUP #
 ############################################
 
-for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-		| sort \
-		| uniq );
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
 	do
 		SETUP_PROJECT
-done
+	done
 
 #######################################################################################
 ##### CRAM FILE GENERATION ############################################################
+#######################################################################################
 # NOTE: THE CRAM FILE IS THE END PRODUCT BUT THE BAM FILE IS USED FOR OTHER PROCESSES #
 # SOME PROGRAMS CAN'T TAKE IN CRAM AS AN INPUT ########################################
 #######################################################################################
 
-	########################################################################################
-	# create an array at the platform level so that bwa mem can add metadata to the header #
-	########################################################################################
+#################################################################################################
+### CREATE_PLATFROM_UNIT_ARRAY ##################################################################
+### create an array at the platform unit level so that bwa mem can add metadata to the header ###
+#################################################################################################
 
-		CREATE_PLATFORM_UNIT_ARRAY ()
-		{
-			PLATFORM_UNIT_ARRAY=(`awk 1 ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+	CREATE_PLATFORM_UNIT_ARRAY ()
+	{
+			PLATFORM_UNIT_ARRAY=(`awk 1 ~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
-			| awk 'BEGIN {FS="\t"} $8$2$3$4=="'$PLATFORM_UNIT'" {split($19,INDEL,";"); print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],$20,$21,$22,$23,$24}' \
+			| awk 'BEGIN {FS="\t"} \
+				$8$2$3$4=="'$PLATFORM_UNIT'" \
+				{split($19,INDEL,";"); \
+				print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],\
+				$20,$21,$22,$23,$24}' \
 			| sort \
 			| uniq`)
 
@@ -619,21 +642,22 @@ done
 				# 24 PHENOTYPE
 
 					PHENOTYPE=${PLATFORM_UNIT_ARRAY[21]}
-		}
+	}
 
-	########################################################################
-	### Use bwa mem to do the alignments; ##################################
-	### pipe to samblaster to add mate tags; ###############################
-	### pipe to picard's AddOrReplaceReadGroups to handle the bam header ###
-	########################################################################
+########################################################################
+### RUN_BWA ############################################################
+### Use bwa mem to do the alignments; ##################################
+### pipe to samblaster to add mate tags; ###############################
+### pipe to picard's AddOrReplaceReadGroups to handle the bam header ###
+########################################################################
 
-		RUN_BWA ()
-		{
+	RUN_BWA ()
+	{
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N A.01-BWA"_"$SGE_SM_TAG"_"$FCID"_"$LANE"_"$INDEX \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"_"$FCID"_"$LANE"_"$INDEX"-BWA.log" \
+			-N A.01-BWA_${SGE_SM_TAG}_${FCID}_${LANE}_${INDEX} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}_${FCID}_${LANE}_${INDEX}-BWA.log \
 			$SCRIPT_DIR/A.01_BWA.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -656,32 +680,36 @@ done
 				$THREADS \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
-		}
+	}
+
+#############################
+# RUN STEPS TO RUN BWA, ETC #
+#############################
 
 	for PLATFORM_UNIT in $(awk 1 $SAMPLE_SHEET \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'BEGIN {FS=","} NR>1 {print $8$2$3$4}' \
 			| sort \
 			| uniq );
-		do
-			CREATE_PLATFORM_UNIT_ARRAY
-			mkdir -p $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/
-			RUN_BWA
-			echo sleep 0.1s
+	do
+		CREATE_PLATFORM_UNIT_ARRAY
+		RUN_BWA
+		echo sleep 0.1s
 	done
 
-	#########################################################################################
-	# Merge files and mark duplicates using picard duplictes with queryname sorting #########
-	# do coordinate sorting with sambamba ###################################################
-	#########################################################################################
-	# I am setting the heap space and garbage collector threads for picard now now ##########
-	# doing this does drastically decrease the load average ( the gc thread specification ) #
-	#########################################################################################
-	# create a hold job id qsub command line based on the number of #########################
-	# submit merging the bam files created by bwa mem above #################################
-	# only launch when every lane for a sample is done being processed by bwa mem ###########
-	# I want to clean this up eventually and get away from using awk to print the qsub line #
-	#########################################################################################
+#########################################################################################
+### MARK_DUPLICATES #####################################################################
+# Merge files and mark duplicates using picard duplictes with queryname sorting #########
+# do coordinate sorting with sambamba ###################################################
+#########################################################################################
+# I am setting the heap space and garbage collector threads for picard now now ##########
+# doing this does drastically decrease the load average ( the gc thread specification ) #
+#########################################################################################
+# create a hold job id qsub command line based on the number of #########################
+# submit merging the bam files created by bwa mem above #################################
+# only launch when every lane for a sample is done being processed by bwa mem ###########
+# I want to clean this up eventually and get away from using awk to print the qsub line #
+#########################################################################################
 
 	# What is being pulled out of the merged sample sheet and ped file table.
 		# 1. PROJECT
@@ -692,9 +720,12 @@ done
 		# 6. SM_TAG
 		# 7. DESCRIPTION (INSTRUMENT MODEL)
 
-			awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8,$2"_"$3"_"$4,$2"_"$3"_"$4".bam",$8,$10}' \
-			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-			| awk 'BEGIN {OFS="\t"} {sub(/@/,"_",$6)} {print $1,$2,$3,$4,$5,$6,$7}' \
+			awk 'BEGIN {FS="\t"; OFS="\t"} \
+				{print $1,$20,$8,$2"_"$3"_"$4,$2"_"$3"_"$4".bam",$8,$10}' \
+			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| awk 'BEGIN {OFS="\t"} \
+				{sub(/@/,"_",$6)} \
+				{print $1,$2,$3,$4,$5,$6,$7}' \
 			| sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 -k 7,7 \
 			| uniq \
 			| singularity exec $ALIGNMENT_CONTAINER datamash \
@@ -730,6 +761,11 @@ done
 				"'$SUBMIT_STAMP'",\
 				"INPUT=" "'$CORE_PATH'" "/" $1"/TEMP/"$5"\n""sleep 0.1s"}'
 
+########################################
+### FINISH UP CREATING THE CRAM FILE ###
+# bqsr then convert cram to BAM ########
+########################################
+
 	###############################################
 	# fix common formatting problems in bed files #
 	# merge bait to target for gvcf creation, pad #
@@ -741,9 +777,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-FIX_BED_FILES.log" \
-			-hold_jid B.01-MARK_DUPLICATES"_"$SGE_SM_TAG"_"$PROJECT \
+			-N C.01-FIX_BED_FILES_${SGE_SM_TAG}_$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FIX_BED_FILES.log \
+			-hold_jid B.01-MARK_DUPLICATES_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/C.01_FIX_BED.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -768,9 +804,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N D.01-PERFORM_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-PERFORM_BQSR.log" \
-			-hold_jid B.01-MARK_DUPLICATES"_"$SGE_SM_TAG"_"$PROJECT,C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT \
+			-N D.01-PERFORM_BQSR_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PERFORM_BQSR.log \
+			-hold_jid B.01-MARK_DUPLICATES_${SGE_SM_TAG}_${PROJECT},C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/D.01_PERFORM_BQSR.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -797,9 +833,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-APPLY_BQSR.log" \
-			-hold_jid D.01-PERFORM_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+			-N E.01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-APPLY_BQSR.log \
+			-hold_jid D.01-PERFORM_BQSR_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E.01_APPLY_BQSR.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -820,9 +856,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-BAM_TO_CRAM.log" \
-			-hold_jid E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+			-N F.01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-BAM_TO_CRAM.log \
+			-hold_jid E.01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/F.01_BAM_TO_CRAM.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -836,14 +872,14 @@ done
 		}
 
 ######################################
-# run steps for cram file generation #
+# RUN STEPS FOR CRAM FILE GENERATION #
 ######################################
 
-for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-		| sort \
-		| uniq );
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
 	do
 		CREATE_SAMPLE_ARRAY
 		FIX_BED_FILES
@@ -854,10 +890,11 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		BAM_TO_CRAM
 		echo sleep 0.1s
-done
+	done
 
 ####################################################################################
 ##### BAM/CRAM FILE RELATED METRICS ################################################
+####################################################################################
 # NOTE: SOME PROGRAMS CAN ONLY BE RAN ON THE BAM FILE AND NOT ON THE CRAM FILE #####
 # I WILL COMMENT ON WHICH IS WHICH #################################################
 ####################################################################################
@@ -874,9 +911,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.01-COLLECT_MULTIPLE_METRICS"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-COLLECT_MULTIPLE_METRICS.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_MULTIPLE_METRICS.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},F.01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.01_COLLECT_MULTIPLE_METRICS.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -902,9 +939,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.02-COLLECT_HS_METRICS"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-COLLECT_HS_METRICS.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_HS_METRICS.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},F.01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.02_COLLECT_HS_METRICS.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -931,9 +968,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.03-DOC_TARGET"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-DOC_TARGET.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.03-DOC_TARGET_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_TARGET.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},F.01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.03_DOC_TARGET_PADDED_BED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -960,9 +997,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.04-SELECT_VERIFYBAMID_VCF"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-SELECT_VERIFYBAMID_VCF.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.04-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-SELECT_VERIFYBAMID_VCF.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E.01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.04_SELECT_VERIFYBAMID_VCF.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -985,9 +1022,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.04-A.01-RUN_VERIFYBAMID"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-VERIFYBAMID.log" \
-			-hold_jid H.04-SELECT_VERIFYBAMID_VCF"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.04-A.01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-VERIFYBAMID.log \
+			-hold_jid H.04-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.04-A.01_VERIFYBAMID.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1011,9 +1048,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.05-DOC_CODING"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-DOC_CODING.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F.01-BAM_TO_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_CODING.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},F.01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05_DOC_CODING_PADDED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -1037,9 +1074,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.05-A.01_CHROM_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-ANEUPLOIDY_CHECK.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,H.05-DOC_CODING"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.05-A.01_CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANEUPLOIDY_CHECK.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05-A.01_CHROM_DEPTH.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1059,9 +1096,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.05-A.02_ANNOTATE_PER_BASE"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-ANNOTATE_PER_BASE.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,H.05-DOC_CODING"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.05-A.02_ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_BASE.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05-A.02_ANNOTATE_PER_BASE.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1084,9 +1121,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.05-A.02-A.01_FILTER_ANNOTATED_PER_BASE"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-FILTER_ANNOTATED_PER_BASE.log" \
-			-hold_jid H.05-A.02_ANNOTATE_PER_BASE"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.05-A.02-A.01_FILTER_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_ANNOTATED_PER_BASE.log \
+			-hold_jid H.05-A.02_ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05-A.02-A.01_FILTER_ANNOTATED_PER_BASE.sh \
 				$CORE_PATH \
 				$PROJECT \
@@ -1105,9 +1142,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-BGZIP_ANNOTATED_PER_BASE.log" \
-			-hold_jid H.05-A.02_ANNOTATE_PER_BASE"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-BGZIP_ANNOTATED_PER_BASE.log \
+			-hold_jid H.05-A.02_ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1130,9 +1167,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.05-A.03_ANNOTATE_PER_INTERVAL"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-ANNOTATE_PER_INTERVAL.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,H.05-DOC_CODING"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.05-A.03_ANNOTATE_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_INTERVAL.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05-A.03_ANNOTATE_PER_INTERVAL.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1152,9 +1189,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.05-A.03-A.01_FILTER_ANNOTATED_PER_INTERVAL"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-FILTER_ANNOTATED_PER_INTERVAL.log" \
-			-hold_jid H.05-A.03_ANNOTATE_PER_INTERVAL"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.05-A.03-A.01_FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_ANNOTATED_PER_INTERVAL.log \
+			-hold_jid H.05-A.03_ANNOTATE_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05-A.03-A.01_FILTER_ANNOTATED_PER_INTERVAL.sh \
 				$CORE_PATH \
 				$PROJECT \
@@ -1178,9 +1215,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.06-SELECT_VERIFYBAMID_PER_AUTOSOME"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-SELECT_VERIFYBAMID_PER_AUTOSOME.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.06-SELECT_VERIFYBAMID_PER_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-SELECT_VERIFYBAMID_PER_AUTOSOME.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E.01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.06_VERIFYBAMID_PER_AUTO.sh \
 				$ALIGNMENT_CONTAINER \
 				$GATK_3_7_0_CONTAINER \
@@ -1208,9 +1245,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.06-A.01-CAT_VERIFYBAMID_AUTOSOME"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-CAT_VERIFYBAMID_AUTOSOME.log" \
-			-hold_jid H.06-SELECT_VERIFYBAMID_PER_AUTOSOME"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.06-A.01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-CAT_VERIFYBAMID_AUTOSOME.log \
+			-hold_jid H.06-SELECT_VERIFYBAMID_PER_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.06-A.01_CAT_VERIFYBAMID_AUTO.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1221,14 +1258,14 @@ done
 		}
 
 ###############################################
-# run steps for cram/bam file related metrics #
+# RUN STEPS FOR CRAM/BAM FILE RELATED METRICS #
 ###############################################
 
-for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-			| sort \
-			| uniq );
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+				| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+				| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+				| sort \
+				| uniq );
 	do
 		CREATE_SAMPLE_ARRAY
 		COLLECT_MULTIPLE_METRICS
@@ -1259,19 +1296,20 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		CAT_VERIFYBAMID_PER_AUTOSOME
 		echo sleep 0.1s
-done
+	done
 
 #############################################
 ##### MITOCHONDRIAL WORKFLOW ################
+#############################################
 # RUN MUTECT2 TO CALL SNVS AND SMALL INDELS #
 # GENERATE COVERAGE STATS ###################
 # RUN EKLIPSE FOR LARGER DELETIONS ##########
 #############################################
 
-	#########################################
-	##### MUTECT2 IN MITO MODE WORKFLOW #####
-	##### WORKS ON FULL BAM FILE ############
-	#########################################
+	#####################################
+	### MUTECT2 IN MITO MODE WORKFLOW ###
+	### WORKS ON FULL BAM FILE ##########
+	#####################################
 
 		#####################################################
 		# run mutect2 in mitochondria mode on full bam file #
@@ -1283,9 +1321,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.08-MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-MUTECT2_MT.log" \
-					-hold_jid E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.08-MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MUTECT2_MT.log \
+				-hold_jid E.01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.08-MUTECT2_MT.sh \
 					$MITO_MUTECT2_CONTAINER \
 					$CORE_PATH \
@@ -1306,9 +1344,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.08-A.01-FILTER_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-FILTER_MUTECT2_MT.log" \
-					-hold_jid H.08-MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.08-A.01-FILTER_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_MUTECT2_MT.log \
+				-hold_jid H.08-MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.08-A.01-FILTER_MUTECT2_MT.sh \
 					$MITO_MUTECT2_CONTAINER \
 					$CORE_PATH \
@@ -1328,9 +1366,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.08-A.01-A.01-MASK_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-MASK_MUTECT2_MT.log" \
-					-hold_jid H.08-A.01-FILTER_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MASK_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-FILTER_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.08-A.01-A.01-MASK_MUTECT2_MT.sh \
 					$MITO_MUTECT2_CONTAINER \
 					$CORE_PATH \
@@ -1350,9 +1388,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.08-A.01-A.01-A01-HAPLOGREP2_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-HAPLOGREP2_MUTECT2_MT.log" \
-					-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.08-A.01-A.01-A01-HAPLOGREP2_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOGREP2_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.08-A.01-A.01-A.01-HAPLOGREP2_MUTECT2_MT.sh \
 					$MITO_MUTECT2_CONTAINER \
 					$CORE_PATH \
@@ -1373,9 +1411,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-GNOMAD_MUTECT2_MT.log" \
-					-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-GNOMAD_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT.sh \
 					$MITO_MUTECT2_CONTAINER \
 					$CORE_PATH \
@@ -1396,9 +1434,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-RUN_ANNOVAR_MUTECT2_MT.log" \
-					-hold_jid H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_ANNOVAR_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.08-A.01-A.01-A.02-A.01-RUN_ANNOVAR_MUTECT2_MT.sh \
 					$MITO_MUTECT2_CONTAINER \
 					$CORE_PATH \
@@ -1419,9 +1457,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-FIX_ANNOVAR_MUTECT2_MT.log" \
-					-hold_jid H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//${SM_TAG}-FIX_ANNOVAR_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT.sh \
 					$CORE_PATH \
 					$PROJECT \
@@ -1431,9 +1469,9 @@ done
 					$SUBMIT_STAMP
 			}
 
-	##############################################################
-	##### RUN EKLIPSE TO DETECT LARGE DELETIONS IN MT GENOME #####
-	##############################################################
+	###############################################################
+	### EKLIPSE WORKFLOW TO DETECT LARGE DELETIONS IN MT GENOME ###
+	###############################################################
 
 		############################################
 		# SUBSET BAM FILE TO CONTAIN ONLY MT READS #
@@ -1444,9 +1482,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.09-MAKE_BAM_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-MAKE_BAM_MT.log" \
-					-hold_jid E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MAKE_BAM_MT.log \
+				-hold_jid E.01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.09-MAKE_MT_BAM.sh \
 					$MITO_EKLIPSE_CONTAINER \
 					$CORE_PATH \
@@ -1467,9 +1505,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.09-A.01-RUN_EKLIPSE"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-RUN_EKLIPSE.log" \
-					-hold_jid H.09-MAKE_BAM_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.09-A.01-RUN_EKLIPSE_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EKLIPSE.log \
+				-hold_jid H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.09-A.01-RUN_EKLIPSE.sh \
 					$MITO_EKLIPSE_CONTAINER \
 					$CORE_PATH \
@@ -1482,9 +1520,9 @@ done
 					$SUBMIT_STAMP
 			}
 
-	######################################################
-	##### COVERAGE STATISTICS AND PLOT FOR MT GENOME #####
-	######################################################
+	##################################################
+	### COVERAGE STATISTICS AND PLOT FOR MT GENOME ###
+	##################################################
 
 		####################################################
 		# RUN COLLECTHSMETRICS ON MT ONLY BAM FILE #########
@@ -1496,9 +1534,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.09-A.02-COLLECTHSMETRICS_MT"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-COLLECTHSMETRICS_MT.log" \
-					-hold_jid H.09-MAKE_BAM_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.09-A.02-COLLECTHSMETRICS_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECTHSMETRICS_MT.log \
+				-hold_jid H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.09-A.02-COLLECTHSMETRICS_MT.sh \
 					$MITO_MUTECT2_CONTAINER \
 					$CORE_PATH \
@@ -1520,9 +1558,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N H.09-A.02-A.01-PLOT_MT_COVERAGE"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//$SM_TAG"-PLOT_MT_COVERAGE.log" \
-					-hold_jid H.09-A.02-COLLECTHSMETRICS_MT"_"$SGE_SM_TAG"_"$PROJECT \
+				-N H.09-A.02-A.01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PLOT_MT_COVERAGE.log \
+				-hold_jid H.09-A.02-COLLECTHSMETRICS_MT_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/H.09-A.02-A.01_PLOT_MT_COVERAGE.sh \
 					$MITO_MUTECT2_CONTAINER \
 					$CORE_PATH \
@@ -1534,15 +1572,15 @@ done
 					$SUBMIT_STAMP
 			}
 
-###############################################################
-# run steps centered on gatk's mutect2 mitochondrial workflow #
-###############################################################
+############################################
+# RUN STEPS FOR MITOCHONDRIAL DNA ANALYSIS #
+############################################
 
-for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-		| sort \
-		| uniq );
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
 	do
 		CREATE_SAMPLE_ARRAY
 		# run mutect2 and then filter, annotate, run haplogrep2
@@ -1570,7 +1608,7 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		PLOT_MT_COVERAGE
 		echo sleep 0.1s
-done
+	done
 
 #################################
 ##### CNV CALLING WORKFLOW ######
@@ -1587,9 +1625,9 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-RUN_EXOME_DEPTH.log" \
-				-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+				-N F02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EXOME_DEPTH.log \
+				-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E.01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 				$SCRIPT_DIR/F02_RUN_EXOME_DEPTH.sh \
 					$CNV_CONTAINER \
 					$CORE_PATH \
@@ -1612,9 +1650,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N F02-A01_PCT_CNV_COVERAGE_PER_CHR"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-PCT_CNV_COVERAGE_PER_CHR.log" \
-			-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
+			-N F02-A01_PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PCT_CNV_COVERAGE_PER_CHR.log \
+			-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},F02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/F02-A01_PCT_CNV_COVERAGE_PER_CHR.sh \
 				$CNV_CONTAINER \
 				$CORE_PATH \
@@ -1633,9 +1671,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N F02-A02_RUN_ANNOTSV"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-RUN_ANNOTSV.log" \
-			-hold_jid F02-RUN_EXOME_DEPTH"_"$SGE_SM_TAG"_"$PROJECT \
+			-N F02-A02_RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_ANNOTSV.log \
+			-hold_jid F02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/F02-A02_RUN_ANNOTSV.sh \
 				$CNV_CONTAINER \
 				$CORE_PATH \
@@ -1655,9 +1693,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N F02-A02-A01_RUN_FORMAT_AND_ZOOM_ANNOTSV"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-RUN_FORMAT_AND_ZOOM_ANNOTSV.log" \
-			-hold_jid F02-A02_RUN_ANNOTSV"_"$SGE_SM_TAG"_"$PROJECT \
+			-N F02-A02-A01_RUN_FORMAT_AND_ZOOM_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_FORMAT_AND_ZOOM_ANNOTSV.log \
+			-hold_jid F02-A02_RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/F02-A02-A01_RUN_FORMAT_AND_ZOOM_ANNOTSV.sh \
 				$CNV_CONTAINER \
 				$CORE_PATH \
@@ -1672,25 +1710,25 @@ done
 		}
 
 ##############################
-# run steps for cnv workflow #
+# RUN STEPS FOR CNV WORKFLOW #
 ##############################
 
-for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-		| sort \
-		| uniq );
-do
-	CREATE_SAMPLE_ARRAY
-	RUN_EXOME_DEPTH
-	echo sleep 0.1s
-	CALCULATE_PCT_CNV_COVERAGE
-	echo sleep 0.1s
-	RUN_ANNOTSV
-	echo sleep 0.1s
-	RUN_FORMAT_AND_ZOOM_ANNOTSV
-	echo sleep 0.1s
-done
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		RUN_EXOME_DEPTH
+		echo sleep 0.1s
+		CALCULATE_PCT_CNV_COVERAGE
+		echo sleep 0.1s
+		RUN_ANNOTSV
+		echo sleep 0.1s
+		RUN_FORMAT_AND_ZOOM_ANNOTSV
+		echo sleep 0.1s
+	done
 
 #########################################################################
 ##### HAPLOTYPE CALLER SCATTER ##########################################
@@ -1705,9 +1743,9 @@ done
 		echo \
 		qsub \
 			$QSUB_ARGS \
-		-N H.07-HAPLOTYPE_CALLER"_"$SGE_SM_TAG"_"$PROJECT"_chr"$CHROMOSOME \
-			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-HAPLOTYPE_CALLER_chr"$CHROMOSOME".log" \
-		-hold_jid C.01-FIX_BED_FILES"_"$SGE_SM_TAG"_"$PROJECT,E.01-APPLY_BQSR"_"$SGE_SM_TAG"_"$PROJECT \
+		-N H.07-HAPLOTYPE_CALLER_${SGE_SM_TAG}_${PROJECT}_chr${CHROMOSOME} \
+			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_chr${CHROMOSOME}.log \
+		-hold_jid C.01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E.01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 		$SCRIPT_DIR/H.07_HAPLOTYPE_CALLER_SCATTER.sh \
 			$GATK_3_7_0_CONTAINER \
 			$CORE_PATH \
@@ -1722,31 +1760,34 @@ done
 			$SUBMIT_STAMP
 	}
 
-# Take the samples bait bed file and...
-# create a list of unique chromosome to use as a scatter for haplotype_caller_scatter
+#######################################################################################
+# RUN STEPS FOR HAPLOTYPE CALLER SCATTER ##############################################
+# Take the samples bait bed file and ##################################################
+# create a list of unique chromosome to use as a scatter for haplotype_caller_scatter #
+#######################################################################################
 
-for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-		|awk 'BEGIN {FS=","} NR>1 {print $8}' \
-		| sort \
-		| uniq );
-do
-	CREATE_SAMPLE_ARRAY
-		for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
-			| sed -r 's/[[:space:]]+/\t/g' \
-			| sed 's/chr//g' \
-			| grep -v "MT" \
-			| cut -f 1 \
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
 			| sort \
-			| uniq \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
-				collapse 1 \
-			| sed 's/,/ /g');
-		do
-			CALL_HAPLOTYPE_CALLER
-			echo sleep 0.1s
-		done
-done
+			| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+				| sed -r 's/[[:space:]]+/\t/g' \
+				| sed 's/chr//g' \
+				| grep -v "MT" \
+				| cut -f 1 \
+				| sort \
+				| uniq \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					collapse 1 \
+				| sed 's/,/ /g');
+			do
+				CALL_HAPLOTYPE_CALLER
+				echo sleep 0.1s
+			done
+	done
 
 ###################################################################################################
 ##### HAPLOTYPE CALLER GATHER #####################################################################
@@ -1771,9 +1812,9 @@ done
 									| singularity exec $ALIGNMENT_CONTAINER datamash \
 										collapse 1 \
 									| sed 's/,/ /g');
-				do
-					HOLD_ID_PATH=$HOLD_ID_PATH"H.07-HAPLOTYPE_CALLER_"$SM_TAG"_"$PROJECT"_chr"$CHROMOSOME","
-					HOLD_ID_PATH=`echo $HOLD_ID_PATH | sed 's/@/_/g'`
+			do
+				HOLD_ID_PATH=$HOLD_ID_PATH"H.07-HAPLOTYPE_CALLER_"$SM_TAG"_"$PROJECT"_chr"$CHROMOSOME","
+				HOLD_ID_PATH=`echo $HOLD_ID_PATH | sed 's/@/_/g'`
 			done
 		}
 
@@ -1786,8 +1827,8 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG-HAPLOTYPE_CALLER_GVCF_GATHER.log \
+			-N H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_GVCF_GATHER.log \
 			${HOLD_ID_PATH} \
 			$SCRIPT_DIR/H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER.sh \
 				$GATK_3_7_0_CONTAINER \
@@ -1810,8 +1851,8 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG-HAPLOTYPE_CALLER_BAM_GATHER.log \
+			-N H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_BAM_GATHER.log \
 			${HOLD_ID_PATH} \
 			$SCRIPT_DIR/H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER.sh \
 				$ALIGNMENT_CONTAINER \
@@ -1832,9 +1873,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM"_"$SGE_SM_TAG"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/$SM_TAG"-HC_BAM_TO_CRAM.log" \
-			-hold_jid H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER"_"$SGE_SM_TAG"_"$PROJECT \
+			-N H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HC_BAM_TO_CRAM.log \
+			-hold_jid H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1848,14 +1889,14 @@ done
 		}
 
 ##################################################################
-# run steps to gather gvcfs/hc bam files and convert bam to cram #
+# RUN STEPS TO GATHER GVCFS/HC BAM FILES AND CONVERT BAM TO CRAM #
 ##################################################################
 
-for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-		| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-		| sort \
-		| uniq );
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
 	do
 		CREATE_SAMPLE_ARRAY
 		BUILD_HOLD_ID_PATH
@@ -1865,22 +1906,23 @@ for SAMPLE in $(awk 1 $SAMPLE_SHEET \
 		echo sleep 0.1s
 		HC_BAM_TO_CRAM
 		echo sleep 0.1s
-done
+	done
 
 ##################################################################
 ##### JOINT CALLING SAMPLES IN A FAMILY WITH SET OF CONTROLS #####
 ##################################################################
 
-	######################################################
-	# create an array for each family/sample combination #
-	######################################################
+######################################################
+### CREATE_FAMILY_ARRAY ##############################
+# create an array for each family/sample combination #
+######################################################
 
-		CREATE_FAMILY_ARRAY ()
-		{
+	CREATE_FAMILY_ARRAY ()
+	{
 			FAMILY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
 				$20=="'$FAMILY_ONLY'" \
 				{print $1,$8,$12,$15,$16,$17,$18,$20}' \
-			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 				| sort \
 				| uniq`)
 
@@ -1901,14 +1943,16 @@ done
 
 					SM_TAG=${FAMILY_ARRAY[1]}
 
-						SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g') # "@" in qsub job or holdid is not allowed
+						# "@" in qsub job or holdid is not allowed
 
-							####################################################################################
-							#  9  SKIP : Center=the center/funding mechanism ###################################
-							# 10  SKIP : Description=Sequencer model and/or setting (setting e.g. "Rapid-Run") #
-							## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq” ##
-							# 11  SKIP : Seq_Exp_ID ############################################################
-							####################################################################################
+							SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g')
+
+								####################################################################################
+								#  9  SKIP : Center=the center/funding mechanism ###################################
+								# 10  SKIP : Description=Sequencer model and/or setting (setting e.g. "Rapid-Run") #
+								## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq” ##
+								# 11  SKIP : Seq_Exp_ID ############################################################
+								####################################################################################
 
 				# 12  Genome_Ref=the reference genome used in the analysis pipeline
 
@@ -1950,14 +1994,7 @@ done
 						# 23 SKIP : GENDER ####
 						# 24 SKIP : PHENOTYPE #
 						#######################
-
-				# OLD ARRAY, DELETE LATER
-					# FAMILY_PROJECT=${FAMILY_ARRAY[0]}
-					# FAMILY_SGE_SAMPLE=${FAMILY_ARRAY[1]}
-					# FAMILY_FAMILY=${FAMILY_ARRAY[2]}
-					# FAMILY_REF_GENOME=${FAMILY_ARRAY[3]}
-					# FAMILY_DBSNP=${FAMILY_ARRAY[4]}
-		}
+	}
 
 	#########################################################
 	# CREATE A GVCF ".list" file for each sample per family #
@@ -1968,10 +2005,10 @@ done
 			awk 'BEGIN {OFS="/"} \
 				$20=="'$FAMILY'" \
 				{print "'$CORE_PATH'",$1,$20,$8,"GVCF",$8".g.vcf.gz"}' \
-				~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-			| sort \
-			| uniq \
-			>| $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".gvcf.list"
+			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+				| sort \
+				| uniq \
+			>| $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.gvcf.list
 		}
 
 	############################################
@@ -1981,13 +2018,15 @@ done
 
 		CREATE_FAMILY_SAMPLE_LIST ()
 		{
-			awk '$20=="'$FAMILY'" {print $8}' \
-			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+			awk 'BEGIN {OFS="/"} \
+				$20=="'$FAMILY'" \
+				{print $8}' \
+			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 				| sort \
 				| uniq \
-			>| $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.list" \
-			&& cp $CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.list" \
-			$CORE_PATH/$PROJECT/$FAMILY/$FAMILY".sample.args"
+			>| $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.list \
+				&& cp $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.list \
+				$CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.args
 		}
 
 	#################################################################################
@@ -2001,8 +2040,8 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.10-FIX_BED_FILES"_"$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"-FIX_BED_FILES.log" \
+			-N H.10-FIX_BED_FILES_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}-FIX_BED_FILES.log \
 			$SCRIPT_DIR/H.10_FIX_BED_FAMILY.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -2024,18 +2063,21 @@ done
 
 		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF ()
 		{
-			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' $SAMPLE_SHEET \
-				| sort \
-				| uniq )
+			for PROJECT in $(awk 'BEGIN {FS=","} \
+					NR>1 \
+					{print $1}' \
+				$SAMPLE_SHEET \
+					| sort \
+					| uniq )
 			do
 				HOLD_ID_PATH="-hold_jid "
 					for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
 							$20=="'$FAMILY_ONLY'" \
 							{print $8}' \
-							~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-								| sed 's/@/_/g' \
-								| sort \
-								| uniq);
+						~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+							| sed 's/@/_/g' \
+							| sort \
+							| uniq);
 					do
 						HOLD_ID_PATH=$HOLD_ID_PATH"H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER_"$SAMPLE"_"$PROJECT","
 					done
@@ -2051,8 +2093,8 @@ done
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N "I.01_GENOTYPE_GVCF_SCATTER_"$FAMILY"_"$PROJECT"_chr"$CHROMOSOME \
-					-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT.GENOTYPE_GVCF_chr$CHROMOSOME.log \
+				-N I.01_GENOTYPE_GVCF_SCATTER_${FAMILY}_${PROJECT}_chr${CHROMOSOME} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.GENOTYPE_GVCF_chr${CHROMOSOME}.log \
 				$HOLD_ID_PATH \
 				$SCRIPT_DIR/I.01_GENOTYPE_GVCF_SCATTER.sh \
 					$GATK_3_7_0_CONTAINER \
@@ -2091,25 +2133,25 @@ done
 		}
 
 #################################################################################
-# run steps to do joint calling per family per set of intervals in a chromosome #
+# RUN STEPS TO DO JOINT CALLING PER FAMILY PER SET OF INTERVALS IN A CHROMOSOME #
 #################################################################################
 
-for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
-		NR>1 \
-		{print $20}' \
-		~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-		| sort \
-		| uniq);
-do
-	CREATE_FAMILY_ARRAY
-	CREATE_GVCF_LIST
-	CREATE_FAMILY_SAMPLE_LIST
-	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF
-	FIX_BED_FILES_FAMILY
-	echo sleep 0.1s
-	SCATTER_GENOTYPE_GVCF_PER_CHROMOSOME
-	echo sleep 0.1s
-done
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			NR>1 \
+			{print $20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq);
+	do
+		CREATE_FAMILY_ARRAY
+		CREATE_GVCF_LIST
+		CREATE_FAMILY_SAMPLE_LIST
+		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF
+		FIX_BED_FILES_FAMILY
+		echo sleep 0.1s
+		SCATTER_GENOTYPE_GVCF_PER_CHROMOSOME
+		echo sleep 0.1s
+	done
 
 ########################################################################################
 ##### GATHER UP THE PER FAMILY PER CHROMOSOME GVCF FILES INTO A SINGLE FAMILY GVCF #####
@@ -2121,10 +2163,12 @@ done
 
 		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER ()
 		{
-			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' \
+			for PROJECT in $(awk 'BEGIN {FS=","} \
+					NR>1 \
+					{print $1}' \
 				$SAMPLE_SHEET \
-				| sort \
-				| uniq )
+					| sort \
+					| uniq )
 			do
 				HOLD_ID_PATH="-hold_jid "
 				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
@@ -2152,9 +2196,9 @@ done
 			echo \
 			qsub \
 			$QSUB_ARGS \
-			-N I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".GENOTYPE_GVCF_GATHER.log" \
-			${HOLD_ID_PATH}"H.10-FIX_BED_FILES"_"$FAMILY"_"$PROJECT" \
+			-N I.01-A.01_GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.GENOTYPE_GVCF_GATHER.log \
+			${HOLD_ID_PATH}H.10-FIX_BED_FILES_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/I.01-A.01_GENOTYPE_GVCF_GATHER.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -2167,23 +2211,25 @@ done
 		}
 
 #####################################################
-# run step to gather per chromosome per family vcfs #
+# RUN STEP TO GATHER PER CHROMOSOME PER FAMILY VCFS #
 #####################################################
 
-for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
-	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	| sort \
-	| uniq)
-do
-	CREATE_FAMILY_ARRAY
-	BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
-	CALL_GENOTYPE_GVCF_GATHER
-	echo sleep 0.1s
-done
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq)
+		do
+		CREATE_FAMILY_ARRAY
+		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
+		CALL_GENOTYPE_GVCF_GATHER
+		echo sleep 0.1s
+	done
 
 ########################################################
 ##### DO VARIANT QUALITY SCORE RECALIBRATION ###########
 # I THINK ALL OF THIS CAN BE MOVED INTO THE LOOP ABOVE #
+# BUT I LIKE TO KEEP IT HERE ###########################
 ########################################################
 
 	##############################################
@@ -2195,9 +2241,9 @@ done
 			echo \
 			qsub \
 			$QSUB_ARGS \
-			-N J01_RUN_VQSR_SNP_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".RUN_VQSR_SNP.log" \
-			-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
+			-N J01_RUN_VQSR_SNP_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.RUN_VQSR_SNP.log \
+			-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/J01-RUN_VARIANT_RECALIBRATOR_SNP.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -2222,9 +2268,9 @@ done
 			echo \
 			qsub \
 			$QSUB_ARGS \
-			-N J02_RUN_VQSR_INDEL_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".RUN_VQSR_INDEL.log" \
-			-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_$FAMILY"_"$PROJECT \
+			-N J02_RUN_VQSR_INDEL_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.RUN_VQSR_INDEL.log \
+			-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/J02-RUN_VARIANT_RECALIBRATOR_INDEL.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -2245,9 +2291,9 @@ done
 			echo \
 			qsub \
 			$QSUB_ARGS \
-			-N K01_APPLY_VQSR_SNP_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".APPLY_VQSR_SNP.log" \
-			-hold_jid J01_RUN_VQSR_SNP_$FAMILY"_"$PROJECT,J02_RUN_VQSR_INDEL_$FAMILY"_"$PROJECT \
+			-N K01_APPLY_VQSR_SNP_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.APPLY_VQSR_SNP.log \
+			-hold_jid J01_RUN_VQSR_SNP_${FAMILY}_${PROJECT},J02_RUN_VQSR_INDEL_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/K01-APPLY_VARIANT_RECALIBRATION_SNP.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -2267,9 +2313,9 @@ done
 			echo \
 			qsub \
 			$QSUB_ARGS \
-			-N L01_APPLY_VQSR_INDEL_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".APPLY_VQSR_INDEL.log" \
-			-hold_jid K01_APPLY_VQSR_SNP_$FAMILY"_"$PROJECT \
+			-N L01_APPLY_VQSR_INDEL_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.APPLY_VQSR_INDEL.log \
+			-hold_jid K01_APPLY_VQSR_SNP_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/L01-APPLY_VARIANT_RECALIBRATION_INDEL.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -2281,24 +2327,25 @@ done
 		}
 
 ########################
-# run steps to do VQSR #
+# RUN STEPS TO DO VQSR #
 ########################
 
-for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
-	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	| sort \
-	| uniq)
-do
-	CREATE_FAMILY_ARRAY
-	RUN_VQSR_SNP
-	echo sleep 0.1s
-	RUN_VQSR_INDEL
-	echo sleep 0.1s
-	APPLY_VQSR_SNP
-	echo sleep 0.1s
-	APPLY_VQSR_INDEL
-	echo sleep 0.1s
-done
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+		{print $20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq)
+	do
+		CREATE_FAMILY_ARRAY
+		RUN_VQSR_SNP
+		echo sleep 0.1s
+		RUN_VQSR_INDEL
+		echo sleep 0.1s
+		APPLY_VQSR_SNP
+		echo sleep 0.1s
+		APPLY_VQSR_INDEL
+		echo sleep 0.1s
+	done
 
 ################################################
 ##### SCATTER GATHER FOR ADDING ANNOTATION #####
@@ -2309,9 +2356,9 @@ done
 		echo \
 		qsub \
 			$QSUB_ARGS \
-		-N P01_VARIANT_ANNOTATOR_$FAMILY"_"$PROJECT"_"$CHROMOSOME \
-			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".VARIANT_ANNOTATOR_$CHROMOSOME.log" \
-		-hold_jid L01_APPLY_VQSR_INDEL_$FAMILY"_"$PROJECT \
+		-N P01_VARIANT_ANNOTATOR_${FAMILY}_${PROJECT}_${CHROMOSOME} \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.VARIANT_ANNOTATOR_$CHROMOSOME.log \
+		-hold_jid L01_APPLY_VQSR_INDEL_${FAMILY}_${PROJECT} \
 		$SCRIPT_DIR/P01_VARIANT_ANNOTATOR_SCATTER.sh \
 			$GATK_3_7_0_CONTAINER \
 			$CORE_PATH \
@@ -2325,34 +2372,38 @@ done
 			$SUBMIT_STAMP
 	}
 
-########################
-# run steps to do VQSR #
-########################
+#####################################
+# RUN STEPS TO DO VARIANT ANNOTATOR #
+#####################################
 
-for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
-	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	| sort \
-	| uniq);
-do
-	CREATE_FAMILY_ARRAY
-		for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
-						| sed -r 's/[[:space:]]+/\t/g' \
-						| sed 's/chr//g' \
-						| grep -v "MT" \
-						| cut -f 1 \
-						| sort \
-						| uniq \
-						| singularity exec $ALIGNMENT_CONTAINER datamash \
-							collapse 1 \
-						| sed 's/,/ /g');
-			do
-				CALL_VARIANT_ANNOTATOR
-				echo sleep 0.1s
-		done
-done
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+		{print $20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq);
+	do
+		CREATE_FAMILY_ARRAY
+			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
+				$BAIT_BED \
+					| sed -r 's/[[:space:]]+/\t/g' \
+					| sed 's/chr//g' \
+					| grep -v "MT" \
+					| cut -f 1 \
+					| sort \
+					| uniq \
+					| singularity exec $ALIGNMENT_CONTAINER datamash \
+						collapse 1 \
+					| sed 's/,/ /g');
+				do
+					CALL_VARIANT_ANNOTATOR
+					echo sleep 0.1s
+			done
+	done
 
 ##############################################################################################
 ##### GATHER UP THE PER FAMILY PER CHROMOSOME ANNOTATED VCF FILES INTO A SINGLE VCF FILE #####
+##### RUN PCA/RELATEDNESS WORKFLOW ###########################################################
+##### RUN ROH ANALYSIS #######################################################################
 ##############################################################################################
 
 	######################################################
@@ -2361,22 +2412,24 @@ done
 
 		BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION ()
 		{
-			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' \
-						$SAMPLE_SHEET \
+			for PROJECT in $(awk 'BEGIN {FS=","} \
+					NR>1 {print $1}' \
+					$SAMPLE_SHEET \
 						| sort \
 						| uniq )
 			do
 				HOLD_ID_PATH="-hold_jid "
-				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
-									| sed -r 's/[[:space:]]+/\t/g' \
-									| sed 's/chr//g' \
-									| grep -v "MT" \
-									| cut -f 1 \
-									| sort \
-									| uniq \
-									| singularity exec $ALIGNMENT_CONTAINER datamash \
-										collapse 1 \
-									| sed 's/,/ /g');
+				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
+						$BAIT_BED \
+							| sed -r 's/[[:space:]]+/\t/g' \
+							| sed 's/chr//g' \
+							| grep -v "MT" \
+							| cut -f 1 \
+							| sort \
+							| uniq \
+							| singularity exec $ALIGNMENT_CONTAINER datamash \
+								collapse 1 \
+							| sed 's/,/ /g');
 				do
 					HOLD_ID_PATH=$HOLD_ID_PATH"P01_VARIANT_ANNOTATOR_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
 				done
@@ -2392,8 +2445,8 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N P01-A01_VARIANT_ANNOTATOR_GATHER_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".MORE_VARIANT_ANNOTATOR_GATHER.log" \
+			-N P01-A01_VARIANT_ANNOTATOR_GATHER_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.MORE_VARIANT_ANNOTATOR_GATHER.log \
 			${HOLD_ID_PATH} \
 			$SCRIPT_DIR/P01-A01_VARIANT_ANNOTATOR_GATHER.sh \
 				$GATK_3_7_0_CONTAINER \
@@ -2416,9 +2469,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N Q02-FILTER_COHORT_SNV_PASS_BIALLELIC_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_COHORT_SNV_PASS_BIALLELIC.log" \
-			-hold_jid P01-A01_VARIANT_ANNOTATOR_GATHER_$FAMILY"_"$PROJECT \
+			-N Q02-FILTER_COHORT_SNV_PASS_BIALLELIC_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.FILTER_COHORT_SNV_PASS_BIALLELIC.log \
+			-hold_jid P01-A01_VARIANT_ANNOTATOR_GATHER_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/Q02-FILTER_COHORT_SNV_PASS_BIALLELIC.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -2502,14 +2555,15 @@ done
 				$SUBMIT_STAMP
 		}
 
-#################################################################
-# run steps to do variant annotator gather, pca/relatednes, ROH #
-#################################################################
+##################################################################
+# RUN STEPS TO DO VARIANT ANNOTATOR GATHER, PCA/RELATEDNESS, ROH #
+##################################################################
 
-	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
-		~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-		| sort \
-		| uniq)
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+		{print $20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq)
 	do
 		CREATE_FAMILY_ARRAY
 		BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION
@@ -2535,9 +2589,9 @@ done
 		echo \
 		qsub \
 			$QSUB_ARGS \
-		-N P01-A03_FILTER_TO_FAMILY_ALL_SITES_$FAMILY"_"$PROJECT"_"$CHROMOSOME \
-			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_TO_FAMILY_ALL_SITES_$CHROMOSOME.log" \
-		-hold_jid P01_VARIANT_ANNOTATOR_$FAMILY"_"$PROJECT"_"$CHROMOSOME \
+		-N P01-A03_FILTER_TO_FAMILY_ALL_SITES_${FAMILY}_${PROJECT}_${CHROMOSOME} \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.FILTER_TO_FAMILY_ALL_SITES_${CHROMOSOME}.log \
+		-hold_jid P01_VARIANT_ANNOTATOR_${FAMILY}_${PROJECT}_${CHROMOSOME} \
 		$SCRIPT_DIR/P01-A03_FILTER_TO_FAMILY_ALL_SITES_CHR.sh \
 			$ALIGNMENT_CONTAINER \
 			$CORE_PATH \
@@ -2550,30 +2604,32 @@ done
 	}
 
 ####################################################
-# run steps to filter all sites vcf to family only #
+# RUN STEPS TO FILTER ALL SITES VCF TO FAMILY ONLY #
 ####################################################
 
-for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
-	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	| sort \
-	| uniq);
-do
-	CREATE_FAMILY_ARRAY
-	for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
-					| sed -r 's/[[:space:]]+/\t/g' \
-					| sed 's/chr//g' \
-					| grep -v "MT" \
-					| cut -f 1 \
-					| sort \
-					| uniq \
-					| singularity exec $ALIGNMENT_CONTAINER datamash \
-						collapse 1 \
-					| sed 's/,/ /g');
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+		{print $20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq);
 	do
-		CALL_FILTER_TO_FAMILY_ALL_SITES
-		echo sleep 1s
+		CREATE_FAMILY_ARRAY
+			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
+					$BAIT_BED \
+						| sed -r 's/[[:space:]]+/\t/g' \
+						| sed 's/chr//g' \
+						| grep -v "MT" \
+						| cut -f 1 \
+						| sort \
+						| uniq \
+						| singularity exec $ALIGNMENT_CONTAINER datamash \
+							collapse 1 \
+						| sed 's/,/ /g');
+			do
+				CALL_FILTER_TO_FAMILY_ALL_SITES
+				echo sleep 0.1s
+			done
 	done
-done
 	
 #####################################################################################################
 ##### GATHER UP THE PER FAMILY PER CHROMOSOME FILTER TO FAMILY VCF FILES INTO A SINGLE VCF FILE #####
@@ -2585,22 +2641,25 @@ done
 
 		BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF ()
 		{
-			for PROJECT in $(awk 'BEGIN {FS=","} NR>1 {print $1}' \
-							$SAMPLE_SHEET \
+			for PROJECT in $(awk 'BEGIN {FS=","} \
+					NR>1 \
+					{print $1}' \
+				$SAMPLE_SHEET \
+					| sort \
+					| uniq )
+			do
+				HOLD_ID_PATH="-hold_jid "
+					for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
+						$BAIT_BED \
+							| sed -r 's/[[:space:]]+/\t/g' \
+							| sed 's/chr//g' \
+							| grep -v "MT" \
+							| cut -f 1 \
 							| sort \
-							| uniq )
-				do
-					HOLD_ID_PATH="-hold_jid "
-					for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
-										| sed -r 's/[[:space:]]+/\t/g' \
-										| sed 's/chr//g' \
-										| grep -v "MT" \
-										| cut -f 1 \
-										| sort \
-										| uniq \
-										| singularity exec $ALIGNMENT_CONTAINER datamash \
-											collapse 1 \
-										| sed 's/,/ /g');
+							| uniq \
+							| singularity exec $ALIGNMENT_CONTAINER datamash \
+								collapse 1 \
+							| sed 's/,/ /g');
 					do
 						HOLD_ID_PATH=$HOLD_ID_PATH"P01-A03_FILTER_TO_FAMILY_ALL_SITES_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
 					done
@@ -2616,8 +2675,8 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N P01-A03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_TO_FAMILY_ALL_SITES_GATHER.log" \
+			-N P01-A03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.FILTER_TO_FAMILY_ALL_SITES_GATHER.log \
 			${HOLD_ID_PATH} \
 			$SCRIPT_DIR/P01-A03-A01-FILTER_TO_FAMILY_ALL_SITES_GATHER.sh \
 				$GATK_3_7_0_CONTAINER \
@@ -2640,9 +2699,9 @@ done
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N Q01_FILTER_FAMILY_CODING_PLUS_PAD_$FAMILY"_"$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/$FAMILY"_"$PROJECT".FILTER_FAMILY_CODING_PLUS_PAD.log" \
-			-hold_jid P01-A03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_$FAMILY"_"$PROJECT \
+			-N Q01_FILTER_FAMILY_CODING_PLUS_PAD_${FAMILY}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.FILTER_FAMILY_CODING_PLUS_PAD.log \
+			-hold_jid P01-A03-A01_FILTER_TO_FAMILY_ALL_SITES_GATHER_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/Q01-FILTER_FAMILY_CODING_PLUS_PAD.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -2700,29 +2759,30 @@ done
 		}
 
 ########################################################################
-# run steps to gather up per chromosome family only all sites vcf file #
+# RUN STEPS TO GATHER UP PER CHROMOSOME FAMILY ONLY ALL SITES VCF FILE #
 ########################################################################
 
-for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} {print $20}' \
-	~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-	| sort \
-	| uniq);
-do
-	CREATE_FAMILY_ARRAY
-	BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF
-	CALL_FILTER_TO_FAMILY_VCF_GATHER
-	echo sleep 0.1s
-	CALL_FILTER_FAMILY_TO_CODING_PLUS_PAD
-	echo sleep 0.1s
-	CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD
-	echo sleep 0.1s
-	CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD_VARIANTS
-	echo sleep 0.1s
-done
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+		{print $20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq);
+	do
+		CREATE_FAMILY_ARRAY
+		BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF
+		CALL_FILTER_TO_FAMILY_VCF_GATHER
+		echo sleep 0.1s
+		CALL_FILTER_FAMILY_TO_CODING_PLUS_PAD
+		echo sleep 0.1s
+		CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD
+		echo sleep 0.1s
+		CALL_FILTER_FAMILY_TO_TARGET_PLUS_PAD_VARIANTS
+		echo sleep 0.1s
+	done
 
-#################################
-### SUBSETTING TO SAMPLE VCFS ###
-#################################
+#####################################
+##### SUBSETTING TO SAMPLE VCFS #####
+#####################################
 
 	#####################################################################################
 	# subset sample all sites to from family coding/bait bed file plus user defined pad #
@@ -2987,110 +3047,114 @@ $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 	$PHENOTYPE
 }
 
-###############################
-# run vcf sample subset steps #
-###############################
+##################################################
+# RUN VCF SAMPLE SUBSTEP STEP AND QC REPORT PREP #
+##################################################
 
-for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-	| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-	| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-	| sort \
-	| uniq );
-do
-	CREATE_SAMPLE_ARRAY
-	EXTRACT_SAMPLE_ALL_SITES
-	echo sleep 0.1s
-	EXTRACT_SAMPLE_VARIANTS
-	echo sleep 0.1s
-	VCF_METRICS_BAIT
-	echo sleep 0.1s
-	VCF_METRICS_TITV
-	echo sleep 0.1s
-	EXTRACT_SAMPLE_ALL_SITES_ON_TARGET
-	echo sleep 0.1s
-	EXTRACT_SAMPLE_VARIANTS_ON_TARGET
-	echo sleep 0.1s
-	DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET
-	echo sleep 0.1s
-	RUN_ANNOVAR_ON_TARGET
-	echo sleep 0.1s
-	VCF_METRICS_TARGET
-	echo sleep 0.1s
-	QC_REPORT_PREP
-	echo sleep 0.1s
-done
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+		| awk 'BEGIN {FS=","} \
+			NR>1 \
+			{print $8}' \
+		| sort \
+		| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		EXTRACT_SAMPLE_ALL_SITES
+		echo sleep 0.1s
+		EXTRACT_SAMPLE_VARIANTS
+		echo sleep 0.1s
+		VCF_METRICS_BAIT
+		echo sleep 0.1s
+		VCF_METRICS_TITV
+		echo sleep 0.1s
+		EXTRACT_SAMPLE_ALL_SITES_ON_TARGET
+		echo sleep 0.1s
+		EXTRACT_SAMPLE_VARIANTS_ON_TARGET
+		echo sleep 0.1s
+		DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET
+		echo sleep 0.1s
+		RUN_ANNOVAR_ON_TARGET
+		echo sleep 0.1s
+		VCF_METRICS_TARGET
+		echo sleep 0.1s
+		QC_REPORT_PREP
+		echo sleep 0.1s
+	done
 
 #############################
 ##### END PROJECT TASKS #####
 #############################
 
-# grab email addy
+	############################################################
+	# build hold id for qc report prep per sample, per project #
+	############################################################
 
-	SEND_TO=`cat $SCRIPT_DIR/../email_lists.txt`
+		BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_SAMPLE ()
+		{
+			HOLD_ID_PATH_QC_REPORT_PREP="-hold_jid "
 
-# grab submitter's name
+				for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+					| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+					| awk 'BEGIN {FS=","} \
+						$1=="'$PROJECT'" \
+						{print $8}' \
+					| sort \
+					| uniq);
+				do
+					CREATE_SAMPLE_ARRAY
+					HOLD_ID_PATH_QC_REPORT_PREP=$HOLD_ID_PATH_QC_REPORT_PREP"X01-QC_REPORT_PREP_"$SGE_SM_TAG"_"$PROJECT","
+					HOLD_ID_PATH_QC_REPORT_PREP=`echo $HOLD_ID_PATH_QC_REPORT_PREP | sed 's/@/_/g'`
+				done
+		}
 
-	PERSON_NAME=`getent passwd | awk 'BEGIN {FS=":"} $1=="'$SUBMITTER_ID'" {print $5}'`
+	###################################################
+	# add hold id for PCA/RELATEDNESS FOR EACH FAMILY #
+	###################################################
 
-# build hold id for qc report prep per sample, per project
+		BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_FAMILY ()
+		{
+			for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+					$1=="'$PROJECT'" \
+					{print $20}' \
+				~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+					| sort \
+					| uniq);
+			do
+				HOLD_ID_PATH_PCA="Q02-A01-PCA_RELATEDNESS_"$FAMILY"_"$PROJECT","
+			done
+		}
 
-	BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_SAMPLE ()
-	{
-		HOLD_ID_PATH_QC_REPORT_PREP="-hold_jid "
+	#########################################################################
+	# run end project functions (qc report, file clean-up) for each project #
+	#########################################################################
 
-		for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} $1=="'$PROJECT'" {print $8}' \
-			| sort \
-			| uniq);
-		do
-			CREATE_SAMPLE_ARRAY
-			HOLD_ID_PATH_QC_REPORT_PREP=$HOLD_ID_PATH_QC_REPORT_PREP"X01-QC_REPORT_PREP_"$SGE_SM_TAG"_"$PROJECT","
-			HOLD_ID_PATH_QC_REPORT_PREP=`echo $HOLD_ID_PATH_QC_REPORT_PREP | sed 's/@/_/g'`
-		done
-	}
+		PROJECT_WRAP_UP ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N X.01-X.01_END_PROJECT_TASKS_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/LOGS/${PROJECT}-END_PROJECT_TASKS.log \
+			$HOLD_ID_PATH_QC_REPORT_PREP$HOLD_ID_PATH_PCA \
+			$SCRIPT_DIR/X.01-X.01-END_PROJECT_TASKS.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$SCRIPT_DIR \
+				$SUBMITTER_ID \
+				$SAMPLE_SHEET \
+				$PED_FILE \
+				$SUBMIT_STAMP \
+				$SEND_TO \
+				$THREADS
+		}
 
-# add hold id for PCA/RELATEDNESS FOR EACH FAMILY
+##################
+# RUN FINAL LOOP #
+##################
 
-	BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_FAMILY ()
-	{
-
-		for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} $1=="'$PROJECT'" \
-			{print $20}' \
-			~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
-			| sort \
-			| uniq);
-		do
-			HOLD_ID_PATH_PCA="Q02-A01-PCA_RELATEDNESS_"$FAMILY"_"$PROJECT","
-		done
-	}
-
-# run end project functions (qc report, file clean-up) for each project
-
-	PROJECT_WRAP_UP ()
-	{
-		echo \
-		qsub \
-			$QSUB_ARGS \
-		-N X.01-X.01_END_PROJECT_TASKS_${PROJECT} \
-			-o $CORE_PATH/$PROJECT/LOGS/${PROJECT}-END_PROJECT_TASKS.log \
-		$HOLD_ID_PATH_QC_REPORT_PREP$HOLD_ID_PATH_PCA \
-		$SCRIPT_DIR/X.01-X.01-END_PROJECT_TASKS.sh \
-			$ALIGNMENT_CONTAINER \
-			$CORE_PATH \
-			$PROJECT \
-			$SCRIPT_DIR \
-			$SUBMITTER_ID \
-			$SAMPLE_SHEET \
-			$PED_FILE \
-			$SUBMIT_STAMP \
-			$SEND_TO \
-			$THREADS
-	}
-
-# final loop
-
-for PROJECT in $(awk 1 $SAMPLE_SHEET \
+	for PROJECT in $(awk 1 $SAMPLE_SHEET \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'BEGIN {FS=","} NR>1 {print $1}' \
 			| sort \
@@ -3099,28 +3163,33 @@ for PROJECT in $(awk 1 $SAMPLE_SHEET \
 		BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_SAMPLE
 		BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_FAMILY
 		PROJECT_WRAP_UP
-done
+	done
 
-# MESSAGE THAT SAMPLE SHEET HAS FINISHED SUBMITTING
+#############################################################
+##### MESSAGE THAT SAMPLE SHEET HAS FINISHED SUBMITTING #####
+#############################################################
 
-printf "echo\n"
+	printf "echo\n"
 
-printf "echo $SAMPLE_SHEET has finished submitting at `date`\n"
+	printf "echo $SAMPLE_SHEET has finished submitting at `date`\n"
 
-# EMAIL WHEN DONE SUBMITTING
+######################################
+##### EMAIL WHEN DONE SUBMITTING #####
+######################################
 
-printf "$SAMPLE_SHEET\nhas finished submitting at\n`date`\nby `whoami`" \
-	| mail -s "$PERSON_NAME has submitted SUBMITTER_JHG-DDL_EXOME_PIPELINE.sh" \
-		$SEND_TO
+	printf "$SAMPLE_SHEET\nhas finished submitting at\n`date`\nby `whoami`" \
+		| mail -s "$PERSON_NAME has submitted SUBMITTER_JHG-DDL_EXOME_PIPELINE.sh" \
+			$SEND_TO
 
-# ###################
-# ##### ANNOVAR #####
-# ###################
+# ###########################################################
+# ##### ANNOVAR #############################################
+# ##### TO BE DELETED WHEN ANNOVAR IS FULLY IMPLEMENTED #####
+# ###########################################################
 
 # ## RUN ANNOVAR
 
 # awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+# ~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 # | sort -k 1,1 -k 2,2 -k 3,3 \
 # | uniq \
 # | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.16-A.01_RUN_ANNOVAR_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
@@ -3133,7 +3202,7 @@ printf "$SAMPLE_SHEET\nhas finished submitting at\n`date`\nby `whoami`" \
 # ## REFORMAT ANNOVAR
 
 # awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-# ~/CGC_PIPELINE_TEMP/$MANIFEST_PREFIX.$PED_PREFIX.join.txt \
+# ~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 # | sort -k 1,1 -k 2,2 -k 3,3 \
 # | uniq \
 # | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.16-A.01-A.01_REFORMAT_ANNOVAR_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
@@ -3141,4 +3210,3 @@ printf "$SAMPLE_SHEET\nhas finished submitting at\n`date`\nby `whoami`" \
 # "-o","'$CORE_PATH'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".REFORMAT_ANNOVAR.log",\
 # "'$SCRIPT_DIR'""/S.16-A.01-A.01_REFORMAT_ANNOVAR.sh",\
 # "'$ANNOVAR_DIR'","'$CORE_PATH'",$1,$2,$3"\n""sleep 3s"}'
-
