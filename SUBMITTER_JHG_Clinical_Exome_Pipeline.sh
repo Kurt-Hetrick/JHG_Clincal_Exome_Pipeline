@@ -1621,25 +1621,25 @@
 	########################################
 
 		RUN_EXOME_DEPTH ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N F02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EXOME_DEPTH.log \
-				-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/F02_RUN_EXOME_DEPTH.sh \
-					$CNV_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$EXOME_DEPTH_R_SCRIPT \
-					$REF_PANEL_COUNTS \
-					$CODING_BED \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EXOME_DEPTH.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E02-RUN_EXOME_DEPTH.sh \
+				$CNV_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$EXOME_DEPTH_R_SCRIPT \
+				$REF_PANEL_COUNTS \
+				$CODING_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
 
 	################################################################
 	# calculate the percent of cnv call length for each chromosome #
@@ -1652,7 +1652,7 @@
 				$QSUB_ARGS \
 			-N F02-A01_PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PCT_CNV_COVERAGE_PER_CHR.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},F02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/F02-A01_PCT_CNV_COVERAGE_PER_CHR.sh \
 				$CNV_CONTAINER \
 				$CORE_PATH \
@@ -1673,7 +1673,7 @@
 				$QSUB_ARGS \
 			-N F02-A02_RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_ANNOTSV.log \
-			-hold_jid F02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid E02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/F02-A02_RUN_ANNOTSV.sh \
 				$CNV_CONTAINER \
 				$CORE_PATH \

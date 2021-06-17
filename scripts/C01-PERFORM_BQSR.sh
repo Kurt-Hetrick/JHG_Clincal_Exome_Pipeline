@@ -57,7 +57,7 @@ START_PERFORM_BQSR=`date '+%s'` # capture time process starts for wall clock tra
 			CMD=${CMD}" --known-sites ${KNOWN_INDEL_2}" \
 			CMD=${CMD}" --known-sites ${DBSNP}" \
 			CMD=${CMD}" --intervals ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed" \
-			CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/COUNT_COVARIATES/GATK_REPORT/${SM_TAG}_PERFORM_BQSR.bqsr"
+		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/COUNT_COVARIATES/GATK_REPORT/${SM_TAG}_PERFORM_BQSR.bqsr"
 
 	# write command line to file and execute the command line
 

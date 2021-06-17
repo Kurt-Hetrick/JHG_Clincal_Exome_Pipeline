@@ -153,7 +153,7 @@
 			CMD=${CMD}" RGDT=${ISO_8601}" \
 			CMD=${CMD}" RGPG=CIDR_WES-${PIPELINE_VERSION}" \
 			CMD=${CMD}" RGDS=${BAIT_NAME},${TARGET_NAME},${TITV_NAME}" \
-			CMD=${CMD}" OUTPUT=${CORE_PATH}/${PROJECT}/TEMP/${PLATFORM_UNIT}.bam"
+		CMD=${CMD}" OUTPUT=${CORE_PATH}/${PROJECT}/TEMP/${PLATFORM_UNIT}.bam"
 
 	# write command line to file and execute the command line
 

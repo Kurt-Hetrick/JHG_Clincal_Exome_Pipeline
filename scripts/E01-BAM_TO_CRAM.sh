@@ -44,13 +44,13 @@ START_CRAM=`date '+%s'` # capture time process starts for wall clock tracking pu
 	# construct command line
 
 		CMD="singularity exec ${ALIGNMENT_CONTAINER} samtools" \
-		CMD=$CMD" view" \
-			CMD=$CMD" -C ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam" \
-			CMD=$CMD" -T ${REF_GENOME}" \
-			CMD=$CMD" -@ ${THREADS}" \
-			CMD=$CMD" --write-index" \
-			CMD=$CMD" -O CRAM" \
-		CMD=$CMD" -o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CRAM/${SM_TAG}.cram" \
+		CMD=${CMD}" view" \
+			CMD=${CMD}" -C ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam" \
+			CMD=${CMD}" -T ${REF_GENOME}" \
+			CMD=${CMD}" -@ ${THREADS}" \
+			CMD=${CMD}" --write-index" \
+			CMD=${CMD}" -O CRAM" \
+		CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CRAM/${SM_TAG}.cram" \
 
 	# write command line to file and execute the command line
 

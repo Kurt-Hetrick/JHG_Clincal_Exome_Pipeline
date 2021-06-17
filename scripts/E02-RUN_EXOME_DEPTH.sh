@@ -24,37 +24,36 @@
 
 # INPUT VARIABLES
 
-	ALIGNMENT_CONTAINER=$1
+	CNV_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
-	REF_GENOME=$6
-	SAMPLE_SHEET=$7
+	
+	EXOME_DEPTH_R_SCRIPT=$6
+	REF_PANEL_COUNTS=$7
+	CODING_BED=$8
+		CODING_BED_NAME=$(basename ${CODING_BED} .bed)
+		CODING_MD5=$(md5sum ${CODING_BED} | cut -c 1-7)
+
+	SAMPLE_SHEET=$9
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=$8
+	SUBMIT_STAMP=${10}
 
-## --write out bam file with a 4 bin qscore scheme, remove indel Q scores, emit original Q scores
-# have to change the way to specify this jar file eventually. gatk 4 devs are monsters.
+## run R script for exomeDepth
 
-START_APPLY_BQSR=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_EXOME_DEPTH=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
-			CMD=${CMD}" /gatk/gatk.jar" \
-		CMD=${CMD}" ApplyBQSR" \
-			CMD=${CMD}" --add-output-sam-program-record" \
-			CMD=${CMD}" --use-original-qualities" \
-			CMD=${CMD}" --emit-original-quals" \
-			CMD=${CMD}" --reference ${REF_GENOME}" \
-			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
-			CMD=${CMD}" --bqsr-recal-file ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/COUNT_COVARIATES/GATK_REPORT/${SM_TAG}_PERFORM_BQSR.bqsr" \
-			CMD=${CMD}" --static-quantized-quals 10" \
-			CMD=${CMD}" --static-quantized-quals 20" \
-			CMD=${CMD}" --static-quantized-quals 30" \
-		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam"
+		CMD="singularity exec ${CNV_CONTAINER} Rscript" \
+		CMD=${CMD}" ${EXOME_DEPTH_R_SCRIPT}" \
+			CMD=${CMD}" --bamfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam" \
+			CMD=${CMD}" --refcounts ${REF_PANEL_COUNTS}" \
+			CMD=${CMD}" --bedfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${CODING_BED_NAME}-${CODING_MD5}.exomeDepth.input.bed" \
+			CMD=${CMD}" --smTag ${SM_TAG}" \
+		CMD=${CMD}" --outdir ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT"
 
 	# write command line to file and execute the command line
 
@@ -76,13 +75,13 @@ START_APPLY_BQSR=`date '+%s'` # capture time process starts for wall clock track
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_APPLY_BQSR=`date '+%s'` # capture time process stops for wall clock tracking purposes.
+END_EXOME_DEPTH=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo ${SM_TAG}_${PROJECT},D01,APPLY_BQSR,${HOSTNAME},${START_APPLY_BQSR},${END_APPLY_BQSR} \
+	echo ${SM_TAG}_${PROJECT},E01,EXOME_DEPTH,${HOSTNAME},${START_EXOME_DEPTH},${END_EXOME_DEPTH} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
-# exit with the signal from the program
+# exit with the signal from samtools bam to cram
 
 	exit ${SCRIPT_STATUS}

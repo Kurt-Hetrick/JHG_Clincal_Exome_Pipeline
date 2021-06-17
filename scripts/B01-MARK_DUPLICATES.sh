@@ -76,7 +76,7 @@ START_MARK_DUPLICATES=`date '+%s'` # capture time process starts for wall clock 
 		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} sambamba" \
 			CMD=${CMD}" sort" \
 			CMD=${CMD}" -t ${THREADS}" \
-			CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
+		CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
 			CMD=${CMD}" /dev/stdin"
 
 	# write command line to file and execute the command line
