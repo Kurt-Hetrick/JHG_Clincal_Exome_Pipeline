@@ -24,26 +24,24 @@
 
 # INPUT VARIABLES
 
-	GATK_3_7_0_CONTAINER=$1
+	ALIGNMENT_CONTAINER=$1
 	CORE_PATH=$2
-
+	
 	PROJECT=$3
-	FAMILY=$4
-	SM_TAG=$5
-	REF_GENOME=$6
-	BAIT_BED=$7
+	SM_TAG=$4
+	BAIT_BED=$5
 		BAIT_BED_NAME=(`basename ${BAIT_BED} .bed`)
-	SAMPLE_SHEET=$8
+	SAMPLE_SHEET=$6
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=$9
+	SUBMIT_STAMP=$7
 
-## -----CONCATENATE SCATTERED g.vcf FILES INTO A SINGLE GRCh37 reference sorted g.vcf file-----
+## -----Cat Variants-----
 
 # Start with creating a *list file, reference sorted, to put into --variant.
 # Assumption is that this is a correctly sorted GRCh37 reference file as the input reference used
 
 	# Put the autosome into a file, sort numerically
-
+	
 		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
 			| sed -r 's/[[:space:]]+/\t/g' \
 			| cut -f 1 \
@@ -51,44 +49,44 @@
 			| uniq \
 			| awk '$1~/^[0-9]/' \
 			| sort -k1,1n \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" "." $1 ".g.vcf.gz"}' \
-		>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.gvcf.list
-
+			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" ".HC." $1 ".bam"}' \
+		>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt
+	
 	# Append X if present
-
+	
 		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
 			| sed -r 's/[[:space:]]+/\t/g' \
 			| cut -f 1 \
 			| sort \
 			| uniq \
 			| awk '$1=="X"' \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" "." $1 ".g.vcf.gz"}' \
-		>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.gvcf.list
-
+			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" ".HC." $1 ".bam"}' \
+		>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt
+	
 	# Append Y if present
-
+	
 		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
 			| sed -r 's/[[:space:]]+/\t/g' \
 			| cut -f 1 \
 			| sort \
 			| uniq \
 			| awk '$1=="Y"' \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" "." $1 ".g.vcf.gz"}' \
-		>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.gvcf.list
+			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" ".HC." $1 ".bam"}' \
+		>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt
 
-## Gather the per chromosome gvcf files
+## --Merge and Sort Bam files--
 
-START_HAPLOTYPE_CALLER_GATHER=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_HC_BAM_GATHER=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -cp" \
-			CMD=${CMD}" /usr/GenomeAnalysisTK.jar" \
-		CMD=${CMD}" org.broadinstitute.gatk.tools.CatVariants" \
-			CMD=${CMD}" -R ${REF_GENOME}" \
-			CMD=${CMD}" --assumeSorted" \
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.gvcf.list" \
-			CMD=${CMD}" --outputFile ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/GVCF/${SM_TAG}.g.vcf.gz"
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
+			CMD=${CMD}" /gatk/picard.jar" \
+		CMD=${CMD}" GatherBamFiles" \
+			CMD=${CMD}" INPUT=${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt" \
+			CMD=${CMD}" OUTPUT=${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC.bam" \
+			CMD=${CMD}" VALIDATION_STRINGENCY=SILENT" \
+			CMD=${CMD}" CREATE_INDEX=true"
 
 	# write command line to file and execute the command line
 
@@ -110,11 +108,11 @@ START_HAPLOTYPE_CALLER_GATHER=`date '+%s'` # capture time process starts for wal
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_HAPLOTYPE_CALLER_GATHER=`date '+%s'` # capture time process stops for wall clock tracking purposes.
+END_HC_BAM_GATHER=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo ${SM_TAG}_${PROJECT},F01,HAPLOTYPE_CALLER_GATHER,${HOSTNAME},${START_HAPLOTYPE_CALLER_GATHER},${END_HAPLOTYPE_CALLER_GATHER} \
+	echo ${SM_TAG}_${PROJECT},F01,MERGE_HC_BAM,${HOSTNAME},${START_HC_BAM_GATHER},${END_HC_BAM_GATHER} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program
