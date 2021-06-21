@@ -88,7 +88,7 @@ START_HAPLOTYPE_CALLER_GATHER=`date '+%s'` # capture time process starts for wal
 			CMD=${CMD}" -R ${REF_GENOME}" \
 			CMD=${CMD}" --assumeSorted" \
 			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.gvcf.list" \
-			CMD=${CMD}" --outputFile ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/GVCF/${SM_TAG}.g.vcf.gz"
+		CMD=${CMD}" --outputFile ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/GVCF/${SM_TAG}.g.vcf.gz"
 
 	# write command line to file and execute the command line
 

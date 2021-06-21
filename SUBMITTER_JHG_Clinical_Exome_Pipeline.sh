@@ -1070,6 +1070,318 @@
 		echo sleep 0.1s
 	done
 
+#############################################
+##### MITOCHONDRIAL WORKFLOW ################
+#############################################
+# RUN MUTECT2 TO CALL SNVS AND SMALL INDELS #
+# GENERATE COVERAGE STATS ###################
+# RUN EKLIPSE FOR LARGER DELETIONS ##########
+#############################################
+
+	#####################################
+	### MUTECT2 IN MITO MODE WORKFLOW ###
+	### WORKS ON FULL BAM FILE ##########
+	#####################################
+
+		#####################################################
+		# run mutect2 in mitochondria mode on full bam file #
+		# this runs MUCH slower on non-avx machines #########
+		#####################################################
+
+			MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N E03-MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MUTECT2_MT.log \
+				-hold_jid D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/E03-MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$REF_GENOME \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		#######################################
+		# apply filters to mutect2 vcf output #
+		#######################################
+
+			FILTER_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.08-A.01-FILTER_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_MUTECT2_MT.log \
+				-hold_jid E03-MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.08-A.01-FILTER_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$SM_TAG \
+					$REF_GENOME \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		###################################################
+		# apply masks to mutect2 mito filtered vcf output #
+		###################################################
+
+			MASK_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MASK_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-FILTER_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.08-A.01-A.01-MASK_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$SM_TAG \
+					$MT_MASK \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		#############################################
+		# run haplogrep2 on mutect2 mito vcf output #
+		#############################################
+
+			HAPLOGREP2_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.08-A.01-A.01-A01-HAPLOGREP2_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOGREP2_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.08-A.01-A.01-A.01-HAPLOGREP2_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$REF_GENOME \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		#############################################################
+		# add gnomad annotation to info field of mutect2 vcf output #
+		#############################################################
+
+			GNOMAD_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-GNOMAD_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$GNOMAD_MT \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		##########################################
+		# run annovar on final mutect2 based vcf #
+		##########################################
+
+			RUN_ANNOVAR_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_ANNOVAR_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.08-A.01-A.01-A.02-A.01-RUN_ANNOVAR_MUTECT2_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$ANNOVAR_MT_DB_DIR \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		##########################################
+		# run annovar on final mutect2 based vcf #
+		##########################################
+
+			FIX_ANNOVAR_MUTECT2_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//${SM_TAG}-FIX_ANNOVAR_MUTECT2_MT.log \
+				-hold_jid H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT.sh \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+	###############################################################
+	### EKLIPSE WORKFLOW TO DETECT LARGE DELETIONS IN MT GENOME ###
+	###############################################################
+
+		############################################
+		# SUBSET BAM FILE TO CONTAIN ONLY MT READS #
+		############################################
+
+			SUBSET_BAM_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MAKE_BAM_MT.log \
+				-hold_jid D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.09-MAKE_MT_BAM.sh \
+					$MITO_EKLIPSE_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$THREADS \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		###############
+		# RUN EKLIPSE #
+		###############
+
+			RUN_EKLIPSE ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.09-A.01-RUN_EKLIPSE_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EKLIPSE.log \
+				-hold_jid H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.09-A.01-RUN_EKLIPSE.sh \
+					$MITO_EKLIPSE_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$MT_GENBANK \
+					$THREADS \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+	##################################################
+	### COVERAGE STATISTICS AND PLOT FOR MT GENOME ###
+	##################################################
+
+		####################################################
+		# RUN COLLECTHSMETRICS ON MT ONLY BAM FILE #########
+		# USES GATK IMPLEMENTATION INSTEAD OF PICARD TOOLS #
+		####################################################
+
+			COLLECTHSMETRICS_MT ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.09-A.02-COLLECTHSMETRICS_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECTHSMETRICS_MT.log \
+				-hold_jid H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.09-A.02-COLLECTHSMETRICS_MT.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$REF_GENOME \
+					$MT_PICARD_INTERVAL_LIST \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+		###############################################################
+		# RUN ALEX'S R SCRIPT TO GENERATE COVERAGE PLOT FOR MT GENOME #
+		###############################################################
+
+			PLOT_MT_COVERAGE ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N H.09-A.02-A.01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PLOT_MT_COVERAGE.log \
+				-hold_jid H.09-A.02-COLLECTHSMETRICS_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/H.09-A.02-A.01_PLOT_MT_COVERAGE.sh \
+					$MITO_MUTECT2_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$MT_COVERAGE_R_SCRIPT \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
+############################################
+# RUN STEPS FOR MITOCHONDRIAL DNA ANALYSIS #
+############################################
+
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		# run mutect2 and then filter, annotate, run haplogrep2
+		MUTECT2_MT
+		echo sleep 0.1s
+		FILTER_MUTECT2_MT
+		echo sleep 0.1s
+		MASK_MUTECT2_MT
+		echo sleep 0.1s
+		HAPLOGREP2_MUTECT2_MT
+		echo sleep 0.1s
+		GNOMAD_MUTECT2_MT
+		echo sleep 0.1s
+		RUN_ANNOVAR_MUTECT2_MT
+		echo sleep 0.1s
+		FIX_ANNOVAR_MUTECT2_MT
+		echo sleep 0.1s
+		# run eklipse workflow
+		SUBSET_BAM_MT
+		echo sleep 0.1s
+		RUN_EKLIPSE
+		echo sleep 0.1s
+		# generate coverage for mt genome
+		COLLECTHSMETRICS_MT
+		echo sleep 0.1s
+		PLOT_MT_COVERAGE
+		echo sleep 0.1s
+	done
+
 ####################################################################################
 ##### BAM/CRAM FILE RELATED METRICS ################################################
 ####################################################################################
@@ -1476,317 +1788,7 @@
 		echo sleep 0.1s
 	done
 
-#############################################
-##### MITOCHONDRIAL WORKFLOW ################
-#############################################
-# RUN MUTECT2 TO CALL SNVS AND SMALL INDELS #
-# GENERATE COVERAGE STATS ###################
-# RUN EKLIPSE FOR LARGER DELETIONS ##########
-#############################################
 
-	#####################################
-	### MUTECT2 IN MITO MODE WORKFLOW ###
-	### WORKS ON FULL BAM FILE ##########
-	#####################################
-
-		#####################################################
-		# run mutect2 in mitochondria mode on full bam file #
-		# this runs MUCH slower on non-avx machines #########
-		#####################################################
-
-			MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.08-MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MUTECT2_MT.log \
-				-hold_jid D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.08-MUTECT2_MT.sh \
-					$MITO_MUTECT2_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$REF_GENOME \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-		#######################################
-		# apply filters to mutect2 vcf output #
-		#######################################
-
-			FILTER_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.08-A.01-FILTER_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_MUTECT2_MT.log \
-				-hold_jid H.08-MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.08-A.01-FILTER_MUTECT2_MT.sh \
-					$MITO_MUTECT2_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$SM_TAG \
-					$REF_GENOME \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-		###################################################
-		# apply masks to mutect2 mito filtered vcf output #
-		###################################################
-
-			MASK_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MASK_MUTECT2_MT.log \
-				-hold_jid H.08-A.01-FILTER_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.08-A.01-A.01-MASK_MUTECT2_MT.sh \
-					$MITO_MUTECT2_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$SM_TAG \
-					$MT_MASK \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-		#############################################
-		# run haplogrep2 on mutect2 mito vcf output #
-		#############################################
-
-			HAPLOGREP2_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.08-A.01-A.01-A01-HAPLOGREP2_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOGREP2_MUTECT2_MT.log \
-				-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.08-A.01-A.01-A.01-HAPLOGREP2_MUTECT2_MT.sh \
-					$MITO_MUTECT2_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$REF_GENOME \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-		#############################################################
-		# add gnomad annotation to info field of mutect2 vcf output #
-		#############################################################
-
-			GNOMAD_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-GNOMAD_MUTECT2_MT.log \
-				-hold_jid H.08-A.01-A.01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT.sh \
-					$MITO_MUTECT2_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$GNOMAD_MT \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-		##########################################
-		# run annovar on final mutect2 based vcf #
-		##########################################
-
-			RUN_ANNOVAR_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_ANNOVAR_MUTECT2_MT.log \
-				-hold_jid H.08-A.01-A.01-A.02-GNOMAD_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.08-A.01-A.01-A.02-A.01-RUN_ANNOVAR_MUTECT2_MT.sh \
-					$MITO_MUTECT2_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$ANNOVAR_MT_DB_DIR \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-		##########################################
-		# run annovar on final mutect2 based vcf #
-		##########################################
-
-			FIX_ANNOVAR_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS//${SM_TAG}-FIX_ANNOVAR_MUTECT2_MT.log \
-				-hold_jid H.08-A.01-A.01-A.02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.08-A.01-A.01-A.02-A.01-A.01-FIX_ANNOVAR_MUTECT2_MT.sh \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-	###############################################################
-	### EKLIPSE WORKFLOW TO DETECT LARGE DELETIONS IN MT GENOME ###
-	###############################################################
-
-		############################################
-		# SUBSET BAM FILE TO CONTAIN ONLY MT READS #
-		############################################
-
-			SUBSET_BAM_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MAKE_BAM_MT.log \
-				-hold_jid D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.09-MAKE_MT_BAM.sh \
-					$MITO_EKLIPSE_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$THREADS \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-		###############
-		# RUN EKLIPSE #
-		###############
-
-			RUN_EKLIPSE ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.09-A.01-RUN_EKLIPSE_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EKLIPSE.log \
-				-hold_jid H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.09-A.01-RUN_EKLIPSE.sh \
-					$MITO_EKLIPSE_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$MT_GENBANK \
-					$THREADS \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-	##################################################
-	### COVERAGE STATISTICS AND PLOT FOR MT GENOME ###
-	##################################################
-
-		####################################################
-		# RUN COLLECTHSMETRICS ON MT ONLY BAM FILE #########
-		# USES GATK IMPLEMENTATION INSTEAD OF PICARD TOOLS #
-		####################################################
-
-			COLLECTHSMETRICS_MT ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.09-A.02-COLLECTHSMETRICS_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECTHSMETRICS_MT.log \
-				-hold_jid H.09-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.09-A.02-COLLECTHSMETRICS_MT.sh \
-					$MITO_MUTECT2_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$REF_GENOME \
-					$MT_PICARD_INTERVAL_LIST \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-		###############################################################
-		# RUN ALEX'S R SCRIPT TO GENERATE COVERAGE PLOT FOR MT GENOME #
-		###############################################################
-
-			PLOT_MT_COVERAGE ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N H.09-A.02-A.01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PLOT_MT_COVERAGE.log \
-				-hold_jid H.09-A.02-COLLECTHSMETRICS_MT_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/H.09-A.02-A.01_PLOT_MT_COVERAGE.sh \
-					$MITO_MUTECT2_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$MT_COVERAGE_R_SCRIPT \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-############################################
-# RUN STEPS FOR MITOCHONDRIAL DNA ANALYSIS #
-############################################
-
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-			| sort \
-			| uniq );
-	do
-		CREATE_SAMPLE_ARRAY
-		# run mutect2 and then filter, annotate, run haplogrep2
-		MUTECT2_MT
-		echo sleep 0.1s
-		FILTER_MUTECT2_MT
-		echo sleep 0.1s
-		MASK_MUTECT2_MT
-		echo sleep 0.1s
-		HAPLOGREP2_MUTECT2_MT
-		echo sleep 0.1s
-		GNOMAD_MUTECT2_MT
-		echo sleep 0.1s
-		RUN_ANNOVAR_MUTECT2_MT
-		echo sleep 0.1s
-		FIX_ANNOVAR_MUTECT2_MT
-		echo sleep 0.1s
-		# run eklipse workflow
-		SUBSET_BAM_MT
-		echo sleep 0.1s
-		RUN_EKLIPSE
-		echo sleep 0.1s
-		# generate coverage for mt genome
-		COLLECTHSMETRICS_MT
-		echo sleep 0.1s
-		PLOT_MT_COVERAGE
-		echo sleep 0.1s
-	done
 
 #################################
 ##### CNV CALLING WORKFLOW ######
