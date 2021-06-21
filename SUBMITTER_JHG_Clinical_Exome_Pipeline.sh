@@ -856,10 +856,10 @@
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-N E02-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-BAM_TO_CRAM.log \
 			-hold_jid D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/E01-BAM_TO_CRAM.sh \
+			$SCRIPT_DIR/E02-BAM_TO_CRAM.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
@@ -892,6 +892,184 @@
 		echo sleep 0.1s
 	done
 
+#########################################################################
+##### HAPLOTYPE CALLER SCATTER ##########################################
+# INPUT IS THE BAM FILE #################################################
+# THE BED FILE FOR THE GVCF INTERVALS IS ################################
+# THE BAIT BED PLUS THE CODING BED FILE CONCATENTATED TOGETHER ##########
+# THEN A 250 BP PAD ADDED AND THEN MERGED FOR OVERLAPPING INTERVALS #####
+#########################################################################
+
+	CALL_HAPLOTYPE_CALLER ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+		-N E01-HAPLOTYPE_CALLER_${SGE_SM_TAG}_${PROJECT}_chr${CHROMOSOME} \
+			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_chr${CHROMOSOME}.log \
+		-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+		$SCRIPT_DIR/E01-HAPLOTYPE_CALLER_SCATTER.sh \
+			$GATK_3_7_0_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$SM_TAG \
+			$REF_GENOME \
+			$CODING_BED \
+			$BAIT_BED \
+			$CHROMOSOME \
+			$GVCF_PAD \
+			$SAMPLE_SHEET \
+			$SUBMIT_STAMP
+	}
+
+#######################################################################################
+# RUN STEPS FOR HAPLOTYPE CALLER SCATTER ##############################################
+# Take the samples bait bed file and ##################################################
+# create a list of unique chromosome to use as a scatter for haplotype_caller_scatter #
+#######################################################################################
+
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+				| sed -r 's/[[:space:]]+/\t/g' \
+				| sed 's/chr//g' \
+				| grep -v "MT" \
+				| cut -f 1 \
+				| sort \
+				| uniq \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					collapse 1 \
+				| sed 's/,/ /g');
+			do
+				CALL_HAPLOTYPE_CALLER
+				echo sleep 0.1s
+			done
+	done
+
+###################################################################################################
+##### HAPLOTYPE CALLER GATHER #####################################################################
+# GATHER UP THE PER SAMPLE PER CHROMOSOME GVCF FILES AND GVCF BAM FILES INTO A SINGLE SAMPLE GVCF #
+###################################################################################################
+
+	####################################################################################################
+	# create a variable to create the hold id for gathering the chromosome level gvcfs/bams per sample #
+	####################################################################################################
+
+		BUILD_HOLD_ID_PATH ()
+		{
+			HOLD_ID_PATH="-hold_jid "
+
+			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+									| sed -r 's/[[:space:]]+/\t/g' \
+									| cut -f 1 \
+									| sed 's/chr//g' \
+									| grep -v "MT" \
+									| sort \
+									| uniq \
+									| singularity exec $ALIGNMENT_CONTAINER datamash \
+										collapse 1 \
+									| sed 's/,/ /g');
+			do
+				HOLD_ID_PATH=$HOLD_ID_PATH"E01-HAPLOTYPE_CALLER_"$SM_TAG"_"$PROJECT"_chr"$CHROMOSOME","
+				HOLD_ID_PATH=`echo $HOLD_ID_PATH | sed 's/@/_/g'`
+			done
+		}
+
+	##############################################
+	# gather the per sample per chromosome gvcfs #
+	##############################################
+
+		CALL_HAPLOTYPE_CALLER_GVCF_GATHER ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_GVCF_GATHER.log \
+			${HOLD_ID_PATH} \
+			$SCRIPT_DIR/H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER.sh \
+				$GATK_3_7_0_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$BAIT_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	####################################################
+	# gather the per sample per chromosome hc bam file #
+	####################################################
+
+		CALL_HAPLOTYPE_CALLER_BAM_GATHER ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_BAM_GATHER.log \
+			${HOLD_ID_PATH} \
+			$SCRIPT_DIR/H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$SM_TAG \
+				$BAIT_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	########################################################
+	# create a lossless HC cram, although the bam is lossy #
+	########################################################
+
+		HC_BAM_TO_CRAM ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HC_BAM_TO_CRAM.log \
+			-hold_jid H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$THREADS \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+##################################################################
+# RUN STEPS TO GATHER GVCFS/HC BAM FILES AND CONVERT BAM TO CRAM #
+##################################################################
+
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		BUILD_HOLD_ID_PATH
+		CALL_HAPLOTYPE_CALLER_GVCF_GATHER
+		echo sleep 0.1s
+		CALL_HAPLOTYPE_CALLER_BAM_GATHER
+		echo sleep 0.1s
+		HC_BAM_TO_CRAM
+		echo sleep 0.1s
+	done
+
 ####################################################################################
 ##### BAM/CRAM FILE RELATED METRICS ################################################
 ####################################################################################
@@ -913,7 +1091,7 @@
 				$QSUB_ARGS \
 			-N H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_$PROJECT \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_MULTIPLE_METRICS.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E02-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.01_COLLECT_MULTIPLE_METRICS.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -941,7 +1119,7 @@
 				$QSUB_ARGS \
 			-N H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_HS_METRICS.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E02-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.02_COLLECT_HS_METRICS.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -970,7 +1148,7 @@
 				$QSUB_ARGS \
 			-N H.03-DOC_TARGET_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_TARGET.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E02-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.03_DOC_TARGET_PADDED_BED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -1050,7 +1228,7 @@
 				$QSUB_ARGS \
 			-N H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_CODING.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E02-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05_DOC_CODING_PADDED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -1730,183 +1908,7 @@
 		echo sleep 0.1s
 	done
 
-#########################################################################
-##### HAPLOTYPE CALLER SCATTER ##########################################
-# INPUT IS THE BAM FILE #################################################
-# THE BED FILE FOR THE GVCF INTERVALS IS ################################
-# THE BAIT BED PLUS THE CODING BED FILE CONCATENTATED TOGETHER ##########
-# THEN A 250 BP PAD ADDED AND THEN MERGED FOR OVERLAPPING INTERVALS #####
-#########################################################################
 
-	CALL_HAPLOTYPE_CALLER ()
-	{
-		echo \
-		qsub \
-			$QSUB_ARGS \
-		-N H.07-HAPLOTYPE_CALLER_${SGE_SM_TAG}_${PROJECT}_chr${CHROMOSOME} \
-			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_chr${CHROMOSOME}.log \
-		-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
-		$SCRIPT_DIR/H.07_HAPLOTYPE_CALLER_SCATTER.sh \
-			$GATK_3_7_0_CONTAINER \
-			$CORE_PATH \
-			$PROJECT \
-			$SM_TAG \
-			$REF_GENOME \
-			$CODING_BED \
-			$BAIT_BED \
-			$CHROMOSOME \
-			$GVCF_PAD \
-			$SAMPLE_SHEET \
-			$SUBMIT_STAMP
-	}
-
-#######################################################################################
-# RUN STEPS FOR HAPLOTYPE CALLER SCATTER ##############################################
-# Take the samples bait bed file and ##################################################
-# create a list of unique chromosome to use as a scatter for haplotype_caller_scatter #
-#######################################################################################
-
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-			| sort \
-			| uniq );
-	do
-		CREATE_SAMPLE_ARRAY
-			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
-				| sed -r 's/[[:space:]]+/\t/g' \
-				| sed 's/chr//g' \
-				| grep -v "MT" \
-				| cut -f 1 \
-				| sort \
-				| uniq \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
-					collapse 1 \
-				| sed 's/,/ /g');
-			do
-				CALL_HAPLOTYPE_CALLER
-				echo sleep 0.1s
-			done
-	done
-
-###################################################################################################
-##### HAPLOTYPE CALLER GATHER #####################################################################
-# GATHER UP THE PER SAMPLE PER CHROMOSOME GVCF FILES AND GVCF BAM FILES INTO A SINGLE SAMPLE GVCF #
-###################################################################################################
-
-	####################################################################################################
-	# create a variable to create the hold id for gathering the chromosome level gvcfs/bams per sample #
-	####################################################################################################
-
-		BUILD_HOLD_ID_PATH ()
-		{
-			HOLD_ID_PATH="-hold_jid "
-
-			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
-									| sed -r 's/[[:space:]]+/\t/g' \
-									| cut -f 1 \
-									| sed 's/chr//g' \
-									| grep -v "MT" \
-									| sort \
-									| uniq \
-									| singularity exec $ALIGNMENT_CONTAINER datamash \
-										collapse 1 \
-									| sed 's/,/ /g');
-			do
-				HOLD_ID_PATH=$HOLD_ID_PATH"H.07-HAPLOTYPE_CALLER_"$SM_TAG"_"$PROJECT"_chr"$CHROMOSOME","
-				HOLD_ID_PATH=`echo $HOLD_ID_PATH | sed 's/@/_/g'`
-			done
-		}
-
-	##############################################
-	# gather the per sample per chromosome gvcfs #
-	##############################################
-
-		CALL_HAPLOTYPE_CALLER_GVCF_GATHER ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_GVCF_GATHER.log \
-			${HOLD_ID_PATH} \
-			$SCRIPT_DIR/H.07-A.01_HAPLOTYPE_CALLER_GVCF_GATHER.sh \
-				$GATK_3_7_0_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$REF_GENOME \
-				$BAIT_BED \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	####################################################
-	# gather the per sample per chromosome hc bam file #
-	####################################################
-
-		CALL_HAPLOTYPE_CALLER_BAM_GATHER ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_BAM_GATHER.log \
-			${HOLD_ID_PATH} \
-			$SCRIPT_DIR/H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$SM_TAG \
-				$BAIT_BED \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	########################################################
-	# create a lossless HC cram, although the bam is lossy #
-	########################################################
-
-		HC_BAM_TO_CRAM ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HC_BAM_TO_CRAM.log \
-			-hold_jid H.07-A.02_HAPLOTYPE_CALLER_BAM_GATHER_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.07-A.02-A.01_HAPLOTYPE_CALLER_CRAM.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$REF_GENOME \
-				$THREADS \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-##################################################################
-# RUN STEPS TO GATHER GVCFS/HC BAM FILES AND CONVERT BAM TO CRAM #
-##################################################################
-
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-			| sort \
-			| uniq );
-	do
-		CREATE_SAMPLE_ARRAY
-		BUILD_HOLD_ID_PATH
-		CALL_HAPLOTYPE_CALLER_GVCF_GATHER
-		echo sleep 0.1s
-		CALL_HAPLOTYPE_CALLER_BAM_GATHER
-		echo sleep 0.1s
-		HC_BAM_TO_CRAM
-		echo sleep 0.1s
-	done
 
 ##################################################################
 ##### JOINT CALLING SAMPLES IN A FAMILY WITH SET OF CONTROLS #####
@@ -3034,7 +3036,7 @@ H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT},\
 H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_${PROJECT},\
 E02-A01-PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT},\
 E02-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV_$SGE_SM_TAG_${PROJECT},\
-E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+E02-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 	$ALIGNMENT_CONTAINER \
 	$CORE_PATH \
