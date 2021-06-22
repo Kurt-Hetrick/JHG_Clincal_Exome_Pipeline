@@ -1382,6 +1382,126 @@
 		echo sleep 0.1s
 	done
 
+#################################
+##### CNV CALLING WORKFLOW ######
+# USES EXOME DEPTH TO CALL CNVS #
+# ANNOTATE WITH ANNOTSV #########
+#################################
+
+	########################################
+	# run exomeDepth to generate CNV calls #
+	########################################
+
+		RUN_EXOME_DEPTH ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EXOME_DEPTH.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E05-RUN_EXOME_DEPTH.sh \
+				$CNV_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$EXOME_DEPTH_R_SCRIPT \
+				$REF_PANEL_COUNTS \
+				$CODING_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	################################################################
+	# calculate the percent of cnv call length for each chromosome #
+	################################################################
+
+		CALCULATE_PCT_CNV_COVERAGE ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E05-A01-PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PCT_CNV_COVERAGE_PER_CHR.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E05-A01-PCT_CNV_COVERAGE_PER_CHR.sh \
+				$CNV_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CODING_BED
+		}
+
+	########################################
+	# run annotSV on the exomeDepth output #
+	########################################
+
+		RUN_ANNOTSV ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E05-A02-RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_ANNOTSV.log \
+			-hold_jid E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E05-A02-RUN_ANNOTSV.sh \
+				$CNV_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	########################################################################################
+	# reformat the header in the annotSV output and filter to zoom gene list if applicable #
+	########################################################################################
+
+		RUN_FORMAT_AND_ZOOM_ANNOTSV ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E05-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_FORMAT_AND_ZOOM_ANNOTSV.log \
+			-hold_jid E05-A02-RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E05-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV.sh \
+				$CNV_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT \
+				$ZOOM_LIST \
+				$ZOOM_NAME \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+##############################
+# RUN STEPS FOR CNV WORKFLOW #
+##############################
+
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		RUN_EXOME_DEPTH
+		echo sleep 0.1s
+		CALCULATE_PCT_CNV_COVERAGE
+		echo sleep 0.1s
+		RUN_ANNOTSV
+		echo sleep 0.1s
+		RUN_FORMAT_AND_ZOOM_ANNOTSV
+		echo sleep 0.1s
+	done
+
 ####################################################################################
 ##### BAM/CRAM FILE RELATED METRICS ################################################
 ####################################################################################
@@ -1790,125 +1910,7 @@
 
 
 
-#################################
-##### CNV CALLING WORKFLOW ######
-# USES EXOME DEPTH TO CALL CNVS #
-# ANNOTATE WITH ANNOTSV #########
-#################################
 
-	########################################
-	# run exomeDepth to generate CNV calls #
-	########################################
-
-		RUN_EXOME_DEPTH ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N E02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EXOME_DEPTH.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/E02-RUN_EXOME_DEPTH.sh \
-				$CNV_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$EXOME_DEPTH_R_SCRIPT \
-				$REF_PANEL_COUNTS \
-				$CODING_BED \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	################################################################
-	# calculate the percent of cnv call length for each chromosome #
-	################################################################
-
-		CALCULATE_PCT_CNV_COVERAGE ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N E02-A01-PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PCT_CNV_COVERAGE_PER_CHR.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/E02-A01-PCT_CNV_COVERAGE_PER_CHR.sh \
-				$CNV_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$CODING_BED
-		}
-
-	########################################
-	# run annotSV on the exomeDepth output #
-	########################################
-
-		RUN_ANNOTSV ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N E02-A02-RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_ANNOTSV.log \
-			-hold_jid E02-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/E02-A02-RUN_ANNOTSV.sh \
-				$CNV_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	########################################################################################
-	# reformat the header in the annotSV output and filter to zoom gene list if applicable #
-	########################################################################################
-
-		RUN_FORMAT_AND_ZOOM_ANNOTSV ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N E02-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_FORMAT_AND_ZOOM_ANNOTSV.log \
-			-hold_jid E02-A02-RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/E02-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV.sh \
-				$CNV_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT \
-				$ZOOM_LIST \
-				$ZOOM_NAME \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-##############################
-# RUN STEPS FOR CNV WORKFLOW #
-##############################
-
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-			| sort \
-			| uniq );
-	do
-		CREATE_SAMPLE_ARRAY
-		RUN_EXOME_DEPTH
-		echo sleep 0.1s
-		CALCULATE_PCT_CNV_COVERAGE
-		echo sleep 0.1s
-		RUN_ANNOTSV
-		echo sleep 0.1s
-		RUN_FORMAT_AND_ZOOM_ANNOTSV
-		echo sleep 0.1s
-	done
 
 
 
@@ -3036,8 +3038,8 @@ H.04-A.01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT},\
 H.03-DOC_TARGET_${SGE_SM_TAG}_${PROJECT},\
 H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT},\
 H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_${PROJECT},\
-E02-A01-PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT},\
-E02-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV_$SGE_SM_TAG_${PROJECT},\
+E05-A01-PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT},\
+E05-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV_$SGE_SM_TAG_${PROJECT},\
 E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 	$ALIGNMENT_CONTAINER \
