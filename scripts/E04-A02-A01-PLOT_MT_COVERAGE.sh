@@ -33,7 +33,7 @@
 	MT_COVERAGE_R_SCRIPT=$6
 
 	SAMPLE_SHEET=$7
-		SAMPLE_SHEET_NAME=$(basename $SAMPLE_SHEET .csv)
+		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
 	SUBMIT_STAMP=$8
 
 ## run alex's r script to generate plot for mt genome coverage
@@ -42,42 +42,42 @@ START_COVERAGE_MT=`date '+%s'` # capture time process starts for wall clock trac
 
 	# construct command line
 
-		CMD="singularity exec $MITO_MUTECT2_CONTAINER Rscript" \
-			CMD=$CMD" $MT_COVERAGE_R_SCRIPT" \
+		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} Rscript" \
+			CMD=${CMD}" ${MT_COVERAGE_R_SCRIPT}" \
 			# input file
-			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT/$SM_TAG"_per_base_cov.tsv"" \
+			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/COLLECTHSMETRICS_MT/${SM_TAG}_per_base_cov.tsv" \
 			# sample name (or whatever you want the prefix to be for the output file name)
-			CMD=$CMD" $SM_TAG"
+			CMD=${CMD}" ${SM_TAG}"
 			# directory where you want the output file to go to
-			CMD=$CMD" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT"
+			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/COLLECTHSMETRICS_MT"
 
 	# write command line to file and execute the command line
 
-		echo $CMD >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
-		echo >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
-		echo $CMD | bash
+		echo ${CMD} >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${SM_TAG}_command_lines.txt
+		echo >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${SM_TAG}_command_lines.txt
+		echo ${CMD} | bash
 
 	# check the exit signal at this point.
 
 		SCRIPT_STATUS=`echo $?`
 
-	# if exit does not equal 0 then exit with whatever the exit signal is at the end.
-	# also write to file that this job failed
+		# if exit does not equal 0 then exit with whatever the exit signal is at the end.
+		# also write to file that this job failed
 
-		if [ "$SCRIPT_STATUS" -ne 0 ]
-		 then
-			echo $SM_TAG $HOSTNAME $JOB_NAME $USER $SCRIPT_STATUS $SGE_STDERR_PATH \
-			>> $CORE_PATH/$PROJECT/TEMP/$SAMPLE_SHEET_NAME"_"$SUBMIT_STAMP"_ERRORS.txt"
-			exit $SCRIPT_STATUS
-		fi
+			if [ "${SCRIPT_STATUS}" -ne 0 ]
+				then
+					echo ${SM_TAG} ${HOSTNAME} ${JOB_NAME} ${USER} ${SCRIPT_STATUS} ${SGE_STDERR_PATH} \
+					>> ${CORE_PATH}/${PROJECT}/TEMP/${SAMPLE_SHEET_NAME}_${SUBMIT_STAMP}_ERRORS.txt
+					exit ${SCRIPT_STATUS}
+			fi
 
 END_COVERAGE_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo $SM_TAG"_"$PROJECT",F.01,COVERAGE_MT,"$HOSTNAME","$START_COVERAGE_MT","$END_COVERAGE_MT \
-	>> $CORE_PATH/$PROJECT/REPORTS/$PROJECT".WALL.CLOCK.TIMES.csv"
+	echo ${SM_TAG}_${PROJECT},G01,COVERAGE_MT,${HOSTNAME},${START_COVERAGE_MT},${END_COVERAGE_MT} \
+	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from samtools bam to cram
 
-	exit $SCRIPT_STATUS
+	exit ${SCRIPT_STATUS}

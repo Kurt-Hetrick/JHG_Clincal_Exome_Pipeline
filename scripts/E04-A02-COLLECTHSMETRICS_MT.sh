@@ -44,20 +44,20 @@ START_COLLECTHSMETRICS_MT=`date '+%s'` # capture time process starts for wall cl
 	# construct command line
 
 		CMD="singularity exec $MITO_MUTECT2_CONTAINER java -jar" \
-		CMD=$CMD" /gatk/gatk.jar" \
-		CMD=$CMD" CollectHsMetrics" \
-			CMD=$CMD" --INPUT $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_MT.bam"" \
-			CMD=$CMD" --REFERENCE_SEQUENCE $REF_GENOME" \
-			CMD=$CMD" --TARGET_INTERVALS $MT_PICARD_INTERVAL_LIST" \
-			CMD=$CMD" --BAIT_INTERVALS $MT_PICARD_INTERVAL_LIST" \
-			CMD=$CMD" --PER_BASE_COVERAGE $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT/$SM_TAG"_per_base_cov.tsv"" \
-			CMD=$CMD" --OUTPUT $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT/$SM_TAG".output.metrics""
+			CMD=${CMD}" /gatk/gatk.jar" \
+		CMD=${CMD}" CollectHsMetrics" \
+			CMD=${CMD}" --INPUT $CORE_PATH/$PROJECT/TEMP/$SM_TAG"_MT.bam"" \
+			CMD=${CMD}" --REFERENCE_SEQUENCE $REF_GENOME" \
+			CMD=${CMD}" --TARGET_INTERVALS $MT_PICARD_INTERVAL_LIST" \
+			CMD=${CMD}" --BAIT_INTERVALS $MT_PICARD_INTERVAL_LIST" \
+			CMD=${CMD}" --PER_BASE_COVERAGE $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT/$SM_TAG"_per_base_cov.tsv"" \
+		CMD=${CMD}" --OUTPUT $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/MT_OUTPUT/COLLECTHSMETRICS_MT/$SM_TAG".output.metrics""
 
 	# write command line to file and execute the command line
 
-		echo $CMD >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
+		echo ${CMD} >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
 		echo >> $CORE_PATH/$PROJECT/COMMAND_LINES/$SM_TAG"_command_lines.txt"
-		echo $CMD | bash
+		echo ${CMD} | bash
 
 	# check the exit signal at this point.
 
