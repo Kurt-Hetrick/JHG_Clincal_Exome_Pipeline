@@ -61,22 +61,22 @@ START_MARK_DUPLICATES=`date '+%s'` # capture time process starts for wall clock 
 
 	# construct command line
 
-		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
-			CMD=${CMD}" -Xmx16g" \
-			CMD=${CMD}" -XX:ParallelGCThreads=${THREADS}" \
-			CMD=${CMD}" /gatk/picard.jar" \
-		CMD=${CMD}" MarkDuplicates" \
-			CMD=${CMD}" ASSUME_SORT_ORDER=queryname" \
-			CMD=${CMD}" ${INPUT}" \
-			CMD=${CMD}" OUTPUT=/dev/stdout" \
-			CMD=${CMD}" VALIDATION_STRINGENCY=SILENT" \
-			CMD=${CMD}" METRICS_FILE=${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt" \
-			CMD=${CMD}" COMPRESSION_LEVEL=0" \
-			CMD=${CMD}" OPTICAL_DUPLICATE_PIXEL_DISTANCE=${PIXEL_DISTANCE}" \
-		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} sambamba" \
-			CMD=${CMD}" sort" \
-			CMD=${CMD}" -t ${THREADS}" \
-		CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar"
+			CMD=${CMD}" -Xmx16g"
+			CMD=${CMD}" -XX:ParallelGCThreads=${THREADS}"
+			CMD=${CMD}" /gatk/picard.jar"
+		CMD=${CMD}" MarkDuplicates"
+			CMD=${CMD}" ASSUME_SORT_ORDER=queryname"
+			CMD=${CMD}" ${INPUT}"
+			CMD=${CMD}" VALIDATION_STRINGENCY=SILENT"
+			CMD=${CMD}" COMPRESSION_LEVEL=0"
+			CMD=${CMD}" OPTICAL_DUPLICATE_PIXEL_DISTANCE=${PIXEL_DISTANCE}"
+		CMD=${CMD}" METRICS_FILE=${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt"
+		CMD=${CMD}" OUTPUT=/dev/stdout"
+		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} sambamba"
+			CMD=${CMD}" sort"
+			CMD=${CMD}" -t ${THREADS}"
+		CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam"
 			CMD=${CMD}" /dev/stdin"
 
 	# write command line to file and execute the command line

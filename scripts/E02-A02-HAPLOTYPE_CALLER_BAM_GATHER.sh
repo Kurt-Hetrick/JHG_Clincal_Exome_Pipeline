@@ -80,13 +80,13 @@ START_HC_BAM_GATHER=`date '+%s'` # capture time process starts for wall clock tr
 
 	# construct command line
 
-		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
-			CMD=${CMD}" /gatk/picard.jar" \
-		CMD=${CMD}" GatherBamFiles" \
-			CMD=${CMD}" INPUT=${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt" \
-			CMD=${CMD}" OUTPUT=${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC.bam" \
-			CMD=${CMD}" VALIDATION_STRINGENCY=SILENT" \
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/picard.jar"
+		CMD=${CMD}" GatherBamFiles"
+			CMD=${CMD}" INPUT=${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt"
+			CMD=${CMD}" VALIDATION_STRINGENCY=SILENT"
 			CMD=${CMD}" CREATE_INDEX=true"
+		CMD=${CMD}" OUTPUT=${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC.bam"
 
 	# write command line to file and execute the command line
 

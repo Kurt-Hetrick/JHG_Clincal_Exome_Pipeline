@@ -42,18 +42,18 @@ START_APPLY_BQSR=`date '+%s'` # capture time process starts for wall clock track
 
 	# construct command line
 
-		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
-			CMD=${CMD}" /gatk/gatk.jar" \
-		CMD=${CMD}" ApplyBQSR" \
-			CMD=${CMD}" --add-output-sam-program-record" \
-			CMD=${CMD}" --use-original-qualities" \
-			CMD=${CMD}" --emit-original-quals" \
-			CMD=${CMD}" --reference ${REF_GENOME}" \
-			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
-			CMD=${CMD}" --bqsr-recal-file ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/COUNT_COVARIATES/GATK_REPORT/${SM_TAG}_PERFORM_BQSR.bqsr" \
-			CMD=${CMD}" --static-quantized-quals 10" \
-			CMD=${CMD}" --static-quantized-quals 20" \
-			CMD=${CMD}" --static-quantized-quals 30" \
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/gatk.jar"
+		CMD=${CMD}" ApplyBQSR"
+			CMD=${CMD}" --add-output-sam-program-record"
+			CMD=${CMD}" --use-original-qualities"
+			CMD=${CMD}" --emit-original-quals"
+			CMD=${CMD}" --reference ${REF_GENOME}"
+			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam"
+			CMD=${CMD}" --bqsr-recal-file ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/COUNT_COVARIATES/GATK_REPORT/${SM_TAG}_PERFORM_BQSR.bqsr"
+			CMD=${CMD}" --static-quantized-quals 10"
+			CMD=${CMD}" --static-quantized-quals 20"
+			CMD=${CMD}" --static-quantized-quals 30"
 		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam"
 
 	# write command line to file and execute the command line

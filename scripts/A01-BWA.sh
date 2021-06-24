@@ -126,33 +126,33 @@
 
 	# construct cmd line
 
-		CMD="singularity exec ${ALIGNMENT_CONTAINER} bwa" \
-		CMD=${CMD}" mem" \
-			CMD=${CMD}" -K 100000000" \
-			CMD=${CMD}" -Y" \
-			CMD=${CMD}" -t ${THREADS}" \
-			CMD=${CMD}" ${REF_GENOME}" \
-			CMD=${CMD}" ${FASTQ_1}" \
-			CMD=${CMD}" ${FASTQ_2}" \
-		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} samblaster" \
-			CMD=${CMD}" --addMateTags" \
-			CMD=${CMD}" -a" \
-		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
-			CMD=${CMD}" /gatk/picard.jar" \
-		CMD=${CMD}" AddOrReplaceReadGroups" \
-			CMD=${CMD}" INPUT=/dev/stdin" \
-			CMD=${CMD}" CREATE_INDEX=true" \
-			CMD=${CMD}" SORT_ORDER=queryname" \
-			CMD=${CMD}" RGID=${FLOWCELL}_${LANE}" \
-			CMD=${CMD}" RGLB=${LIBRARY_NAME}" \
-			CMD=${CMD}" RGPL=${PLATFORM}" \
-			CMD=${CMD}" RGPU=${PLATFORM_UNIT}" \
-			CMD=${CMD}" RGPM=${SEQUENCER_MODEL}" \
-			CMD=${CMD}" RGSM=${SM_TAG}" \
-			CMD=${CMD}" RGCN=${CENTER}" \
-			CMD=${CMD}" RGDT=${ISO_8601}" \
-			CMD=${CMD}" RGPG=CIDR_WES-${PIPELINE_VERSION}" \
-			CMD=${CMD}" RGDS=${BAIT_NAME},${TARGET_NAME},${TITV_NAME}" \
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} bwa"
+		CMD=${CMD}" mem"
+			CMD=${CMD}" -K 100000000"
+			CMD=${CMD}" -Y"
+			CMD=${CMD}" -t ${THREADS}"
+			CMD=${CMD}" ${REF_GENOME}"
+			CMD=${CMD}" ${FASTQ_1}"
+			CMD=${CMD}" ${FASTQ_2}"
+		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} samblaster"
+			CMD=${CMD}" --addMateTags"
+			CMD=${CMD}" -a"
+		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/picard.jar"
+		CMD=${CMD}" AddOrReplaceReadGroups"
+			CMD=${CMD}" INPUT=/dev/stdin"
+			CMD=${CMD}" CREATE_INDEX=true"
+			CMD=${CMD}" SORT_ORDER=queryname"
+			CMD=${CMD}" RGID=${FLOWCELL}_${LANE}"
+			CMD=${CMD}" RGLB=${LIBRARY_NAME}"
+			CMD=${CMD}" RGPL=${PLATFORM}"
+			CMD=${CMD}" RGPU=${PLATFORM_UNIT}"
+			CMD=${CMD}" RGPM=${SEQUENCER_MODEL}"
+			CMD=${CMD}" RGSM=${SM_TAG}"
+			CMD=${CMD}" RGCN=${CENTER}"
+			CMD=${CMD}" RGDT=${ISO_8601}"
+			CMD=${CMD}" RGPG=CIDR_WES-${PIPELINE_VERSION}"
+			CMD=${CMD}" RGDS=${BAIT_NAME},${TARGET_NAME},${TITV_NAME}"
 		CMD=${CMD}" OUTPUT=${CORE_PATH}/${PROJECT}/TEMP/${PLATFORM_UNIT}.bam"
 
 	# write command line to file and execute the command line

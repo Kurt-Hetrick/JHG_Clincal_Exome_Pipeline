@@ -17,6 +17,7 @@
 #$ -j y
 
 # export all variables, useful to find out what compute node the program was executed on
+# redirecting stderr/stdout to file as a log.
 
 	set
 
@@ -24,30 +25,35 @@
 
 # INPUT VARIABLES
 
-	CORE_PATH=$1
+	ALIGNMENT_CONTAINER=$1
+	CORE_PATH=$2
 
-	PROJECT=$2
-	FAMILY=$3
+	PROJECT=$3
 	SM_TAG=$4
-
-	SAMPLE_SHEET=$5
+	REF_GENOME=$5
+	VERIFY_VCF=$6
+	BAIT_BED=$7
+		BAIT_BED_NAME=$(basename ${BAIT_BED} .bed)
+	SAMPLE_SHEET=$8
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=$6
+	SUBMIT_STAMP=$9
 
-## replace generic annovar headers with descritive headers
+## --Creating an on the fly VCF file to be used as the reference for verifyBamID--
+## --remove X and Y data
 
-START_FIX_ANNOVAR=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_SELECT_VERIFYBAMID_VCF=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="sed -i -e '1s/vcf3/gnomAD\[exclude_AC\/AN\]/'"
-		CMD=${CMD}" -e '1s/vcf2/GB_Freq.MMdisease/'"
-			CMD=${CMD}" -e '1s/vcf/GB_Freq.MMpolymorphisms/'"
-			CMD=${CMD}" -e '1s/Otherinfo11/gnomADplusVCF-INFO/'"
-			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_ANNOVAR_MT/${SM_TAG}.GRCh37_MT_multianno.txt"
-		CMD=${CMD}" &&"
-			CMD=${CMD}" mv -v ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_ANNOVAR_MT/${SM_TAG}.GRCh37_MT_multianno*"
-			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/$FAMILY/${SM_TAG}/MT_OUTPUT/ANNOVAR_MT/"
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/gatk.jar"
+		CMD=${CMD}" SelectVariants"
+			CMD=${CMD}" --reference ${REF_GENOME}"
+			CMD=${CMD}" --intervals ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed"
+			CMD=${CMD}" --variant ${VERIFY_VCF}"
+			CMD=${CMD}" --exclude-intervals X"
+			CMD=${CMD}" --exclude-intervals Y"
+		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.VerifyBamID.vcf"
 
 	# write command line to file and execute the command line
 
@@ -69,13 +75,13 @@ START_FIX_ANNOVAR=`date '+%s'` # capture time process starts for wall clock trac
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_FIX_ANNOVAR=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_SELECT_VERIFYBAMID_VCF=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo ${SM_TAG}_${PROJECT},I01,FIX_ANNOVAR,${HOSTNAME},${START_FIX_ANNOVAR},${END_FIX_ANNOVAR} \
+	echo ${SM_TAG}_${PROJECT},E01,SELECT_VERIFYBAMID_VCF,${HOSTNAME},${START_SELECT_VERIFYBAMID_VCF},${END_SELECT_VERIFYBAMID_VCF} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
-# exit with the signal from samtools bam to cram
+# exit with the signal from the program
 
 	exit ${SCRIPT_STATUS}

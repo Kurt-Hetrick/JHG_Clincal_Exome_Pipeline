@@ -42,24 +42,24 @@ START_MAKE_MT_BAM=`date '+%s'` # capture time process starts for wall clock trac
 
 	# construct command line
 
-		CMD="singularity exec ${MITO_EKLIPSE_CONTAINER} samtools" \
-		CMD=${CMD}" view" \
-			CMD=${CMD}" -bh" \
-			CMD=${CMD}" -@ ${THREADS}" \
-		CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam" \
-		CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam" \
-		CMD=${CMD}" MT" \
-		CMD=${CMD}" &&" \
+		CMD="singularity exec ${MITO_EKLIPSE_CONTAINER} samtools"
+		CMD=${CMD}" view"
+			CMD=${CMD}" -bh"
+			CMD=${CMD}" -@ ${THREADS}"
+		CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam"
+			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam"
+			CMD=${CMD}" MT"
 		# index the new bam file
-		CMD=${CMD}" singularity exec ${MITO_EKLIPSE_CONTAINER} samtools" \
-		CMD=${CMD}" index" \
-			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam" \
-			CMD=${CMD}" -@ ${THREADS}" \
-		CMD=${CMD}" &&" \
+		CMD=${CMD}" &&"
+			CMD=${CMD}" singularity exec ${MITO_EKLIPSE_CONTAINER} samtools"
+			CMD=${CMD}" index"
+				CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam"
+				CMD=${CMD}" -@ ${THREADS}"
 		# eklipse for some reason reads in a text file with the file path and a title (sample name)
 		# so generating that now
-		CMD=${CMD}" echo -e ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam'\t'${SM_TAG}" \
-		CMD=${CMD}" >| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_EKLIPSE_CONFIG.txt"
+		CMD=${CMD}" &&"
+			CMD=${CMD}" echo -e ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam'\t'${SM_TAG}"
+			CMD=${CMD}" >| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_EKLIPSE_CONFIG.txt"
 
 	# write command line to file and execute the command line
 

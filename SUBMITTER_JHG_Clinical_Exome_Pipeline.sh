@@ -1503,74 +1503,65 @@
 	done
 
 ####################################################################################
-##### BAM/CRAM FILE RELATED METRICS ################################################
+##### BAM FILE METRICS #############################################################
 ####################################################################################
 # NOTE: SOME PROGRAMS CAN ONLY BE RAN ON THE BAM FILE AND NOT ON THE CRAM FILE #####
-# I WILL COMMENT ON WHICH IS WHICH #################################################
 ####################################################################################
 
-	################################################################################
-	# COLLECT MULTIPLE METRICS  ####################################################
-	# again used bait bed file here instead of target b/c target could be anything #
-	# ti/tv bed is unrelated to the capture really #################################
-	# uses the CRAM file as the input ##############################################
-	################################################################################
+	##############################################################################
+	# CREATE DEPTH OF COVERAGE FOR CODING BED PADDED WITH THE INPUT FROM THE GUI #
+	# uses a gatk 3.7 container ##################################################
+	# This with all RefSeq Select CDS exons + missing OMIM, etc. #################
+	##############################################################################
 
-		COLLECT_MULTIPLE_METRICS ()
+		DOC_CODING ()
 		{
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_MULTIPLE_METRICS.log \
+			-N E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_CODING.log \
 			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.01_COLLECT_MULTIPLE_METRICS.sh \
-				$ALIGNMENT_CONTAINER \
+			$SCRIPT_DIR/E06-DOC_CODING_PADDED.sh \
+				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
 				$FAMILY \
 				$SM_TAG \
 				$REF_GENOME \
-				$DBSNP \
-				$BAIT_BED \
+				$CODING_BED \
+				$PADDING_LENGTH \
+				$GENE_LIST \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
 		}
 
-	#########################################
-	# COLLECT HS METRICS  ###################
-	# bait bed is the bait bed file #########
-	# titv bed files is the target bed file #
-	# uses the CRAM file as the input #######
-	#########################################
+		#########################################################
+		# DO AN ANEUPLOIDY CHECK ON CODING BED FILE DOC OUTPUT  #
+		#########################################################
 
-		COLLECT_HS_METRICS ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_HS_METRICS.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.02_COLLECT_HS_METRICS.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$REF_GENOME \
-				$BAIT_BED \
-				$TITV_BED \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
+			ANEUPLOIDY_CHECK ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N E06-A01-CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANEUPLOIDY_CHECK.log \
+				-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/E06-A01-CHROM_DEPTH.sh \
+					$ALIGNMENT_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$CODING_BED \
+					$PADDING_LENGTH
+			}
 
 	##############################################################################
 	# CREATE DEPTH OF COVERAGE FOR TARGET BED PADDED WITH THE INPUT FROM THE GUI #
-	# uses a gatk 3.7 container ##################################################
-	# input is the BAM file #################################################################################
+	# uses a gatk 3.7 container #############################################################################
 	# Generally this with all RefSeq Select CDS exons + missing OMIM unless it becomes targeted, e.g a zoom #
-	# uses the BAM file as the input ########################################################################
 	#########################################################################################################
 
 		DOC_TARGET ()
@@ -1578,10 +1569,10 @@
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.03-DOC_TARGET_${SGE_SM_TAG}_${PROJECT} \
+			-N E07-DOC_TARGET_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_TARGET.log \
 			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.03_DOC_TARGET_PADDED_BED.sh \
+			$SCRIPT_DIR/E07-DOC_TARGET_PADDED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
@@ -1607,10 +1598,10 @@
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.04-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
+			-N E08-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-SELECT_VERIFYBAMID_VCF.log \
 			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.04_SELECT_VERIFYBAMID_VCF.sh \
+			$SCRIPT_DIR/E08-SELECT_VERIFYBAMID_VCF.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
@@ -1622,80 +1613,27 @@
 				$SUBMIT_STAMP
 		}
 
-	###############################
-	# RUN VERIFYBAMID #############
-	# THIS RUNS OFF OF A BAM FILE #
-	###############################
+		###################
+		# RUN VERIFYBAMID #
+		###################
 
-		RUN_VERIFYBAMID ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.04-A.01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-VERIFYBAMID.log \
-			-hold_jid H.04-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.04-A.01_VERIFYBAMID.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	##############################################################################
-	# CREATE DEPTH OF COVERAGE FOR CODING BED PADDED WITH THE INPUT FROM THE GUI #
-	# uses a gatk 3.7 container ##################################################
-	# input is the BAM file ######################################################
-	# This with all RefSeq Select CDS exons + missing OMIM, etc. #################
-	# uses the BAM file as the input #############################################
-	##############################################################################
-
-		DOC_CODING ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_CODING.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.05_DOC_CODING_PADDED.sh \
-				$GATK_3_7_0_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$REF_GENOME \
-				$CODING_BED \
-				$PADDING_LENGTH \
-				$GENE_LIST \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	#########################################################
-	# DO AN ANEUPLOIDY CHECK ON TARGET BED FILE DOC OUTPUT  #
-	#########################################################
-
-		ANEUPLOIDY_CHECK ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.05-A.01_CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANEUPLOIDY_CHECK.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.05-A.01_CHROM_DEPTH.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$CODING_BED \
-				$PADDING_LENGTH
-		}
+			RUN_VERIFYBAMID ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N E08-A01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-VERIFYBAMID.log \
+				-hold_jid E08-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/E08-A01-VERIFYBAMID.sh \
+					$ALIGNMENT_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
 
 	########################################################################################
 	# FORMATTING PER BASE COVERAGE AND ADDING GENE NAME, TRANSCRIPT, EXON, ETC ANNNOTATION #
@@ -1708,7 +1646,7 @@
 				$QSUB_ARGS \
 			-N H.05-A.02_ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_BASE.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05-A.02_ANNOTATE_PER_BASE.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1779,7 +1717,7 @@
 				$QSUB_ARGS \
 			-N H.05-A.03_ANNOTATE_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_INTERVAL.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},H.05-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/H.05-A.03_ANNOTATE_PER_INTERVAL.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1865,6 +1803,66 @@
 				$FAMILY \
 				$SM_TAG \
 				$BAIT_BED
+		}
+
+#############################
+##### CRAM FILE METRICS #####
+#############################
+
+	################################################################################
+	# COLLECT MULTIPLE METRICS  ####################################################
+	# again used bait bed file here instead of target b/c target could be anything #
+	# ti/tv bed is unrelated to the capture really #################################
+	# uses the CRAM file as the input ##############################################
+	################################################################################
+
+		COLLECT_MULTIPLE_METRICS ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_MULTIPLE_METRICS.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/H.01_COLLECT_MULTIPLE_METRICS.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$DBSNP \
+				$BAIT_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	#########################################
+	# COLLECT HS METRICS  ###################
+	# bait bed is the bait bed file #########
+	# titv bed files is the target bed file #
+	# uses the CRAM file as the input #######
+	#########################################
+
+		COLLECT_HS_METRICS ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_HS_METRICS.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/H.02_COLLECT_HS_METRICS.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$BAIT_BED \
+				$TITV_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
 		}
 
 ###############################################
@@ -3033,9 +3031,9 @@ H.06-A.01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT},\
 H.05-A.03-A.01_FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT},\
 H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\
 H.05-A.02-A.01_FILTER_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\
-H.05-A.01_CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT},\
-H.04-A.01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT},\
-H.03-DOC_TARGET_${SGE_SM_TAG}_${PROJECT},\
+E06-A01-CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT},\
+E08-A01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT},\
+E07-DOC_TARGET_${SGE_SM_TAG}_${PROJECT},\
 H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT},\
 H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_${PROJECT},\
 E05-A01-PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT},\

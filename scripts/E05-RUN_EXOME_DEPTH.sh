@@ -47,12 +47,12 @@ START_EXOME_DEPTH=`date '+%s'` # capture time process starts for wall clock trac
 
 	# construct command line
 
-		CMD="singularity exec ${CNV_CONTAINER} Rscript" \
-		CMD=${CMD}" ${EXOME_DEPTH_R_SCRIPT}" \
-			CMD=${CMD}" --bamfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam" \
-			CMD=${CMD}" --refcounts ${REF_PANEL_COUNTS}" \
-			CMD=${CMD}" --bedfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${CODING_BED_NAME}-${CODING_MD5}.exomeDepth.input.bed" \
-			CMD=${CMD}" --smTag ${SM_TAG}" \
+		CMD="singularity exec ${CNV_CONTAINER} Rscript"
+		CMD=${CMD}" ${EXOME_DEPTH_R_SCRIPT}"
+			CMD=${CMD}" --bamfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam"
+			CMD=${CMD}" --refcounts ${REF_PANEL_COUNTS}"
+			CMD=${CMD}" --bedfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${CODING_BED_NAME}-${CODING_MD5}.exomeDepth.input.bed"
+			CMD=${CMD}" --smTag ${SM_TAG}"
 		CMD=${CMD}" --outdir ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT"
 
 	# write command line to file and execute the command line

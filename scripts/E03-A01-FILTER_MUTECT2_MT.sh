@@ -42,17 +42,17 @@ START_FILTER_MUTECT2_MT=`date '+%s'` # capture time process starts for wall cloc
 
 	# construct command line
 
-		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} java -jar" \
-			CMD=${CMD}" /gatk/gatk.jar" \
-		CMD=${CMD}" FilterMutectCalls" \
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_RAW.vcf" \
-			CMD=${CMD}" --reference ${REF_GENOME}" \
-			CMD=${CMD}" --mitochondria-mode true" \
-			CMD=${CMD}" --max-alt-allele-count 4" \
-			CMD=${CMD}" --min-allele-fraction 0.03" \
-			CMD=${CMD}" --contamination-estimate 0.0" \
-			CMD=${CMD}" --stats ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_RAW.vcf.stats" \
-		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED.vcf" \
+		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/gatk.jar"
+		CMD=${CMD}" FilterMutectCalls"
+			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_RAW.vcf"
+			CMD=${CMD}" --reference ${REF_GENOME}"
+			CMD=${CMD}" --mitochondria-mode true"
+			CMD=${CMD}" --max-alt-allele-count 4"
+			CMD=${CMD}" --min-allele-fraction 0.03"
+			CMD=${CMD}" --contamination-estimate 0.0"
+			CMD=${CMD}" --stats ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_RAW.vcf.stats"
+		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED.vcf"
 
 	# write command line to file and execute the command line
 

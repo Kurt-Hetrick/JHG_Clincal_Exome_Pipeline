@@ -42,13 +42,13 @@ START_HC_CRAM=`date '+%s'` # capture time process starts for wall clock tracking
 
 	# construct command line
 
-		CMD="singularity exec ${ALIGNMENT_CONTAINER} samtools" \
-			CMD=${CMD}" view" \
-				CMD=${CMD}" -C ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC.bam" \
-				CMD=${CMD}" -T ${REF_GENOME}" \
-				CMD=${CMD}" -@ ${THREADS}" \
-				CMD=${CMD}" --write-index" \
-				CMD=${CMD}" -O CRAM" \
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} samtools"
+			CMD=${CMD}" view"
+				CMD=${CMD}" -C ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC.bam"
+				CMD=${CMD}" -T ${REF_GENOME}"
+				CMD=${CMD}" -@ ${THREADS}"
+				CMD=${CMD}" --write-index"
+				CMD=${CMD}" -O CRAM"
 			CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/HC_CRAM/${SM_TAG}.HC.cram"
 
 	# write command line to file and execute the command line

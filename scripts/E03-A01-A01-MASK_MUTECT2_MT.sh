@@ -41,12 +41,12 @@ START_MASK_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock 
 
 	# construct command line
 
-		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} java -jar" \
-			CMD=${CMD}" /gatk/gatk.jar" \
-		CMD=${CMD}" VariantFiltration" \
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED.vcf" \
-			CMD=${CMD}" --mask ${MT_MASK}" \
-			CMD=${CMD}" --mask-name blacklisted_site" \
+		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/gatk.jar"
+		CMD=${CMD}" VariantFiltration"
+			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED.vcf"
+			CMD=${CMD}" --mask ${MT_MASK}"
+			CMD=${CMD}" --mask-name blacklisted_site"
 		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf.gz"
 
 	# write command line to file and execute the command line

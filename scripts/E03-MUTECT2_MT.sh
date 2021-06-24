@@ -42,27 +42,27 @@ START_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock track
 
 	# construct command line
 
-		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} java -jar" \
-			CMD=${CMD}" /gatk/gatk.jar" \
-		CMD=${CMD}" Mutect2" \
-			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam" \
-			CMD=${CMD}" --reference ${REF_GENOME}" \
-			CMD=${CMD}" --mitochondria-mode true" \
-			CMD=${CMD}" --max-mnp-distance 0" \
-			CMD=${CMD}" --max-reads-per-alignment-start 75" \
-			CMD=${CMD}" --max-disc-ar-extension 25" \
-			CMD=${CMD}" --max-gga-ar-extension 300" \
-			CMD=${CMD}" --padding-around-indels 150" \
-			CMD=${CMD}" --padding-around-snps 20" \
-			CMD=${CMD}" --pruning-lod-threshold 1.0" \
-			CMD=${CMD}" --debug-graph-transformations false" \
-			CMD=${CMD}" --capture-assembly-failure-bam false" \
-			CMD=${CMD}" --error-correct-reads false" \
-			CMD=${CMD}" --kmer-length-for-read-error-correction 25" \
-			CMD=${CMD}" --min-observations-for-kmer-to-be-solid 20" \
-			CMD=${CMD}" --likelihood-calculation-engine PairHMM" \
-			CMD=${CMD}" --annotation StrandBiasBySample" \
-			CMD=${CMD}" --intervals MT:1-16569" \
+		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/gatk.jar"
+		CMD=${CMD}" Mutect2"
+			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam"
+			CMD=${CMD}" --reference ${REF_GENOME}"
+			CMD=${CMD}" --mitochondria-mode true"
+			CMD=${CMD}" --max-mnp-distance 0"
+			CMD=${CMD}" --max-reads-per-alignment-start 75"
+			CMD=${CMD}" --max-disc-ar-extension 25"
+			CMD=${CMD}" --max-gga-ar-extension 300"
+			CMD=${CMD}" --padding-around-indels 150"
+			CMD=${CMD}" --padding-around-snps 20"
+			CMD=${CMD}" --pruning-lod-threshold 1.0"
+			CMD=${CMD}" --debug-graph-transformations false"
+			CMD=${CMD}" --capture-assembly-failure-bam false"
+			CMD=${CMD}" --error-correct-reads false"
+			CMD=${CMD}" --kmer-length-for-read-error-correction 25"
+			CMD=${CMD}" --min-observations-for-kmer-to-be-solid 20"
+			CMD=${CMD}" --likelihood-calculation-engine PairHMM"
+			CMD=${CMD}" --annotation StrandBiasBySample"
+			CMD=${CMD}" --intervals MT:1-16569"
 		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_RAW.vcf"
 
 	# write command line to file and execute the command line

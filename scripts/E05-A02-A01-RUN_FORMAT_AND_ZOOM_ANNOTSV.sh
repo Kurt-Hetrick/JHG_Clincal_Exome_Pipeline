@@ -45,13 +45,13 @@ START_FORMAT_AND_ZOOM_ANNOTSV=`date '+%s'` # capture time process starts for wal
 
 	# construct command line
 
-		CMD="singularity exec ${CNV_CONTAINER} Rscript" \
-			CMD=${CMD}" ${FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT}" \
-			CMD=${CMD}" --annotSVtemp ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.annotSV.temp.tsv" \
-			CMD=${CMD}" --zoomfile ${ZOOM_LIST}" \
-			CMD=${CMD}" --zoomname ${ZOOM_NAME}" \
-			CMD=${CMD}" --smTag ${SM_TAG}" \
-			CMD=${CMD}" --outdir ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT"
+		CMD="singularity exec ${CNV_CONTAINER} Rscript"
+			CMD=${CMD}" ${FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT}"
+			CMD=${CMD}" --annotSVtemp ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.annotSV.temp.tsv"
+			CMD=${CMD}" --zoomfile ${ZOOM_LIST}"
+			CMD=${CMD}" --zoomname ${ZOOM_NAME}"
+			CMD=${CMD}" --smTag ${SM_TAG}"
+		CMD=${CMD}" --outdir ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT"
 
 	# write command line to file and execute the command line
 

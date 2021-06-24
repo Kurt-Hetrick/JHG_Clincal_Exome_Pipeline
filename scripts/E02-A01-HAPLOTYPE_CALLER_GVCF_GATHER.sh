@@ -82,12 +82,12 @@ START_HAPLOTYPE_CALLER_GATHER=`date '+%s'` # capture time process starts for wal
 
 	# construct command line
 
-		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -cp" \
-			CMD=${CMD}" /usr/GenomeAnalysisTK.jar" \
-		CMD=${CMD}" org.broadinstitute.gatk.tools.CatVariants" \
-			CMD=${CMD}" -R ${REF_GENOME}" \
-			CMD=${CMD}" --assumeSorted" \
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.gvcf.list" \
+		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -cp"
+			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
+		CMD=${CMD}" org.broadinstitute.gatk.tools.CatVariants"
+			CMD=${CMD}" -R ${REF_GENOME}"
+			CMD=${CMD}" --assumeSorted"
+			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.gvcf.list"
 		CMD=${CMD}" --outputFile ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/GVCF/${SM_TAG}.g.vcf.gz"
 
 	# write command line to file and execute the command line

@@ -40,13 +40,13 @@ START_ANNOTSV=`date '+%s'` # capture time process starts for wall clock tracking
 
 	# construct command line
 
-		CMD="singularity exec ${CNV_CONTAINER} AnnotSV" \
-			CMD=${CMD}" -typeOfAnnotation split" \
-			CMD=${CMD}" -SVinputInfo 1" \
-			CMD=${CMD}" -svtBEDcol 4" \
-			CMD=${CMD}" -SVinputFile ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT/${SM_TAG}.exomeDepth.bed" \
-			CMD=${CMD}" -outputDir ${CORE_PATH}/${PROJECT}/TEMP" \
-			CMD=${CMD}" -outputFile ${SM_TAG}.annotSV.temp.tsv"
+		CMD="singularity exec ${CNV_CONTAINER} AnnotSV"
+			CMD=${CMD}" -typeOfAnnotation split"
+			CMD=${CMD}" -SVinputInfo 1"
+			CMD=${CMD}" -svtBEDcol 4"
+			CMD=${CMD}" -SVinputFile ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT/${SM_TAG}.exomeDepth.bed"
+			CMD=${CMD}" -outputDir ${CORE_PATH}/${PROJECT}/TEMP"
+		CMD=${CMD}" -outputFile ${SM_TAG}.annotSV.temp.tsv"
 
 	# write command line to file and execute the command line
 

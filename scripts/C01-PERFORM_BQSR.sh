@@ -47,16 +47,16 @@ START_PERFORM_BQSR=`date '+%s'` # capture time process starts for wall clock tra
 
 	# construct command line
 
-		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar" \
-			CMD=${CMD}" /gatk/gatk.jar" \
-		CMD=${CMD}" BaseRecalibrator" \
-			CMD=${CMD}" --use-original-qualities" \
-			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam" \
-			CMD=${CMD}" --reference ${REF_GENOME}" \
-			CMD=${CMD}" --known-sites ${KNOWN_INDEL_1}" \
-			CMD=${CMD}" --known-sites ${KNOWN_INDEL_2}" \
-			CMD=${CMD}" --known-sites ${DBSNP}" \
-			CMD=${CMD}" --intervals ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed" \
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/gatk.jar"
+		CMD=${CMD}" BaseRecalibrator"
+			CMD=${CMD}" --use-original-qualities"
+			CMD=${CMD}" --input ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.dup.bam"
+			CMD=${CMD}" --reference ${REF_GENOME}"
+			CMD=${CMD}" --known-sites ${KNOWN_INDEL_1}"
+			CMD=${CMD}" --known-sites ${KNOWN_INDEL_2}"
+			CMD=${CMD}" --known-sites ${DBSNP}"
+			CMD=${CMD}" --intervals ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed"
 		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/COUNT_COVARIATES/GATK_REPORT/${SM_TAG}_PERFORM_BQSR.bqsr"
 
 	# write command line to file and execute the command line
