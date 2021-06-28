@@ -36,9 +36,9 @@
 	KNOWN_INDEL_2=$8
 	DBSNP=$9
 	BAIT_BED=${10}
-		BAIT_BED_NAME=(`basename ${BAIT_BED} .bed`)
+		BAIT_BED_NAME=$(basename ${BAIT_BED} .bed)
 	SAMPLE_SHEET=${11}
-		SAMPLE_SHEET_NAME=(`basename ${SAMPLE_SHEET} .csv`)
+		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
 	SUBMIT_STAMP=${12}
 
 ## --BQSR using data only from the baited intervals

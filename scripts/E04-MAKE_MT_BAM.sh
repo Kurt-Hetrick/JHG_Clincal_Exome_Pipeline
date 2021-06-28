@@ -51,10 +51,10 @@ START_MAKE_MT_BAM=`date '+%s'` # capture time process starts for wall clock trac
 			CMD=${CMD}" MT"
 		# index the new bam file
 		CMD=${CMD}" &&"
-			CMD=${CMD}" singularity exec ${MITO_EKLIPSE_CONTAINER} samtools"
-			CMD=${CMD}" index"
-				CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam"
-				CMD=${CMD}" -@ ${THREADS}"
+		CMD=${CMD}" singularity exec ${MITO_EKLIPSE_CONTAINER} samtools"
+		CMD=${CMD}" index"
+			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam"
+			CMD=${CMD}" -@ ${THREADS}"
 		# eklipse for some reason reads in a text file with the file path and a title (sample name)
 		# so generating that now
 		CMD=${CMD}" &&"

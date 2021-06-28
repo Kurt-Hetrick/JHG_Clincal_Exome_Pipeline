@@ -30,7 +30,7 @@
 	PROJECT=$3
 	SM_TAG=$4
 	BAIT_BED=$5
-		BAIT_BED_NAME=(`basename ${BAIT_BED} .bed`)
+		BAIT_BED_NAME=$(basename ${BAIT_BED} .bed)
 	SAMPLE_SHEET=$6
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
 	SUBMIT_STAMP=$7

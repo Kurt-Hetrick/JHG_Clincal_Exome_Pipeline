@@ -31,7 +31,7 @@
 	LANE=$5 # lane of flowcell that sample read group was performed on. 3rd column of the sample manifest
 	INDEX=$6 # sample barcode. 4th column of the sample manifest
 		PLATFORM_UNIT=${FLOWCELL}_${LANE}_${INDEX}
-		FIXED_PLATFORM_UNIT=`echo ${PLATFORM_UNIT} | sed 's/~/*/g'`
+		FIXED_PLATFORM_UNIT=$(echo ${PLATFORM_UNIT} | sed 's/~/*/g')
 	PLATFORM=$7 # type of sequencing chemistry matching SAM specification. 5th column of the sample manifest.
 	LIBRARY_NAME=$8 # library group of the sample read group.
 						# Used during Marking Duplicates to determine if molecules are to be considered as part of the same library or not

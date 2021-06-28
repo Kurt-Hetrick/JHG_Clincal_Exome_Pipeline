@@ -32,7 +32,7 @@
 	SM_TAG=$5
 	REF_GENOME=$6
 	BAIT_BED=$7
-		BAIT_BED_NAME=(`basename ${BAIT_BED} .bed`)
+		BAIT_BED_NAME=$(basename ${BAIT_BED} .bed)
 	SAMPLE_SHEET=$8
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
 	SUBMIT_STAMP=$9

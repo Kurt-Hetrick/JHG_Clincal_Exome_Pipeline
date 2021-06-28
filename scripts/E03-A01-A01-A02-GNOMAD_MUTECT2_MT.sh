@@ -48,7 +48,7 @@ START_GNOMAD_MUTECT2_MT=`date '+%s'` # capture time process starts for wall cloc
 			CMD=${CMD}" -a ${GNOMAD_MT}"
 			CMD=${CMD}" -c INFO"
 			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf.gz"
-		CMD=${CMD}" > ${CORE_PATH}/${PROJECT}/$FAMILY/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT.vcf"
+		CMD=${CMD}" >| ${CORE_PATH}/${PROJECT}/$FAMILY/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT.vcf"
 
 	# write command line to file and execute the command line
 

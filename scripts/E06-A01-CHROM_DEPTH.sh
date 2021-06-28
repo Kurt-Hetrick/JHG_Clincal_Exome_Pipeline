@@ -113,7 +113,7 @@
 # normalize by the AUTOSOMAL MEAN DEPTH
 
 	awk 'BEGIN {print "SM_TAG","CHROM","ARM","TOTAL_COVERAGE","TOTAL_TARGETS","MEAN_DEPTH","NORM_DEPTH"} \
-	{print $1,$2,$3,$4,$5,$4/$5,$4/$5/"'${AUTOSOMAL_MEAN_DEPTH}'"}' \
+		{print $1,$2,$3,$4,$5,$4/$5,$4/$5/"'${AUTOSOMAL_MEAN_DEPTH}'"}' \
 	${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.depth_per_chr_arm.txt \
 		| awk '$2!="21"||$3!="p" {print $0}' \
 		| awk '$2!="X.PAR"||$3!="p" {print $0}' \

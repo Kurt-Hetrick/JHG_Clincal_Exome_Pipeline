@@ -1536,19 +1536,19 @@
 				$SUBMIT_STAMP
 		}
 
-		#########################################################
-		# DO AN ANEUPLOIDY CHECK ON CODING BED FILE DOC OUTPUT  #
-		#########################################################
+	#########################################################
+	# DO AN ANEUPLOIDY CHECK ON CODING BED FILE DOC OUTPUT  #
+	#########################################################
 
-			ANEUPLOIDY_CHECK ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N E06-A01-CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANEUPLOIDY_CHECK.log \
-				-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/E06-A01-CHROM_DEPTH.sh \
+		ANEUPLOIDY_CHECK ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E06-A01-CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANEUPLOIDY_CHECK.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E06-A01-CHROM_DEPTH.sh \
 					$ALIGNMENT_CONTAINER \
 					$CORE_PATH \
 					$PROJECT \
@@ -1556,7 +1556,121 @@
 					$SM_TAG \
 					$CODING_BED \
 					$PADDING_LENGTH
-			}
+		}
+
+	########################################################################################
+	# FORMATTING PER BASE COVERAGE AND ADDING GENE NAME, TRANSCRIPT, EXON, ETC ANNNOTATION #
+	########################################################################################
+
+		ANNOTATE_PER_BASE_REPORT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E06-A02-ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_BASE.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E06-A02-ANNOTATE_PER_BASE.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CODING_BED \
+				$PADDING_LENGTH \
+				$THREADS \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	##########################################################################
+	# FILTER PER BASE COVERAGE WITH GENE NAME ANNNOTATION WITH LESS THAN 30x #
+	##########################################################################
+
+		FILTER_ANNOTATED_PER_BASE_REPORT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E06-A02-A01-FILTER_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_ANNOTATED_PER_BASE.log \
+			-hold_jid E06-A02-ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E06-A02-A01-FILTER_ANNOTATED_PER_BASE.sh \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CODING_BED \
+				$PADDING_LENGTH
+		}
+
+	######################################################
+	# BGZIP PER BASE COVERAGE WITH GENE NAME ANNNOTATION #
+	######################################################
+
+		BGZIP_ANNOTATED_PER_BASE_REPORT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E06-A02-A01-A01-BGZIP_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-BGZIP_ANNOTATED_PER_BASE.log \
+			-hold_jid E06-A02-A01-FILTER_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E06-A02-A01-A01-BGZIP_ANNOTATED_PER_BASE.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CODING_BED \
+				$PADDING_LENGTH \
+				$THREADS \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	###################################################################################################
+	# FORMATTING PER CODING INTERVAL COVERAGE AND ADDING GENE NAME, TRANSCRIPT, EXON, ETC ANNNOTATION #
+	###################################################################################################
+
+		ANNOTATE_PER_INTERVAL_REPORT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E06-A03-ANNOTATE_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_INTERVAL.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E06-A03-ANNOTATE_PER_INTERVAL.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CODING_BED \
+				$PADDING_LENGTH
+		}
+
+	##################################################################################################
+	# FILTER ANNOTATED PER CODING INTERVAL COVERAGE TO INTERVALS WHERE LESS 100% OF BASES ARE AT 30X #
+	##################################################################################################
+
+		FILTER_ANNOTATED_PER_INTERVAL_REPORT ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N E06-A03-A01-FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_ANNOTATED_PER_INTERVAL.log \
+			-hold_jid E06-A03-ANNOTATE_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E06-A03-A01-FILTER_ANNOTATED_PER_INTERVAL.sh \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$CODING_BED \
+				$PADDING_LENGTH
+		}
 
 	##############################################################################
 	# CREATE DEPTH OF COVERAGE FOR TARGET BED PADDED WITH THE INPUT FROM THE GUI #
@@ -1613,140 +1727,26 @@
 				$SUBMIT_STAMP
 		}
 
-		###################
-		# RUN VERIFYBAMID #
-		###################
+	###################
+	# RUN VERIFYBAMID #
+	###################
 
-			RUN_VERIFYBAMID ()
-			{
-				echo \
-				qsub \
-					$QSUB_ARGS \
-				-N E08-A01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT} \
-					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-VERIFYBAMID.log \
-				-hold_jid E08-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
-				$SCRIPT_DIR/E08-A01-VERIFYBAMID.sh \
-					$ALIGNMENT_CONTAINER \
-					$CORE_PATH \
-					$PROJECT \
-					$FAMILY \
-					$SM_TAG \
-					$SAMPLE_SHEET \
-					$SUBMIT_STAMP
-			}
-
-	########################################################################################
-	# FORMATTING PER BASE COVERAGE AND ADDING GENE NAME, TRANSCRIPT, EXON, ETC ANNNOTATION #
-	########################################################################################
-
-		ANNOTATE_PER_BASE_REPORT ()
+		RUN_VERIFYBAMID ()
 		{
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.05-A.02_ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_BASE.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.05-A.02_ANNOTATE_PER_BASE.sh \
+			-N E08-A01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-VERIFYBAMID.log \
+			-hold_jid E08-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E08-A01-VERIFYBAMID.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
 				$FAMILY \
 				$SM_TAG \
-				$CODING_BED \
-				$PADDING_LENGTH \
-				$THREADS \
 				$SAMPLE_SHEET \
 				$SUBMIT_STAMP
-		}
-
-	##########################################################################
-	# FILTER PER BASE COVERAGE WITH GENE NAME ANNNOTATION WITH LESS THAN 30x #
-	##########################################################################
-
-		FILTER_ANNOTATED_PER_BASE_REPORT ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.05-A.02-A.01_FILTER_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_ANNOTATED_PER_BASE.log \
-			-hold_jid H.05-A.02_ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.05-A.02-A.01_FILTER_ANNOTATED_PER_BASE.sh \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$CODING_BED \
-				$PADDING_LENGTH
-		}
-
-	######################################################
-	# BGZIP PER BASE COVERAGE WITH GENE NAME ANNNOTATION #
-	######################################################
-
-		BGZIP_ANNOTATED_PER_BASE_REPORT ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-BGZIP_ANNOTATED_PER_BASE.log \
-			-hold_jid H.05-A.02_ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$CODING_BED \
-				$PADDING_LENGTH \
-				$THREADS \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	###################################################################################################
-	# FORMATTING PER CODING INTERVAL COVERAGE AND ADDING GENE NAME, TRANSCRIPT, EXON, ETC ANNNOTATION #
-	###################################################################################################
-
-		ANNOTATE_PER_INTERVAL_REPORT ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.05-A.03_ANNOTATE_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_INTERVAL.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.05-A.03_ANNOTATE_PER_INTERVAL.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$CODING_BED \
-				$PADDING_LENGTH
-		}
-
-	##################################################################################################
-	# FILTER ANNOTATED PER CODING INTERVAL COVERAGE TO INTERVALS WHERE LESS 100% OF BASES ARE AT 30X #
-	##################################################################################################
-
-		FILTER_ANNOTATED_PER_INTERVAL_REPORT ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.05-A.03-A.01_FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FILTER_ANNOTATED_PER_INTERVAL.log \
-			-hold_jid H.05-A.03_ANNOTATE_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.05-A.03-A.01_FILTER_ANNOTATED_PER_INTERVAL.sh \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$CODING_BED \
-				$PADDING_LENGTH
 		}
 
 	#################################################################################################
@@ -1755,7 +1755,6 @@
 	# THE TARGET BED COULD BE MODIFIED TO BE TOO SMALL TO BE USEFUL HERE ############################
 	# TI/TV BED FILE HAS TOO MUCH UNCERTAINTY SINCE IT DOES NOT HAE ANYTHING TO DO WITH THE CAPTURE #
 	# SCRIPT READS BAIT BED FILE, GRABS THE CHROMOSOMES AND RUNS A FOR LOOP FOR BOTH THINGS #########
-	# USES BAM FILE AS THE INPUT ####################################################################
 	#################################################################################################
 
 		VERIFYBAMID_PER_AUTOSOME ()
@@ -1763,10 +1762,10 @@
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.06-SELECT_VERIFYBAMID_PER_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
+			-N E09-SELECT_VERIFYBAMID_PER_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-SELECT_VERIFYBAMID_PER_AUTOSOME.log \
 			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.06_VERIFYBAMID_PER_AUTO.sh \
+			$SCRIPT_DIR/E09-VERIFYBAMID_PER_AUTO.sh \
 				$ALIGNMENT_CONTAINER \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -1793,10 +1792,10 @@
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.06-A.01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
+			-N E09-A01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-CAT_VERIFYBAMID_AUTOSOME.log \
-			-hold_jid H.06-SELECT_VERIFYBAMID_PER_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.06-A.01_CAT_VERIFYBAMID_AUTO.sh \
+			-hold_jid E09-SELECT_VERIFYBAMID_PER_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/E09-A01-CAT_VERIFYBAMID_AUTO.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
@@ -1805,88 +1804,24 @@
 				$BAIT_BED
 		}
 
-#############################
-##### CRAM FILE METRICS #####
-#############################
-
-	################################################################################
-	# COLLECT MULTIPLE METRICS  ####################################################
-	# again used bait bed file here instead of target b/c target could be anything #
-	# ti/tv bed is unrelated to the capture really #################################
-	# uses the CRAM file as the input ##############################################
-	################################################################################
-
-		COLLECT_MULTIPLE_METRICS ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_$PROJECT \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_MULTIPLE_METRICS.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.01_COLLECT_MULTIPLE_METRICS.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$REF_GENOME \
-				$DBSNP \
-				$BAIT_BED \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-	#########################################
-	# COLLECT HS METRICS  ###################
-	# bait bed is the bait bed file #########
-	# titv bed files is the target bed file #
-	# uses the CRAM file as the input #######
-	#########################################
-
-		COLLECT_HS_METRICS ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_HS_METRICS.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/H.02_COLLECT_HS_METRICS.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$SM_TAG \
-				$REF_GENOME \
-				$BAIT_BED \
-				$TITV_BED \
-				$SAMPLE_SHEET \
-				$SUBMIT_STAMP
-		}
-
-###############################################
-# RUN STEPS FOR CRAM/BAM FILE RELATED METRICS #
-###############################################
+##########################################
+# RUN STEPS FOR BAM FILE RELATED METRICS #
+##########################################
 
 	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-				| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-				| awk 'BEGIN {FS=","} NR>1 {print $8}' \
-				| sort \
-				| uniq );
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
 	do
 		CREATE_SAMPLE_ARRAY
-		COLLECT_MULTIPLE_METRICS
-		echo sleep 0.1s
-		COLLECT_HS_METRICS
+		DOC_CODING
 		echo sleep 0.1s
 		DOC_TARGET
 		echo sleep 0.1s
 		SELECT_VERIFYBAMID_VCF
 		echo sleep 0.1s
 		RUN_VERIFYBAMID
-		echo sleep 0.1s
-		DOC_CODING
 		echo sleep 0.1s
 		ANEUPLOIDY_CHECK
 		echo sleep 0.1s
@@ -1905,12 +1840,6 @@
 		CAT_VERIFYBAMID_PER_AUTOSOME
 		echo sleep 0.1s
 	done
-
-
-
-
-
-
 
 ##################################################################
 ##### JOINT CALLING SAMPLES IN A FAMILY WITH SET OF CONTROLS #####
@@ -2044,9 +1973,9 @@
 			echo \
 			qsub \
 				$QSUB_ARGS \
-			-N H.10-FIX_BED_FILES_${FAMILY}_${PROJECT} \
+			-N A03-FIX_BED_FILES_${FAMILY}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}-FIX_BED_FILES.log \
-			$SCRIPT_DIR/H.10_FIX_BED_FAMILY.sh \
+			$SCRIPT_DIR/A03-FIX_BED_FILES_FAMILY.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
@@ -2097,10 +2026,10 @@
 				echo \
 				qsub \
 					$QSUB_ARGS \
-				-N I.01_GENOTYPE_GVCF_SCATTER_${FAMILY}_${PROJECT}_chr${CHROMOSOME} \
+				-N F01-GENOTYPE_GVCF_SCATTER_${FAMILY}_${PROJECT}_chr${CHROMOSOME} \
 					-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.GENOTYPE_GVCF_chr${CHROMOSOME}.log \
 				$HOLD_ID_PATH \
-				$SCRIPT_DIR/I.01_GENOTYPE_GVCF_SCATTER.sh \
+				$SCRIPT_DIR/F01-GENOTYPE_GVCF_SCATTER.sh \
 					$GATK_3_7_0_CONTAINER \
 					$CORE_PATH \
 					$PROJECT \
@@ -2157,6 +2086,83 @@
 		echo sleep 0.1s
 	done
 
+#############################
+##### CRAM FILE METRICS #####
+#############################
+
+	################################################################################
+	# COLLECT MULTIPLE METRICS  ####################################################
+	# again used bait bed file here instead of target b/c target could be anything #
+	# ti/tv bed is unrelated to the capture really #################################
+	# uses the CRAM file as the input ##############################################
+	################################################################################
+
+		COLLECT_MULTIPLE_METRICS ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N F02-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_$PROJECT \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_MULTIPLE_METRICS.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/F02-COLLECT_MULTIPLE_METRICS.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$DBSNP \
+				$BAIT_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+	#########################################
+	# COLLECT HS METRICS  ###################
+	# bait bed is the bait bed file #########
+	# titv bed files is the target bed file #
+	# uses the CRAM file as the input #######
+	#########################################
+
+		COLLECT_HS_METRICS ()
+		{
+			echo \
+			qsub \
+				$QSUB_ARGS \
+			-N F03-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT} \
+				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_HS_METRICS.log \
+			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			$SCRIPT_DIR/F03-COLLECT_HS_METRICS.sh \
+				$ALIGNMENT_CONTAINER \
+				$CORE_PATH \
+				$PROJECT \
+				$FAMILY \
+				$SM_TAG \
+				$REF_GENOME \
+				$BAIT_BED \
+				$TITV_BED \
+				$SAMPLE_SHEET \
+				$SUBMIT_STAMP
+		}
+
+###########################################
+# RUN STEPS FOR CRAM FILE RELATED METRICS #
+###########################################
+
+	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
+			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+			| sort \
+			| uniq );
+	do
+		CREATE_SAMPLE_ARRAY
+		COLLECT_MULTIPLE_METRICS
+		echo sleep 0.1s
+		COLLECT_HS_METRICS
+		echo sleep 0.1s
+	done
+
 ########################################################################################
 ##### GATHER UP THE PER FAMILY PER CHROMOSOME GVCF FILES INTO A SINGLE FAMILY GVCF #####
 ########################################################################################
@@ -2186,7 +2192,7 @@
 						collapse 1 \
 					| sed 's/,/ /g');
 				do
-					HOLD_ID_PATH=$HOLD_ID_PATH"I.01_GENOTYPE_GVCF_SCATTER_"$FAMILY"_"$PROJECT"_chr"$CHROMOSOME","
+					HOLD_ID_PATH=$HOLD_ID_PATH"F01-GENOTYPE_GVCF_SCATTER_"$FAMILY"_"$PROJECT"_chr"$CHROMOSOME","
 				done
 			done
 		}
@@ -2200,10 +2206,10 @@
 			echo \
 			qsub \
 			$QSUB_ARGS \
-			-N I.01-A.01_GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
+			-N G01-GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.GENOTYPE_GVCF_GATHER.log \
-			${HOLD_ID_PATH}H.10-FIX_BED_FILES_${FAMILY}_${PROJECT} \
-			$SCRIPT_DIR/I.01-A.01_GENOTYPE_GVCF_GATHER.sh \
+			${HOLD_ID_PATH}A03-FIX_BED_FILES_${FAMILY}_${PROJECT} \
+			$SCRIPT_DIR/G01-GENOTYPE_GVCF_GATHER.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
@@ -2223,7 +2229,7 @@
 		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
 			| uniq)
-		do
+	do
 		CREATE_FAMILY_ARRAY
 		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER
 		CALL_GENOTYPE_GVCF_GATHER
@@ -2245,10 +2251,10 @@
 			echo \
 			qsub \
 			$QSUB_ARGS \
-			-N J01_RUN_VQSR_SNP_${FAMILY}_${PROJECT} \
+			-N H01-RUN_VQSR_SNP_${FAMILY}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.RUN_VQSR_SNP.log \
-			-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
-			$SCRIPT_DIR/J01-RUN_VARIANT_RECALIBRATOR_SNP.sh \
+			-hold_jid G01-GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
+			$SCRIPT_DIR/H01-RUN_VARIANT_RECALIBRATOR_SNP.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
 				$PROJECT \
@@ -2274,7 +2280,7 @@
 			$QSUB_ARGS \
 			-N J02_RUN_VQSR_INDEL_${FAMILY}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.RUN_VQSR_INDEL.log \
-			-hold_jid I.01-A.01_GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
+			-hold_jid G01-GENOTYPE_GVCF_GATHER_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/J02-RUN_VARIANT_RECALIBRATOR_INDEL.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -2297,7 +2303,7 @@
 			$QSUB_ARGS \
 			-N K01_APPLY_VQSR_SNP_${FAMILY}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}_${PROJECT}.APPLY_VQSR_SNP.log \
-			-hold_jid J01_RUN_VQSR_SNP_${FAMILY}_${PROJECT},J02_RUN_VQSR_INDEL_${FAMILY}_${PROJECT} \
+			-hold_jid H01-RUN_VQSR_SNP_${FAMILY}_${PROJECT},J02_RUN_VQSR_INDEL_${FAMILY}_${PROJECT} \
 			$SCRIPT_DIR/K01-APPLY_VARIANT_RECALIBRATION_SNP.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -3027,15 +3033,15 @@ E04-A02-A01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT},\
 E04-A01-RUN_EKLIPSE_${SGE_SM_TAG}_${PROJECT},\
 E03-A01-A01-A02-A01-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
 E03-A01-A01-A01-HAPLOGREP2_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
-H.06-A.01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT},\
-H.05-A.03-A.01_FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT},\
-H.05-A.02-A.02_BGZIP_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\
-H.05-A.02-A.01_FILTER_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\
+E09-A01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT},\
+E06-A03-A01-FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT},\
+E06-A02-A01-A01-BGZIP_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\
+E06-A02-A01-FILTER_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\
 E06-A01-CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT},\
 E08-A01-RUN_VERIFYBAMID_${SGE_SM_TAG}_${PROJECT},\
 E07-DOC_TARGET_${SGE_SM_TAG}_${PROJECT},\
-H.02-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT},\
-H.01-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_${PROJECT},\
+F03-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT},\
+F02-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_${PROJECT},\
 E05-A01-PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT},\
 E05-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV_$SGE_SM_TAG_${PROJECT},\
 E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \

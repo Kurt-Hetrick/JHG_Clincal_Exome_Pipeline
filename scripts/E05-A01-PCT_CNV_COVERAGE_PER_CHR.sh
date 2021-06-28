@@ -70,8 +70,8 @@
 			$1=="'${CHROMOSOME_BED}'" \
 			{print $1,$2,$3}' \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT/${SM_TAG}.exomeDepth.bed \
-			| sort -k \
-				2,2n \
+			| sort \
+				-k 2,2n \
 			| singularity exec ${CNV_CONTAINER} bedtools \
 				merge \
 				-i - \
