@@ -29,42 +29,31 @@
 
 	PROJECT=$3
 	FAMILY=$4
-	REF_GENOME=$5
-	DBSNP=$6
-	CHROMOSOME=$7
-	CONTROL_REPO=$8
-	CONTROL_DATA_SET_FILE=$9
-	SAMPLE_SHEET=${10}
+	SM_TAG=$5
+	REF_GENOME=$6
+	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=${11}
+	SUBMIT_STAMP=$8
 
-# start joint calling the family with the controls by intervals per chromosome
+# filter to on target variants for a sample
 
-START_GENOTYPE_GVCF=`date '+%s'`
+START_FILTER_TO_SAMPLE_VARIANTS_TARGET=`date '+%s'`
 
 	# construct command line
 
 		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
 			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
-		CMD=${CMD}" -T GenotypeGVCFs"
-			CMD=${CMD}" -R ${REF_GENOME}"
+		CMD=${CMD}" --analysis_type SelectVariants"
+			CMD=${CMD}" --reference_sequence ${REF_GENOME}"
 			CMD=${CMD}" --disable_auto_index_creation_and_locking_when_reading_rods"
-			CMD=${CMD}" --logging_level ERROR"
-			CMD=${CMD}" --intervals ${CHROMOSOME}"
-			CMD=${CMD}" --dbsnp ${DBSNP}"
-			CMD=${CMD}" --annotateNDA"
-			CMD=${CMD}" --includeNonVariantSites"
-			CMD=${CMD}" --annotation FractionInformativeReads"
-			CMD=${CMD}" --annotation StrandBiasBySample"
-			CMD=${CMD}" --annotation StrandAlleleCountsBySample"
-			CMD=${CMD}" --variant ${CONTROL_REPO}/${CONTROL_DATA_SET_FILE}"
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/${FAMILY}/${FAMILY}.gvcf.list"
-		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/TEMP/CONTROLS_PLUS_${FAMILY}.RAW.${CHROMOSOME}.vcf"
+			CMD=${CMD}" --excludeNonVariants"
+			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/VCF/FILTERED_ON_TARGET/${SM_TAG}.ALL_SITES.TARGET.vcf.gz"
+		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/VCF/FILTERED_ON_TARGET/${SM_TAG}.VARIANT_SITES.TARGET.vcf"
 
 	# write command line to file and execute the command line
 
-		echo ${CMD} >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${FAMILY}_command_lines.txt
-		echo >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${FAMILY}_command_lines.txt
+		echo ${CMD} >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${SM_TAG}_command_lines.txt
+		echo >> ${CORE_PATH}/${PROJECT}/COMMAND_LINES/${SM_TAG}_command_lines.txt
 		echo ${CMD} | bash
 
 	# check the exit signal at this point.
@@ -76,16 +65,16 @@ START_GENOTYPE_GVCF=`date '+%s'`
 
 			if [ "${SCRIPT_STATUS}" -ne 0 ]
 				then
-					echo ${FAMILY} ${HOSTNAME} ${JOB_NAME} ${USER} ${SCRIPT_STATUS} ${SGE_STDERR_PATH} \
+					echo ${SM_TAG} ${HOSTNAME} ${JOB_NAME} ${USER} ${SCRIPT_STATUS} ${SGE_STDERR_PATH} \
 					>> ${CORE_PATH}/${PROJECT}/TEMP/${SAMPLE_SHEET_NAME}_${SUBMIT_STAMP}_ERRORS.txt
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_GENOTYPE_GVCF=`date '+%s'`
+END_FILTER_TO_SAMPLE_VARIANTS_TARGET=`date '+%s'`
 
 # write out timing metrics to file
 
-	echo ${FAMILY}_${PROJECT},F01,GENOTYPE_GVCF_${CHROMOSOME},${HOSTNAME},${START_GENOTYPE_GVCF},${END_GENOTYPE_GVCF} \
+	echo ${SM_TAG}_${PROJECT},R01,FILTER_TO_SAMPLE_VARIANTS_TARGET,${HOSTNAME},${START_FILTER_TO_SAMPLE_VARIANTS_TARGET},${END_FILTER_TO_SAMPLE_VARIANTS_TARGET} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program

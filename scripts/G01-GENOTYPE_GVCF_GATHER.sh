@@ -97,15 +97,15 @@ START_GENOTYPE_GVCF_GATHER=`date '+%s'`
 
 		SCRIPT_STATUS=`echo $?`
 
-	# if exit does not equal 0 then exit with whatever the exit signal is at the end.
-	# also write to file that this job failed
+		# if exit does not equal 0 then exit with whatever the exit signal is at the end.
+		# also write to file that this job failed
 
-		if [ "${SCRIPT_STATUS}" -ne 0 ]
-			then
-				echo ${FAMILY} ${HOSTNAME} ${JOB_NAME} ${USER} ${SCRIPT_STATUS} ${SGE_STDERR_PATH} \
-				>> ${CORE_PATH}/${PROJECT}/TEMP/${SAMPLE_SHEET_NAME}_${SUBMIT_STAMP}_ERRORS.txt
-				exit ${SCRIPT_STATUS}
-		fi
+			if [ "${SCRIPT_STATUS}" -ne 0 ]
+				then
+					echo ${FAMILY} ${HOSTNAME} ${JOB_NAME} ${USER} ${SCRIPT_STATUS} ${SGE_STDERR_PATH} \
+					>> ${CORE_PATH}/${PROJECT}/TEMP/${SAMPLE_SHEET_NAME}_${SUBMIT_STAMP}_ERRORS.txt
+					exit ${SCRIPT_STATUS}
+			fi
 
 END_GENOTYPE_GVCF_GATHER=`date '+%s'`
 

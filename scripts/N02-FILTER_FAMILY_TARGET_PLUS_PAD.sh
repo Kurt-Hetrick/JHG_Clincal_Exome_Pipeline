@@ -24,42 +24,39 @@
 
 # INPUT VARIABLES
 
-	GATK_3_7_0_CONTAINER=$1
+	ALIGNMENT_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
-	REF_GENOME=$5
-	DBSNP=$6
-	CHROMOSOME=$7
-	CONTROL_REPO=$8
-	CONTROL_DATA_SET_FILE=$9
-	SAMPLE_SHEET=${10}
+	TARGET_BED=$5
+		TARGET_BED_NAME=$(basename ${TARGET_BED} .bed)
+		TARGET_MD5=$(md5sum ${TARGET_BED} | cut -c 1-7)
+	PADDING_LENGTH=$6
+	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=${11}
+	SUBMIT_STAMP=$8
 
-# start joint calling the family with the controls by intervals per chromosome
+## gather up vcf files that have had extra annotations added to them
 
-START_GENOTYPE_GVCF=`date '+%s'`
+START_FILTER_FAMILY_TO_TARGET_PLUS_PAD=`date '+%s'`
 
 	# construct command line
 
-		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
-			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
-		CMD=${CMD}" -T GenotypeGVCFs"
-			CMD=${CMD}" -R ${REF_GENOME}"
-			CMD=${CMD}" --disable_auto_index_creation_and_locking_when_reading_rods"
-			CMD=${CMD}" --logging_level ERROR"
-			CMD=${CMD}" --intervals ${CHROMOSOME}"
-			CMD=${CMD}" --dbsnp ${DBSNP}"
-			CMD=${CMD}" --annotateNDA"
-			CMD=${CMD}" --includeNonVariantSites"
-			CMD=${CMD}" --annotation FractionInformativeReads"
-			CMD=${CMD}" --annotation StrandBiasBySample"
-			CMD=${CMD}" --annotation StrandAlleleCountsBySample"
-			CMD=${CMD}" --variant ${CONTROL_REPO}/${CONTROL_DATA_SET_FILE}"
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/${FAMILY}/${FAMILY}.gvcf.list"
-		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/TEMP/CONTROLS_PLUS_${FAMILY}.RAW.${CHROMOSOME}.vcf"
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} bedtools"
+		CMD=${CMD}" intersect"
+			CMD=${CMD}" -header"
+			CMD=${CMD}" -a ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.VQSR.ANNOTATED.JUST_FAMILY.vcf.gz"
+			CMD=${CMD}" -b ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}_${TARGET_BED_NAME}-${PADDING_LENGTH}-BP-PAD.bed"
+		CMD=${CMD}" | singularity exec ${ALIGNMENT_CONTAINER} bgzip"
+			CMD=${CMD}" -@ ${THREADS}"
+			CMD=${CMD}" -c"
+		CMD=${CMD}" >| ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.VQSR.ANNOTATED.ALL.SITES.TARGET.vcf.gz"
+		CMD=${CMD}" &&"
+		CMD=${CMD}" singularity exec ${ALIGNMENT_CONTAINER} tabix"
+			CMD=${CMD}" -p vcf"
+			CMD=${CMD}" -f"
+		CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.VQSR.ANNOTATED.ALL.SITES.TARGET.vcf.gz"
 
 	# write command line to file and execute the command line
 
@@ -81,11 +78,11 @@ START_GENOTYPE_GVCF=`date '+%s'`
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_GENOTYPE_GVCF=`date '+%s'`
+END_FILTER_FAMILY_TO_TARGET_PLUS_PAD=`date '+%s'`
 
 # write out timing metrics to file
 
-	echo ${FAMILY}_${PROJECT},F01,GENOTYPE_GVCF_${CHROMOSOME},${HOSTNAME},${START_GENOTYPE_GVCF},${END_GENOTYPE_GVCF} \
+	echo ${FAMILY}_${PROJECT},N01,FILTER_FAMILY_TO_TARGET_PLUS_PAD,${HOSTNAME},${START_FILTER_FAMILY_TO_TARGET_PLUS_PAD},${END_FILTER_FAMILY_TO_TARGET_PLUS_PAD} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program

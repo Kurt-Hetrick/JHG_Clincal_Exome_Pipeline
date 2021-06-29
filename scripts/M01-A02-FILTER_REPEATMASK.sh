@@ -24,42 +24,32 @@
 
 # INPUT VARIABLES
 
-	GATK_3_7_0_CONTAINER=$1
+	ALIGNMENT_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
 	REF_GENOME=$5
-	DBSNP=$6
-	CHROMOSOME=$7
-	CONTROL_REPO=$8
-	CONTROL_DATA_SET_FILE=$9
-	SAMPLE_SHEET=${10}
+	UCSC_REPEATMASK=$6
+	MDUST_REPEATMASK=$7
+	SAMPLE_SHEET=$8
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=${11}
+	SUBMIT_STAMP=$9
 
-# start joint calling the family with the controls by intervals per chromosome
+# FILTER OUT REPEATMASKED REGIONS IN PASSING BIALLELIC SNVS IN FULL CALL SET
 
-START_GENOTYPE_GVCF=`date '+%s'`
+START_FILTER_COHORT_SNV_PASS_REPEATMASK=`date '+%s'`
 
 	# construct command line
 
-		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
-			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
-		CMD=${CMD}" -T GenotypeGVCFs"
-			CMD=${CMD}" -R ${REF_GENOME}"
-			CMD=${CMD}" --disable_auto_index_creation_and_locking_when_reading_rods"
-			CMD=${CMD}" --logging_level ERROR"
-			CMD=${CMD}" --intervals ${CHROMOSOME}"
-			CMD=${CMD}" --dbsnp ${DBSNP}"
-			CMD=${CMD}" --annotateNDA"
-			CMD=${CMD}" --includeNonVariantSites"
-			CMD=${CMD}" --annotation FractionInformativeReads"
-			CMD=${CMD}" --annotation StrandBiasBySample"
-			CMD=${CMD}" --annotation StrandAlleleCountsBySample"
-			CMD=${CMD}" --variant ${CONTROL_REPO}/${CONTROL_DATA_SET_FILE}"
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/${FAMILY}/${FAMILY}.gvcf.list"
-		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/TEMP/CONTROLS_PLUS_${FAMILY}.RAW.${CHROMOSOME}.vcf"
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar"
+			CMD=${CMD}" /gatk/gatk.jar"
+		CMD=${CMD}" SelectVariants"
+			CMD=${CMD}" --reference ${REF_GENOME}"
+			CMD=${CMD}" --exclude-intervals ${UCSC_REPEATMASK}"
+			CMD=${CMD}" --exclude-intervals ${MDUST_REPEATMASK}"
+			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/VCF_PREP/CONTROLS_PLUS_${FAMILY}.VQSR.ANNOTATED.SNV_ONLY.PASS.BIALLELIC.vcf"
+		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/VCF_PREP/CONTROLS_PLUS_${FAMILY}.VQSR.ANNOTATED.SNV_ONLY.PASS.BIALLELIC.REPEATMASK.vcf.gz"
 
 	# write command line to file and execute the command line
 
@@ -81,11 +71,11 @@ START_GENOTYPE_GVCF=`date '+%s'`
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_GENOTYPE_GVCF=`date '+%s'`
+END_FILTER_COHORT_SNV_PASS=`date '+%s'`
 
 # write out timing metrics to file
 
-	echo ${FAMILY}_${PROJECT},F01,GENOTYPE_GVCF_${CHROMOSOME},${HOSTNAME},${START_GENOTYPE_GVCF},${END_GENOTYPE_GVCF} \
+	echo ${FAMILY}_${PROJECT},N01,FILTER_COHORT_SNV_PASS_REPEATMASK,${HOSTNAME},${START_FILTER_COHORT_SNV_PASS_REPEATMASK},${END_FILTER_COHORT_SNV_PASS_REPEATMASK} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program

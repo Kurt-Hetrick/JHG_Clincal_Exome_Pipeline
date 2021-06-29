@@ -30,36 +30,38 @@
 	PROJECT=$3
 	FAMILY=$4
 	REF_GENOME=$5
-	DBSNP=$6
-	CHROMOSOME=$7
-	CONTROL_REPO=$8
-	CONTROL_DATA_SET_FILE=$9
-	SAMPLE_SHEET=${10}
+	BAIT_BED=$6
+	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=${11}
+	SUBMIT_STAMP=$8
 
-# start joint calling the family with the controls by intervals per chromosome
+# gather up per chromosome family only all sites vcf.
 
-START_GENOTYPE_GVCF=`date '+%s'`
+START_GATHER_FAMILY_ALL_SITES=`date '+%s'`
 
 	# construct command line
 
-		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
+		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -cp"
 			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
-		CMD=${CMD}" -T GenotypeGVCFs"
+		CMD=${CMD}" org.broadinstitute.gatk.tools.CatVariants"
 			CMD=${CMD}" -R ${REF_GENOME}"
-			CMD=${CMD}" --disable_auto_index_creation_and_locking_when_reading_rods"
-			CMD=${CMD}" --logging_level ERROR"
-			CMD=${CMD}" --intervals ${CHROMOSOME}"
-			CMD=${CMD}" --dbsnp ${DBSNP}"
-			CMD=${CMD}" --annotateNDA"
-			CMD=${CMD}" --includeNonVariantSites"
-			CMD=${CMD}" --annotation FractionInformativeReads"
-			CMD=${CMD}" --annotation StrandBiasBySample"
-			CMD=${CMD}" --annotation StrandAlleleCountsBySample"
-			CMD=${CMD}" --variant ${CONTROL_REPO}/${CONTROL_DATA_SET_FILE}"
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/${FAMILY}/${FAMILY}.gvcf.list"
-		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/TEMP/CONTROLS_PLUS_${FAMILY}.RAW.${CHROMOSOME}.vcf"
+			CMD=${CMD}" --assumeSorted"
+
+			# grab uniq list of chromosomes from bait bed file and sort by karyotype (natural) order (sort -V)
+
+			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${BAIT_BED} \
+									| sed -r 's/[[:space:]]+/\t/g' \
+									| sed 's/chr//g' \
+									| egrep "^[0-9]|^X|^Y" \
+									| cut -f 1 \
+									| sort \
+									| uniq \
+									| sort -V) ;
+			do
+				CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.VQSR.ANNOTATED.JUST_FAMILY.${CHROMOSOME}.vcf"
+			done
+
+		CMD=${CMD}" --outputFile ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.VQSR.ANNOTATED.JUST_FAMILY.vcf.gz"
 
 	# write command line to file and execute the command line
 
@@ -81,11 +83,11 @@ START_GENOTYPE_GVCF=`date '+%s'`
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_GENOTYPE_GVCF=`date '+%s'`
+END_GATHER_FAMILY_ALL_SITES=`date '+%s'`
 
 # write out timing metrics to file
 
-	echo ${FAMILY}_${PROJECT},F01,GENOTYPE_GVCF_${CHROMOSOME},${HOSTNAME},${START_GENOTYPE_GVCF},${END_GENOTYPE_GVCF} \
+	echo ${FAMILY}_${PROJECT},M01,GATHER_FAMILY_ALL_SITES,${HOSTNAME},${START_GATHER_FAMILY_ALL_SITES},${END_GATHER_FAMILY_ALL_SITES} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program

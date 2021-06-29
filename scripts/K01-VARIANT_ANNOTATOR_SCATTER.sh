@@ -26,40 +26,51 @@
 
 	GATK_3_7_0_CONTAINER=$1
 	CORE_PATH=$2
+	PED_FILE=$3
 
-	PROJECT=$3
-	FAMILY=$4
-	REF_GENOME=$5
-	DBSNP=$6
+	PROJECT=$4
+	FAMILY=$5
+	REF_GENOME=$6
 	CHROMOSOME=$7
-	CONTROL_REPO=$8
-	CONTROL_DATA_SET_FILE=$9
-	SAMPLE_SHEET=${10}
+	PHASE3_1KG_AUTOSOMES=$8
+	SAMPLE_SHEET=$9
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=${11}
+	SUBMIT_STAMP=${10}
 
-# start joint calling the family with the controls by intervals per chromosome
-
-START_GENOTYPE_GVCF=`date '+%s'`
+START_ADD_MORE_ANNOTATION=`date '+%s'`
 
 	# construct command line
 
 		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
 			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
-		CMD=${CMD}" -T GenotypeGVCFs"
-			CMD=${CMD}" -R ${REF_GENOME}"
+		CMD=${CMD}" --analysis_type VariantAnnotator"
+			CMD=${CMD}" --reference_sequence ${REF_GENOME}"
 			CMD=${CMD}" --disable_auto_index_creation_and_locking_when_reading_rods"
-			CMD=${CMD}" --logging_level ERROR"
+			CMD=${CMD}" --annotation AlleleBalance"
+			CMD=${CMD}" --annotation AlleleBalanceBySample"
+			CMD=${CMD}" --annotation AlleleCountBySample"
+			CMD=${CMD}" --annotation GCContent"
+			CMD=${CMD}" --annotation GenotypeSummaries"
+			CMD=${CMD}" --annotation HomopolymerRun"
+			CMD=${CMD}" --annotation MVLikelihoodRatio"
+			CMD=${CMD}" --annotation SampleList"
+			CMD=${CMD}" --annotation TandemRepeatAnnotator"
+			CMD=${CMD}" --annotation VariantType"
+			CMD=${CMD}" --resource:OneKGP ${PHASE3_1KG_AUTOSOMES}"
+			CMD=${CMD}" --expression OneKGP.AF"
+			CMD=${CMD}" --expression OneKGP.EAS_AF"
+			CMD=${CMD}" --expression OneKGP.AMR_AF"
+			CMD=${CMD}" --expression OneKGP.AFR_AF"
+			CMD=${CMD}" --expression OneKGP.EUR_AF"
+			CMD=${CMD}" --expression OneKGP.SAS_AF"
+			CMD=${CMD}" --resourceAlleleConcordance"
+			CMD=${CMD}" --pedigree ${PED_FILE}"
+			CMD=${CMD}" --pedigreeValidationType SILENT"
+			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/CONTROLS_PLUS_${FAMILY}.VQSR.SNP_INDEL.vcf"
+			CMD=${CMD}" --intervals ${CORE_PATH}/${PROJECT}/TEMP/CONTROLS_PLUS_${FAMILY}.VQSR.SNP_INDEL.vcf"
 			CMD=${CMD}" --intervals ${CHROMOSOME}"
-			CMD=${CMD}" --dbsnp ${DBSNP}"
-			CMD=${CMD}" --annotateNDA"
-			CMD=${CMD}" --includeNonVariantSites"
-			CMD=${CMD}" --annotation FractionInformativeReads"
-			CMD=${CMD}" --annotation StrandBiasBySample"
-			CMD=${CMD}" --annotation StrandAlleleCountsBySample"
-			CMD=${CMD}" --variant ${CONTROL_REPO}/${CONTROL_DATA_SET_FILE}"
-			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/${FAMILY}/${FAMILY}.gvcf.list"
-		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/TEMP/CONTROLS_PLUS_${FAMILY}.RAW.${CHROMOSOME}.vcf"
+			CMD=${CMD}" --interval_set_rule INTERSECTION"
+		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/TEMP/CONTROLS_PLUS_${FAMILY}.VQSR.ANNOTATED.${CHROMOSOME}.vcf"
 
 	# write command line to file and execute the command line
 
@@ -81,11 +92,11 @@ START_GENOTYPE_GVCF=`date '+%s'`
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_GENOTYPE_GVCF=`date '+%s'`
+END_ADD_MORE_ANNOTATION=`date '+%s'`
 
 # write out timing metrics to file
 
-	echo ${FAMILY}_${PROJECT},F01,GENOTYPE_GVCF_${CHROMOSOME},${HOSTNAME},${START_GENOTYPE_GVCF},${END_GENOTYPE_GVCF} \
+	echo ${FAMILY}_${PROJECT},K01,VARIANT_ANNOTATOR_${CHROMOSOME},${HOSTNAME},${START_ADD_MORE_ANNOTATION},${END_ADD_MORE_ANNOTATION} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from the program
