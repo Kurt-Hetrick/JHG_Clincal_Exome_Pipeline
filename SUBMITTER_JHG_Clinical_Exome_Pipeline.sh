@@ -791,6 +791,7 @@
 				$TITV_BED \
 				$CYTOBAND_BED \
 				$REF_GENOME \
+				$REF_DICT \
 				$PADDING_LENGTH \
 				$GVCF_PAD
 		}
@@ -1891,6 +1892,10 @@
 
 					REF_GENOME=${FAMILY_ARRAY[2]}
 
+						# REFERENCE DICTIONARY IS A SUMMARY OF EACH CONTIG. PAIRED WITH REF GENOME
+
+							REF_DICT=$(echo $REF_GENOME | sed 's/fasta$/dict/g; s/fa$/dict/g')
+
 						########################################################
 						# 13 SKIP : Operator=no standard on this, not captured #
 						# 14 SKIP : Extra_VCF_Filter_Params=LEGACY, NOT USED ###
@@ -1986,6 +1991,7 @@
 				$TITV_BED \
 				$CYTOBAND_BED \
 				$REF_GENOME \
+				$REF_DICT \
 				$PADDING_LENGTH \
 				$GVCF_PAD
 		}
