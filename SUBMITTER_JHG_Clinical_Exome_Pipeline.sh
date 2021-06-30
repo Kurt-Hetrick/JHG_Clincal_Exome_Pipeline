@@ -3013,9 +3013,9 @@
 				$SUBMIT_STAMP
 		}
 
-	##################################
-	# QC REPORT PREP FOR EACH SAMPLE #
-	##################################
+######################################
+### QC REPORT PREP FOR EACH SAMPLE ###
+######################################
 
 QC_REPORT_PREP ()
 {
@@ -3131,7 +3131,7 @@ $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 					| sort \
 					| uniq);
 			do
-				HOLD_ID_PATH_PCA="M01-A01-PCA_RELATEDNESS_"$FAMILY"_"$PROJECT","
+				HOLD_ID_PATH_PCA="M01-A01-PCA_RELATEDNESS_"$FAMILY"_"$PROJECT",""M01-A02-A01-BCFTOOLS_ROH_"$FAMILY"_"$PROJECT
 			done
 		}
 
