@@ -55,15 +55,15 @@ START_SELECT_VERIFYBAMID_VCF_CHR=`date '+%s'` # capture time process starts for 
 
 			CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
 				CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
-			CMD=${CMD}" -T SelectVariants"
+			CMD=${CMD}" --analysis_type SelectVariants"
 				CMD=${CMD}" --reference_sequence ${REF_GENOME}"
-				CMD=${CMD}" -L ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed"
-				CMD=${CMD}" -L ${AUTOSOME}"
+				CMD=${CMD}" --intervals ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed"
+				CMD=${CMD}" --intervals ${AUTOSOME}"
 				CMD=${CMD}" --variant ${VERIFY_VCF}"
-				CMD=${CMD}" -XL X"
-				CMD=${CMD}" -XL Y"
+				CMD=${CMD}" --excludeIntervals X"
+				CMD=${CMD}" --excludeIntervals Y"
 				CMD=${CMD}" --interval_set_rule INTERSECTION"
-			CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.VerifyBamID.${AUTOSOME}.vcf"
+			CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.VerifyBamID.${AUTOSOME}.vcf"
 
 		# write command line to file and execute the command line
 

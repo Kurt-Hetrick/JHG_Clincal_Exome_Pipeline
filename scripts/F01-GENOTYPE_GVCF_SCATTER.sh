@@ -46,8 +46,8 @@ START_GENOTYPE_GVCF=`date '+%s'`
 
 		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
 			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
-		CMD=${CMD}" -T GenotypeGVCFs"
-			CMD=${CMD}" -R ${REF_GENOME}"
+		CMD=${CMD}" --analysis_type GenotypeGVCFs"
+			CMD=${CMD}" --reference_sequence ${REF_GENOME}"
 			CMD=${CMD}" --disable_auto_index_creation_and_locking_when_reading_rods"
 			CMD=${CMD}" --logging_level ERROR"
 			CMD=${CMD}" --intervals ${CHROMOSOME}"

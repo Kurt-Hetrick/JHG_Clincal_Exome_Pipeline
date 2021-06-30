@@ -52,11 +52,11 @@ START_HAPLOTYPE_CALLER=`date '+%s'` # capture time process starts for wall clock
 
 	CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
 		CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
-	CMD=${CMD}" -T HaplotypeCaller"
-		CMD=${CMD}" -R ${REF_GENOME}"
+	CMD=${CMD}" --analysis_type HaplotypeCaller"
+		CMD=${CMD}" --reference_sequence ${REF_GENOME}"
 		CMD=${CMD}" --input_file ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.bam"
-		CMD=${CMD}" -L ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}-${CODING_BED_NAME}-${CODING_MD5}-${GVCF_PAD}-BP-PAD-GVCF.bed"
-		CMD=${CMD}" -L ${CHROMOSOME}"
+		CMD=${CMD}" --intervals ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}-${CODING_BED_NAME}-${CODING_MD5}-${GVCF_PAD}-BP-PAD-GVCF.bed"
+		CMD=${CMD}" --intervals ${CHROMOSOME}"
 		CMD=${CMD}" --interval_set_rule INTERSECTION"
 		CMD=${CMD}" --variant_index_type LINEAR"
 		CMD=${CMD}" --variant_index_parameter 128000"
@@ -77,9 +77,9 @@ START_HAPLOTYPE_CALLER=`date '+%s'` # capture time process starts for wall clock
 		CMD=${CMD}" --annotation AlleleBalanceBySample"
 		CMD=${CMD}" --annotation AlleleBalance"
 		CMD=${CMD}" --annotation LikelihoodRankSumTest"
-	CMD=${CMD}" -bamout ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC.${CHROMOSOME}.bam"
+	CMD=${CMD}" --bamOutput ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC.${CHROMOSOME}.bam"
 		CMD=${CMD}" --emitDroppedReads"
-	CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.${CHROMOSOME}.g.vcf.gz"
+	CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.${CHROMOSOME}.g.vcf.gz"
 
 END_HAPLOTYPE_CALLER=`date '+%s'` # capture time process stops for wall clock tracking purposes.
 

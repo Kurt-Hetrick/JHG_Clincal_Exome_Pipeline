@@ -44,7 +44,7 @@ START_VARIANT_ANNOTATOR_GATHER=`date '+%s'`
 		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -cp"
 			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
 		CMD=${CMD}" org.broadinstitute.gatk.tools.CatVariants"
-			CMD=${CMD}" -R ${REF_GENOME}"
+			CMD=${CMD}" --reference ${REF_GENOME}"
 			CMD=${CMD}" --assumeSorted"
 
 			# grab uniq list of chromosomes from bait bed file and sort by karyotype order (sort -V)
