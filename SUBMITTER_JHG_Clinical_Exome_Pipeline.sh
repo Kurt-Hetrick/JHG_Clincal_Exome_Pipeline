@@ -9,7 +9,7 @@
 	PADDING_LENGTH=$3 # optional. if no 3rd argument present then the default is 10
 	# THIS PAD IS FOR SLICING
 
-		if [[ ! $PADDING_LENGTH ]]
+		if [[ ! ${PADDING_LENGTH} ]]
 			then
 			PADDING_LENGTH="10"
 		fi
@@ -17,7 +17,7 @@
 	QUEUE_LIST=$4 # optional. if no 4th argument present then the default is cgc.q
 		# if you want to set this then you need to set the 3rd argument as well (even to the default)
 
-		if [[ ! $QUEUE_LIST ]]
+		if [[ ! ${QUEUE_LIST} ]]
 			then
 			QUEUE_LIST="cgc.q"
 		fi
@@ -25,7 +25,7 @@
 	PRIORITY=$5 # optional. if no 5th argument present then the default is -15.
 		# if you want to set this then you need to set the 3rd and 4th argument as well (even to the default)
 
-			if [[ ! $PRIORITY ]]
+			if [[ ! ${PRIORITY} ]]
 				then
 				PRIORITY="-15"
 			fi
@@ -33,7 +33,7 @@
 	THREADS=$6 # optional. if no 6th argument present then default is 6.
 		# if you want to set this then you need to set 3rd,4th and 5th argument as well (even to default)
 
-			if [[ ! $THREADS ]]
+			if [[ ! ${THREADS} ]]
 				then
 				THREADS="6"
 			fi
@@ -44,7 +44,7 @@
 
 	SUBMITTER_SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
-	SCRIPT_DIR="$SUBMITTER_SCRIPT_PATH/scripts"
+	SCRIPT_DIR="${SUBMITTER_SCRIPT_PATH}/scripts"
 
 ##################
 # CORE VARIABLES #
@@ -57,7 +57,7 @@
 	## This will always put the current working directory in front of any directory for PATH
 	## added /bin for RHEL6
 
-		export PATH=".:$PATH:/bin"
+		export PATH=".:${PATH}:/bin"
 
 	# where the input/output sequencing data will be located.
 
@@ -69,7 +69,7 @@
 
 	# used for tracking in the read group header of the cram file
 
-		PIPELINE_VERSION=`git --git-dir=$SCRIPT_DIR/../.git --work-tree=$SCRIPT_DIR/.. log --pretty=format:'%h' -n 1`
+		PIPELINE_VERSION=`git --git-dir=${SCRIPT_DIR}/../.git --work-tree=${SCRIPT_DIR}/.. log --pretty=format:'%h' -n 1`
 
 	# load gcc for programs like verifyBamID
 	## this will get pushed out to all of the compute nodes since I specify env var to pushed out with qsub
@@ -91,11 +91,11 @@
 
 	# grab email addy
 
-		SEND_TO=`cat $SCRIPT_DIR/../email_lists.txt`
+		SEND_TO=`cat ${SCRIPT_DIR}/../email_lists.txt`
 
 	# grab submitter's name
 
-		PERSON_NAME=`getent passwd | awk 'BEGIN {FS=":"} $1=="'$SUBMITTER_ID'" {print $5}'`
+		PERSON_NAME=`getent passwd | awk 'BEGIN {FS=":"} $1=="'${SUBMITTER_ID}'" {print $5}'`
 
 	# bind the host file system /mnt to the singularity container. in case I use it in the submitter.
 
@@ -111,12 +111,12 @@
 		# combine stdout and stderr logging to same output file
 
 			QSUB_ARGS="-S /bin/bash" \
-				QSUB_ARGS=$QSUB_ARGS" -cwd" \
-				QSUB_ARGS=$QSUB_ARGS" -V" \
-				QSUB_ARGS=$QSUB_ARGS" -v SINGULARITY_BINDPATH=/mnt:/mnt" \
-				QSUB_ARGS=$QSUB_ARGS" -q $QUEUE_LIST" \
-				QSUB_ARGS=$QSUB_ARGS" -p $PRIORITY" \
-				QSUB_ARGS=$QSUB_ARGS" -j y"
+				QSUB_ARGS=${QSUB_ARGS}" -cwd" \
+				QSUB_ARGS=${QSUB_ARGS}" -V" \
+				QSUB_ARGS=${QSUB_ARGS}" -v SINGULARITY_BINDPATH=/mnt:/mnt" \
+				QSUB_ARGS=${QSUB_ARGS}" -q ${QUEUE_LIST}" \
+				QSUB_ARGS=${QSUB_ARGS}" -p ${PRIORITY}" \
+				QSUB_ARGS=${QSUB_ARGS}" -j y"
 
 #####################
 # PIPELINE PROGRAMS #
@@ -170,13 +170,13 @@
 	MITO_EKLIPSE_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_eklipse-master-c25931b.0.simg"
 		# https://github.com/dooguypapua/eKLIPse AND all of its dependencies
 
-	MT_COVERAGE_R_SCRIPT="$SCRIPT_DIR/mito_coverage_graph.r"
+	MT_COVERAGE_R_SCRIPT="${SCRIPT_DIR}/mito_coverage_graph.r"
 
 	CNV_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/cnv_exomedepth-dev.simg"
 
-	EXOME_DEPTH_R_SCRIPT="$SCRIPT_DIR/runExomeDepth.r"
+	EXOME_DEPTH_R_SCRIPT="${SCRIPT_DIR}/runExomeDepth.r"
 
-	FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="$SCRIPT_DIR/FORMAT_AND_ZOOM_ANNOTSV.r"
+	FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="${SCRIPT_DIR}/FORMAT_AND_ZOOM_ANNOTSV.r"
 
 	PCA_RELATEDNESS_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/pca-relatedness-0.0.1.simg"
 
@@ -191,51 +191,51 @@
 
 	# ANNOVAR PARAMETERS AND INPUTS
 
-		ANNOVAR_DATABASE_FILE="$SCRIPT_DIR/../resources/CFTR.final.csv"
+		ANNOVAR_DATABASE_FILE="${SCRIPT_DIR}/../resources/CFTR.final.csv"
 		ANNOVAR_REF_BUILD="hg19"
 
 		ANNOVAR_INFO_FIELD_KEYS="VariantType," \
-			ANNOVAR_INFO_FIELD_KEYS=$ANNOVAR_INFO_FIELD_KEYS"DP" \
+			ANNOVAR_INFO_FIELD_KEYS=${ANNOVAR_INFO_FIELD_KEYS}"DP" \
 
 		ANNOVAR_HEADER_MAPPINGS="af=gnomad211_exome_AF," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_popmax=gnomad211_exome_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_male=gnomad211_exome_AF_male," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_female=gnomad211_exome_AF_female," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_raw=gnomad211_exome_AF_raw," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_afr=gnomad211_exome_AF_afr," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_sas=gnomad211_exome_AF_sas," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_amr=gnomad211_exome_AF_amr," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_eas=gnomad211_exome_AF_eas," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_nfe=gnomad211_exome_AF_nfe," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_fin=gnomad211_exome_AF_fin," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_asj=gnomad211_exome_AF_asj," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"af_oth=gnomad211_exome_AF_oth," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_topmed_af_popmax=gnomad211_exome_non_topmed_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_neuro_af_popmax=gnomad211_exome_non_neuro_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_cancer_af_popmax=gnomad211_exome_non_cancer_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"controls_af_popmax=gnomad211_exome_controls_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF=gnomad211_genome_AF," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_popmax=gnomad211_genome_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_male=gnomad211_genome_AF_male," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_female=gnomad211_genome_AF_female," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_raw=gnomad211_genome_AF_raw," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_afr=gnomad211_genome_AF_afr," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_sas=gnomad211_genome_AF_sas," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_amr=gnomad211_genome_AF_amr," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_eas=gnomad211_genome_AF_eas," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_nfe=gnomad211_genome_AF_nfe," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_fin=gnomad211_genome_AF_fin," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_asj=gnomad211_genome_AF_asj," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"AF_oth=gnomad211_genome_AF_oth," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_topmed_AF_popmax=gnomad211_genome_non_topmed_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_neuro_AF_popmax=gnomad211_genome_non_neuro_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"non_cancer_AF_popmax=gnomad211_genome_non_cancer_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=$ANNOVAR_HEADER_MAPPINGS"controls_AF_popmax=gnomad211_genome_controls_AF_popmax"
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_popmax=gnomad211_exome_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_male=gnomad211_exome_AF_male," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_female=gnomad211_exome_AF_female," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_raw=gnomad211_exome_AF_raw," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_afr=gnomad211_exome_AF_afr," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_sas=gnomad211_exome_AF_sas," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_amr=gnomad211_exome_AF_amr," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_eas=gnomad211_exome_AF_eas," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_nfe=gnomad211_exome_AF_nfe," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_fin=gnomad211_exome_AF_fin," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_asj=gnomad211_exome_AF_asj," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_oth=gnomad211_exome_AF_oth," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_af_popmax=gnomad211_exome_non_topmed_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_af_popmax=gnomad211_exome_non_neuro_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_af_popmax=gnomad211_exome_non_cancer_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_af_popmax=gnomad211_exome_controls_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF=gnomad211_genome_AF," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_popmax=gnomad211_genome_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_male=gnomad211_genome_AF_male," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_female=gnomad211_genome_AF_female," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_raw=gnomad211_genome_AF_raw," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_afr=gnomad211_genome_AF_afr," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_sas=gnomad211_genome_AF_sas," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_amr=gnomad211_genome_AF_amr," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_eas=gnomad211_genome_AF_eas," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_nfe=gnomad211_genome_AF_nfe," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_fin=gnomad211_genome_AF_fin," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_asj=gnomad211_genome_AF_asj," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_oth=gnomad211_genome_AF_oth," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_AF_popmax=gnomad211_genome_non_topmed_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_AF_popmax=gnomad211_genome_non_neuro_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_AF_popmax=gnomad211_genome_non_cancer_AF_popmax," \
+			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_AF_popmax=gnomad211_genome_controls_AF_popmax"
 
 			ANNOVAR_VCF_COLUMNS="CHROM,"
-				ANNOVAR_VCF_COLUMNS=$ANNOVAR_VCF_COLUMNS"POS,"
-				ANNOVAR_VCF_COLUMNS=$ANNOVAR_VCF_COLUMNS"REF,"
-				ANNOVAR_VCF_COLUMNS=$ANNOVAR_VCF_COLUMNS"ALT"
+				ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"POS,"
+				ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"REF,"
+				ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"ALT"
 
 ##################
 # PIPELINE FILES #
@@ -263,12 +263,12 @@
 			# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4271055/
 			# https://github.com/lh3/varcmp/tree/master/scripts
 
-		# where the control data set resides.
+	# where the control data set resides.
 
 		CONTROL_REPO="/mnt/clinical/ddl/NGS/Exome_Data/TWIST_CONTROL_SET1.200601_PIPELINE_2_0_0"
-		CONTROL_PED_FILE="$CONTROL_REPO/TWIST_CONTROL_SET1.200601.ped"
+		CONTROL_PED_FILE="${CONTROL_REPO}/TWIST_CONTROL_SET1.200601.ped"
 
-		# SFAFASFA
+	# SFAFASFA
 
 		CONTROL_DATA_SET_FILE="CGC_CONTROL_SET_3_7.g.vcf.gz"
 
@@ -312,14 +312,14 @@
 
 	# create variables using the base name for the sample sheet and ped file
 
-		MANIFEST_PREFIX=`basename $SAMPLE_SHEET .csv`
-		PED_PREFIX=`basename $PED_FILE .ped`
+		MANIFEST_PREFIX=`basename ${SAMPLE_SHEET} .csv`
+		PED_PREFIX=`basename ${PED_FILE} .ped`
 
 	# fix any commonly seen formatting issues in the sample sheet
 
 		FORMAT_MANIFEST ()
 		{
-			awk 1 $SAMPLE_SHEET \
+			awk 1 ${SAMPLE_SHEET} \
 			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
 			| awk 'NR>1' \
 			| sed 's/,/\t/g' \
@@ -331,7 +331,7 @@
 
 		MERGE_PED_MANIFEST ()
 		{
-			awk 1 $PED_FILE \
+			awk 1 ${PED_FILE} \
 				| sed 's/\r//g' \
 				| sort -k 2,2 \
 				| join -1 8 -2 2 -e '-'  -t $'\t' \
@@ -349,13 +349,13 @@
 	CREATE_SAMPLE_ARRAY ()
 	{
 		SAMPLE_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
-			$8=="'$SAMPLE'" \
+			$8=="'${SAMPLE}'" \
 			{split($19,INDEL,";"); \
 			print $1,$8,$9,$10,$11,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],\
 			$20,$21,$22,$23,$24}' \
-				~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
-				| sort \
-				| uniq`)
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq`)
 
 		#  1  Project=the Seq Proj folder name
 
@@ -376,7 +376,7 @@
 
 				# If there is an @ in the qsub or holdId name it breaks
 
-					SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g')
+					SGE_SM_TAG=$(echo ${SM_TAG} | sed 's/@/_/g')
 
 		#  9  Center=the center/funding mechanism
 
@@ -393,8 +393,8 @@
 
 				# if the zoom list file exists than the output file prefix is the input file prefix before .GeneList
 
-					if [ -f $ZOOM_LIST ]
-						then ZOOM_NAME=$(basename $ZOOM_LIST | sed 's/.GeneList.[0-9]*.csv//g')
+					if [ -f ${ZOOM_LIST} ]
+						then ZOOM_NAME=$(basename ${ZOOM_LIST} | sed 's/.GeneList.[0-9]*.csv//g')
 						else ZOOM_NAME="NA"
 					fi
 
@@ -404,7 +404,7 @@
 
 				# REFERENCE DICTIONARY IS A SUMMARY OF EACH CONTIG. PAIRED WITH REF GENOME
 
-					REF_DICT=$(echo $REF_GENOME | sed 's/fasta$/dict/g; s/fa$/dict/g')
+					REF_DICT=$(echo ${REF_GENOME} | sed 's/fasta$/dict/g; s/fa$/dict/g')
 
 			#####################################
 			# 13  Operator: SKIP ################
@@ -451,12 +451,12 @@
 
 			# set $REF_PANEL_COUNTS USED IN EXOMEDEPTH TO THE SEX SPECIFIC ONE
 
-				if [[ $GENDER = "1" ]];
+				if [[ ${GENDER} = "1" ]];
 					then REF_PANEL_COUNTS=${REF_PANEL_MALE_READ_COUNT_RDA}
-				elif [[ $GENDER = "2" ]];
-					then REF_PANEL_COUNTS=${REF_PANEL_FEMALE_READ_COUNT_RDA}
-				else
-					REF_PANEL_COUNTS=${REF_PANEL_ALL_READ_COUNT_RDA}
+					elif [[ ${GENDER} = "2" ]];
+						then REF_PANEL_COUNTS=${REF_PANEL_FEMALE_READ_COUNT_RDA}
+					else
+						REF_PANEL_COUNTS=${REF_PANEL_ALL_READ_COUNT_RDA}
 				fi
 
 		# 24 PHENOTYPE
@@ -509,11 +509,11 @@
 # RUN STEPS FOR PIPELINE AND PROJECT SETUP #
 ############################################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq );
+			| uniq);
 	do
 		SETUP_PROJECT
 	done
@@ -532,15 +532,14 @@
 
 	CREATE_PLATFORM_UNIT_ARRAY ()
 	{
-			PLATFORM_UNIT_ARRAY=(`awk 1 ~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
-			| awk 'BEGIN {FS="\t"} \
-				$8$2$3$4=="'$PLATFORM_UNIT'" \
+			PLATFORM_UNIT_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
+				$8$2$3$4=="'${PLATFORM_UNIT}'" \
 				{split($19,INDEL,";"); \
 				print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],\
 				$20,$21,$22,$23,$24}' \
-			| sort \
-			| uniq`)
+			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+				| sort \
+				| uniq`)
 
 				#  1  Project=the Seq Proj folder name
 
@@ -577,7 +576,7 @@
 
 						# sge sm tag. If there is an @ in the qsub or holdId name it breaks
 
-							SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g')
+							SGE_SM_TAG=$(echo ${SM_TAG} | sed 's/@/_/g')
 
 				#  9  Center=the center/funding mechanism
 
@@ -686,9 +685,9 @@
 # RUN STEPS TO RUN BWA, ETC #
 #############################
 
-	for PLATFORM_UNIT in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8$2$3$4}' \
+	for PLATFORM_UNIT in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8$2$3$4}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
 			| uniq );
 	do
@@ -876,11 +875,11 @@
 # RUN STEPS FOR CRAM FILE GENERATION #
 ######################################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq );
+			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
 		FIX_BED_FILES
@@ -929,11 +928,11 @@
 # create a list of unique chromosome to use as a scatter for haplotype_caller_scatter #
 #######################################################################################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq );
+			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
 			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
@@ -1055,11 +1054,11 @@
 # RUN STEPS TO GATHER GVCFS/HC BAM FILES AND CONVERT BAM TO CRAM #
 ##################################################################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq );
+			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
 		BUILD_HOLD_ID_PATH
@@ -1349,11 +1348,11 @@
 # RUN STEPS FOR MITOCHONDRIAL DNA ANALYSIS #
 ############################################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq );
+			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
 		# run mutect2 and then filter, annotate, run haplogrep2
@@ -1486,11 +1485,11 @@
 # RUN STEPS FOR CNV WORKFLOW #
 ##############################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq );
+			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
 		RUN_EXOME_DEPTH
@@ -1809,11 +1808,11 @@
 # RUN STEPS FOR BAM FILE RELATED METRICS #
 ##########################################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq );
+			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
 		DOC_CODING
@@ -1854,7 +1853,7 @@
 	CREATE_FAMILY_ARRAY ()
 	{
 			FAMILY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
-				$20=="'$FAMILY_ONLY'" \
+				$20=="'${FAMILY_ONLY}'" \
 				{print $1,$8,$12,$15,$16,$17,$18,$20}' \
 			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 				| sort \
@@ -1879,7 +1878,7 @@
 
 						# "@" in qsub job or holdid is not allowed
 
-							SGE_SM_TAG=$(echo $SM_TAG | sed 's/@/_/g')
+							SGE_SM_TAG=$(echo ${SM_TAG} | sed 's/@/_/g')
 
 								####################################################################################
 								#  9  SKIP : Center=the center/funding mechanism ###################################
@@ -1894,7 +1893,7 @@
 
 						# REFERENCE DICTIONARY IS A SUMMARY OF EACH CONTIG. PAIRED WITH REF GENOME
 
-							REF_DICT=$(echo $REF_GENOME | sed 's/fasta$/dict/g; s/fa$/dict/g')
+							REF_DICT=$(echo ${REF_GENOME} | sed 's/fasta$/dict/g; s/fa$/dict/g')
 
 						########################################################
 						# 13 SKIP : Operator=no standard on this, not captured #
@@ -1940,9 +1939,9 @@
 
 		CREATE_GVCF_LIST ()
 		{
-			awk 'BEGIN {OFS="/"} \
-				$20=="'$FAMILY'" \
-				{print "'$CORE_PATH'",$1,$20,$8,"GVCF",$8".g.vcf.gz"}' \
+			awk 'BEGIN {FS="\t"; OFS="\t"} \
+				$20=="'${FAMILY}'" \
+				{print "'${CORE_PATH}'",$1,$20,$8,"GVCF",$8".g.vcf.gz"}' \
 			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 				| sort \
 				| uniq \
@@ -1956,8 +1955,8 @@
 
 		CREATE_FAMILY_SAMPLE_LIST ()
 		{
-			awk 'BEGIN {OFS="/"} \
-				$20=="'$FAMILY'" \
+			awk 'BEGIN {FS="\t"; OFS="\t"} \
+				$20=="'${FAMILY}'" \
 				{print $8}' \
 			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 				| sort \
@@ -2002,16 +2001,15 @@
 
 		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF ()
 		{
-			for PROJECT in $(awk 'BEGIN {FS=","} \
-					NR>1 \
+			for PROJECT in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
 					{print $1}' \
-				$SAMPLE_SHEET \
+				~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 					| sort \
 					| uniq )
 			do
 				HOLD_ID_PATH="-hold_jid "
 					for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
-							$20=="'$FAMILY_ONLY'" \
+							$20=="'${FAMILY_ONLY}'" \
 							{print $8}' \
 						~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 							| sed 's/@/_/g' \
@@ -2028,7 +2026,7 @@
 	#########################################################
 
 		GENOTYPE_GVCF ()
-			{
+		{
 				echo \
 				qsub \
 					$QSUB_ARGS \
@@ -2047,7 +2045,7 @@
 					$CONTROL_DATA_SET_FILE \
 					$SAMPLE_SHEET \
 					$SUBMIT_STAMP
-			}
+		}
 
 	########################################
 	# scatter genotype gvcfs by chromosome #
@@ -2076,7 +2074,6 @@
 #################################################################################
 
 	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
-			NR>1 \
 			{print $20}' \
 		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
@@ -2156,11 +2153,11 @@
 # RUN STEPS FOR CRAM FILE RELATED METRICS #
 ###########################################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $8}' \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq );
+			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
 		COLLECT_MULTIPLE_METRICS
@@ -2179,10 +2176,9 @@
 
 		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF_GATHER ()
 		{
-			for PROJECT in $(awk 'BEGIN {FS=","} \
-					NR>1 \
+			for PROJECT in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
 					{print $1}' \
-				$SAMPLE_SHEET \
+				~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 					| sort \
 					| uniq )
 			do
@@ -2347,7 +2343,7 @@
 ########################
 
 	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
-		{print $20}' \
+			{print $20}' \
 		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
 			| uniq)
@@ -2393,7 +2389,7 @@
 #####################################
 
 	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
-		{print $20}' \
+			{print $20}' \
 		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
 			| uniq);
@@ -2428,11 +2424,11 @@
 
 		BUILD_HOLD_ID_PATH_ADD_MORE_ANNOTATION ()
 		{
-			for PROJECT in $(awk 'BEGIN {FS=","} \
-					NR>1 {print $1}' \
-					$SAMPLE_SHEET \
-						| sort \
-						| uniq )
+			for PROJECT in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+					{print $1}' \
+				~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+					| sort \
+					| uniq )
 			do
 				HOLD_ID_PATH="-hold_jid "
 				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
@@ -2657,12 +2653,11 @@
 
 		BUILD_HOLD_ID_PATH_FILTER_TO_FAMILY_VCF ()
 		{
-			for PROJECT in $(awk 'BEGIN {FS=","} \
-					NR>1 \
+			for PROJECT in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
 					{print $1}' \
-				$SAMPLE_SHEET \
+				~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 					| sort \
-					| uniq )
+					| uniq );
 			do
 				HOLD_ID_PATH="-hold_jid "
 					for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
@@ -3067,13 +3062,11 @@ $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 # RUN VCF SAMPLE SUBSTEP STEP AND QC REPORT PREP #
 ##################################################
 
-	for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-		| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-		| awk 'BEGIN {FS=","} \
-			NR>1 \
+	for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
 			{print $8}' \
-		| sort \
-		| uniq );
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
 		EXTRACT_SAMPLE_ALL_SITES
@@ -3110,13 +3103,12 @@ $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 		{
 			HOLD_ID_PATH_QC_REPORT_PREP="-hold_jid "
 
-				for SAMPLE in $(awk 1 $SAMPLE_SHEET \
-					| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-					| awk 'BEGIN {FS=","} \
-						$1=="'$PROJECT'" \
+				for SAMPLE in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+						$1=="'${PROJECT}'" \
 						{print $8}' \
-					| sort \
-					| uniq);
+					~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+						| sort \
+						| uniq);
 				do
 					CREATE_SAMPLE_ARRAY
 					HOLD_ID_PATH_QC_REPORT_PREP=$HOLD_ID_PATH_QC_REPORT_PREP"X01-QC_REPORT_PREP_"$SGE_SM_TAG"_"$PROJECT","
@@ -3170,11 +3162,11 @@ $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 # RUN FINAL LOOP #
 ##################
 
-	for PROJECT in $(awk 1 $SAMPLE_SHEET \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'BEGIN {FS=","} NR>1 {print $1}' \
+	for PROJECT in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $1}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 			| sort \
-			| uniq);
+			| uniq );
 	do
 		BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_SAMPLE
 		BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_FAMILY
