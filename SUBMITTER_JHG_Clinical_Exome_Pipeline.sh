@@ -298,13 +298,20 @@
 
 				REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/CNV/refCountAllUniqBed48.rda"
 
-###########################################################################
-##### PIPELINE AND PROJECT SET-UP #########################################
-###########################################################################
-##### MERGE SAMPLE_SHEET AND PED FILE AND CREATE A SAMPLE LEVEL ARRAY #####
-##### ARRAY IS USED TO PASS VARIABLES FOR SAMPLE LEVEL PROCESSES ##########
-##### MAKE A DIRECTORY TREE ###############################################
-###########################################################################
+############################################################################
+##### PIPELINE AND PROJECT SET-UP ##########################################
+############################################################################
+##### MERGE SAMPLE_SHEET AND PED FILE AND CREATE A SAMPLE LEVEL ARRAY ######
+##### ARRAY IS USED TO PASS VARIABLES FOR SAMPLE LEVEL PROCESSES ###########
+##### MAKE A DIRECTORY TREE ################################################
+##### FIX BED FILES USED FOR EACH SAMPLE ###################################
+##### FIX BED FILES USED FOR EACH FAMILY ###################################
+##### CREATE LISTS FOR SAMPLES IN A FAMILY (USED FOR JOINT CALLING, ETC) ###
+############################################################################
+
+########################################
+### MERGE SAMPLE SHEET WITH PED FILE ###
+########################################
 
 	# make a directory in user home directory
 
@@ -494,16 +501,198 @@
 		$CORE_PATH/$PROJECT/TEMP/${SM_TAG}_ANNOVAR_TARGET
 	}
 
-	# combine above functions into one...this is probably not necessary...
+############################################################################
+### combine above functions into one...this is probably not necessary... ###
+############################################################################
 
-		SETUP_PROJECT ()
-		{
-			FORMAT_MANIFEST
-			MERGE_PED_MANIFEST
-			CREATE_SAMPLE_ARRAY
-			MAKE_PROJ_DIR_TREE
-			echo Project started at `date` >| $CORE_PATH/$PROJECT/REPORTS/PROJECT_START_END_TIMESTAMP.txt
-		}
+	SETUP_PROJECT ()
+	{
+		FORMAT_MANIFEST
+		MERGE_PED_MANIFEST
+		CREATE_SAMPLE_ARRAY
+		MAKE_PROJ_DIR_TREE
+		echo Project started at `date` >| $CORE_PATH/$PROJECT/REPORTS/PROJECT_START_END_TIMESTAMP.txt
+	}
+
+###################################################
+### fix common formatting problems in bed files ###
+### merge bait to target for gvcf creation, pad ###
+### create picard style interval files ############
+### DO PER SAMPLE #################################
+###################################################
+
+	FIX_BED_FILES_SAMPLE ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+		-N A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT} \
+			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FIX_BED_FILES.log \
+		$SCRIPT_DIR/A02-FIX_BED_FILES_SAMPLE.sh \
+			$ALIGNMENT_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$SM_TAG \
+			$CODING_BED \
+			$TARGET_BED \
+			$BAIT_BED \
+			$TITV_BED \
+			$CYTOBAND_BED \
+			$REF_GENOME \
+			$REF_DICT \
+			$PADDING_LENGTH \
+			$GVCF_PAD
+	}
+
+######################################################
+### CREATE_FAMILY_ARRAY ##############################
+# create an array for each family/sample combination #
+######################################################
+
+	CREATE_FAMILY_ARRAY ()
+	{
+		FAMILY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
+			$20=="'${FAMILY_ONLY}'" \
+			{print $1,$8,$12,$15,$16,$17,$18,$20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq`)
+
+			#  1  Project=the Seq Proj folder name
+
+				PROJECT=${FAMILY_ARRAY[0]}
+
+					################################################################################
+					# 2 SKIP : FCID=flowcell that sample read group was performed on ###############
+					# 3 SKIP : Lane=lane of flowcell that sample read group was performed on] ######
+					# 4 SKIP : Index=sample barcode ################################################
+					# 5 SKIP : Platform=type of sequencing chemistry matching SAM specification ####
+					# 6 SKIP : Library_Name=library group of the sample read group #################
+					# 7 SKIP : Date=should be the run set up date to match the seq run folder name #
+					################################################################################
+
+			#  8  SM_Tag=sample ID
+
+				SM_TAG=${FAMILY_ARRAY[1]}
+
+					# "@" in qsub job or holdid is not allowed
+
+						SGE_SM_TAG=$(echo ${SM_TAG} | sed 's/@/_/g')
+
+							####################################################################################
+							#  9  SKIP : Center=the center/funding mechanism ###################################
+							# 10  SKIP : Description=Sequencer model and/or setting (setting e.g. "Rapid-Run") #
+							## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq” ##
+							# 11  SKIP : Seq_Exp_ID ############################################################
+							####################################################################################
+
+			# 12  Genome_Ref=the reference genome used in the analysis pipeline
+
+				REF_GENOME=${FAMILY_ARRAY[2]}
+
+					# REFERENCE DICTIONARY IS A SUMMARY OF EACH CONTIG. PAIRED WITH REF GENOME
+
+						REF_DICT=$(echo ${REF_GENOME} | sed 's/fasta$/dict/g; s/fa$/dict/g')
+
+					########################################################
+					# 13 SKIP : Operator=no standard on this, not captured #
+					# 14 SKIP : Extra_VCF_Filter_Params=LEGACY, NOT USED ###
+					########################################################
+
+			# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
+
+				TITV_BED=${FAMILY_ARRAY[3]}
+
+			# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
+			# Used for limited where to run base quality score recalibration on where to create gvcf files.
+
+				BAIT_BED=${FAMILY_ARRAY[4]}
+
+			# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
+
+				TARGET_BED=${FAMILY_ARRAY[5]}
+
+			# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in BQSR
+
+				DBSNP=${FAMILY_ARRAY[6]}
+
+					#####################################################
+					# 19 SKIP : KNOWN_INDEL_FILES=used for BQSR masking #
+					#####################################################
+
+			# 20 family that sample belongs to
+
+				FAMILY=${FAMILY_ARRAY[7]}
+
+					#######################
+					# 21 SKIP : MOM #######
+					# 22 SKIP : DAD #######
+					# 23 SKIP : GENDER ####
+					# 24 SKIP : PHENOTYPE #
+					#######################
+	}
+
+#############################################################
+### CREATE A GVCF ".list" file for each sample per family ###
+#############################################################
+
+	CREATE_GVCF_LIST ()
+	{
+		awk 'BEGIN {FS="\t"; OFS="/"} \
+			$20=="'${FAMILY}'" \
+			{print "'${CORE_PATH}'",$1,$20,$8,"GVCF",$8".g.vcf.gz"}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq \
+		>| $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.gvcf.list
+	}
+
+################################################
+### create a list of all samples in a family ###
+### *list is for gatk3, *args is for gatk4 #####
+################################################
+
+	CREATE_FAMILY_SAMPLE_LIST ()
+	{
+		awk 'BEGIN {FS="\t"; OFS="\t"} \
+			$20=="'${FAMILY}'" \
+			{print $8}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq \
+		>| $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.list \
+			&& cp $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.list \
+			$CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.args
+	}
+
+#####################################################################################
+### fix common formatting problems in bed files to use for family level functions ###
+### merge bait to target for gvcf creation, pad #####################################
+### create picard style interval files ##############################################
+#####################################################################################
+
+	FIX_BED_FILES_FAMILY ()
+	{
+		echo \
+		qsub \
+			$QSUB_ARGS \
+		-N A03-FIX_BED_FILES_${FAMILY}_${PROJECT} \
+			-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}-FIX_BED_FILES.log \
+		$SCRIPT_DIR/A03-FIX_BED_FILES_FAMILY.sh \
+			$ALIGNMENT_CONTAINER \
+			$CORE_PATH \
+			$PROJECT \
+			$FAMILY \
+			$CODING_BED \
+			$TARGET_BED \
+			$BAIT_BED \
+			$TITV_BED \
+			$CYTOBAND_BED \
+			$REF_GENOME \
+			$REF_DICT \
+			$PADDING_LENGTH \
+			$GVCF_PAD
+	}
 
 ############################################
 # RUN STEPS FOR PIPELINE AND PROJECT SETUP #
@@ -516,6 +705,21 @@
 			| uniq);
 	do
 		SETUP_PROJECT
+		FIX_BED_FILES_SAMPLE
+		echo sleep 0.1s
+	done
+
+	for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+			{print $20}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq);
+	do
+		CREATE_FAMILY_ARRAY
+		CREATE_GVCF_LIST
+		CREATE_FAMILY_SAMPLE_LIST
+		FIX_BED_FILES_FAMILY
+		echo sleep 0.1s
 	done
 
 #######################################################################################
@@ -735,7 +939,7 @@
 				unique 6 \
 				unique 7 \
 			| awk 'BEGIN {FS="\t"} \
-				gsub(/,/,",A.01_BWA_"$6"_",$4) \
+				gsub(/,/,",A01-BWA_"$6"_",$4) \
 				gsub(/,/,",INPUT=" "'$CORE_PATH'" "/" $1"/TEMP/",$5) \
 				{print "qsub",\
 				"-S /bin/bash",\
@@ -765,36 +969,6 @@
 # bqsr then convert cram to BAM ########
 ########################################
 
-	###############################################
-	# fix common formatting problems in bed files #
-	# merge bait to target for gvcf creation, pad #
-	# create picard style interval files ##########
-	###############################################
-
-		FIX_BED_FILES ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-FIX_BED_FILES.log \
-			-hold_jid B01-MARK_DUPLICATES_${SGE_SM_TAG}_${PROJECT} \
-			$SCRIPT_DIR/C01-FIX_BED_FILES.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$SM_TAG \
-				$CODING_BED \
-				$TARGET_BED \
-				$BAIT_BED \
-				$TITV_BED \
-				$CYTOBAND_BED \
-				$REF_GENOME \
-				$REF_DICT \
-				$PADDING_LENGTH \
-				$GVCF_PAD
-		}
-
 	#######################################
 	# run bqsr on the using bait bed file #
 	#######################################
@@ -806,7 +980,7 @@
 				$QSUB_ARGS \
 			-N C01-PERFORM_BQSR_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PERFORM_BQSR.log \
-			-hold_jid B01-MARK_DUPLICATES_${SGE_SM_TAG}_${PROJECT},C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},B01-MARK_DUPLICATES_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/C01-PERFORM_BQSR.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -882,8 +1056,6 @@
 			| uniq);
 	do
 		CREATE_SAMPLE_ARRAY
-		FIX_BED_FILES
-		echo sleep 0.1s
 		PERFORM_BQSR
 		echo sleep 0.1s
 		APPLY_BQSR
@@ -907,7 +1079,7 @@
 			$QSUB_ARGS \
 		-N E02-HAPLOTYPE_CALLER_${SGE_SM_TAG}_${PROJECT}_chr${CHROMOSOME} \
 			-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-HAPLOTYPE_CALLER_chr${CHROMOSOME}.log \
-		-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+		-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 		$SCRIPT_DIR/E02-HAPLOTYPE_CALLER_SCATTER.sh \
 			$GATK_3_7_0_CONTAINER \
 			$CORE_PATH \
@@ -1399,7 +1571,7 @@
 				$QSUB_ARGS \
 			-N E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-RUN_EXOME_DEPTH.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E05-RUN_EXOME_DEPTH.sh \
 				$CNV_CONTAINER \
 				$CORE_PATH \
@@ -1424,7 +1596,7 @@
 				$QSUB_ARGS \
 			-N E05-A01-PCT_CNV_COVERAGE_PER_CHR_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-PCT_CNV_COVERAGE_PER_CHR.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E05-A01-PCT_CNV_COVERAGE_PER_CHR.sh \
 				$CNV_CONTAINER \
 				$CORE_PATH \
@@ -1521,7 +1693,7 @@
 				$QSUB_ARGS \
 			-N E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_CODING.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E06-DOC_CODING_PADDED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -1547,7 +1719,7 @@
 				$QSUB_ARGS \
 			-N E06-A01-CHROM_DEPTH_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANEUPLOIDY_CHECK.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E06-A01-CHROM_DEPTH.sh \
 					$ALIGNMENT_CONTAINER \
 					$CORE_PATH \
@@ -1569,7 +1741,7 @@
 				$QSUB_ARGS \
 			-N E06-A02-ANNOTATE_PER_BASE_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_BASE.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E06-A02-ANNOTATE_PER_BASE.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1640,7 +1812,7 @@
 				$QSUB_ARGS \
 			-N E06-A03-ANNOTATE_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-ANNOTATE_PER_INTERVAL.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E06-DOC_CODING_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E06-A03-ANNOTATE_PER_INTERVAL.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1685,7 +1857,7 @@
 				$QSUB_ARGS \
 			-N E07-DOC_TARGET_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-DOC_TARGET.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E07-DOC_TARGET_PADDED.sh \
 				$GATK_3_7_0_CONTAINER \
 				$CORE_PATH \
@@ -1714,7 +1886,7 @@
 				$QSUB_ARGS \
 			-N E08-SELECT_VERIFYBAMID_VCF_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-SELECT_VERIFYBAMID_VCF.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E08-SELECT_VERIFYBAMID_VCF.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -1764,7 +1936,7 @@
 				$QSUB_ARGS \
 			-N E09-SELECT_VERIFYBAMID_PER_AUTOSOME_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-SELECT_VERIFYBAMID_PER_AUTOSOME.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},D01-APPLY_BQSR_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/E09-VERIFYBAMID_PER_AUTO.sh \
 				$ALIGNMENT_CONTAINER \
 				$GATK_3_7_0_CONTAINER \
@@ -1844,156 +2016,6 @@
 ##################################################################
 ##### JOINT CALLING SAMPLES IN A FAMILY WITH SET OF CONTROLS #####
 ##################################################################
-
-######################################################
-### CREATE_FAMILY_ARRAY ##############################
-# create an array for each family/sample combination #
-######################################################
-
-	CREATE_FAMILY_ARRAY ()
-	{
-			FAMILY_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
-				$20=="'${FAMILY_ONLY}'" \
-				{print $1,$8,$12,$15,$16,$17,$18,$20}' \
-			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
-				| sort \
-				| uniq`)
-
-				#  1  Project=the Seq Proj folder name
-
-					PROJECT=${FAMILY_ARRAY[0]}
-
-						################################################################################
-						# 2 SKIP : FCID=flowcell that sample read group was performed on ###############
-						# 3 SKIP : Lane=lane of flowcell that sample read group was performed on] ######
-						# 4 SKIP : Index=sample barcode ################################################
-						# 5 SKIP : Platform=type of sequencing chemistry matching SAM specification ####
-						# 6 SKIP : Library_Name=library group of the sample read group #################
-						# 7 SKIP : Date=should be the run set up date to match the seq run folder name #
-						################################################################################
-
-				#  8  SM_Tag=sample ID
-
-					SM_TAG=${FAMILY_ARRAY[1]}
-
-						# "@" in qsub job or holdid is not allowed
-
-							SGE_SM_TAG=$(echo ${SM_TAG} | sed 's/@/_/g')
-
-								####################################################################################
-								#  9  SKIP : Center=the center/funding mechanism ###################################
-								# 10  SKIP : Description=Sequencer model and/or setting (setting e.g. "Rapid-Run") #
-								## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq” ##
-								# 11  SKIP : Seq_Exp_ID ############################################################
-								####################################################################################
-
-				# 12  Genome_Ref=the reference genome used in the analysis pipeline
-
-					REF_GENOME=${FAMILY_ARRAY[2]}
-
-						# REFERENCE DICTIONARY IS A SUMMARY OF EACH CONTIG. PAIRED WITH REF GENOME
-
-							REF_DICT=$(echo ${REF_GENOME} | sed 's/fasta$/dict/g; s/fa$/dict/g')
-
-						########################################################
-						# 13 SKIP : Operator=no standard on this, not captured #
-						# 14 SKIP : Extra_VCF_Filter_Params=LEGACY, NOT USED ###
-						########################################################
-
-				# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
-
-					TITV_BED=${FAMILY_ARRAY[3]}
-
-				# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
-				# Used for limited where to run base quality score recalibration on where to create gvcf files.
-
-					BAIT_BED=${FAMILY_ARRAY[4]}
-
-				# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
-
-					TARGET_BED=${FAMILY_ARRAY[5]}
-
-				# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in BQSR
-
-					DBSNP=${FAMILY_ARRAY[6]}
-
-						#####################################################
-						# 19 SKIP : KNOWN_INDEL_FILES=used for BQSR masking #
-						#####################################################
-
-				# 20 family that sample belongs to
-
-					FAMILY=${FAMILY_ARRAY[7]}
-
-						#######################
-						# 21 SKIP : MOM #######
-						# 22 SKIP : DAD #######
-						# 23 SKIP : GENDER ####
-						# 24 SKIP : PHENOTYPE #
-						#######################
-	}
-
-	#########################################################
-	# CREATE A GVCF ".list" file for each sample per family #
-	#########################################################
-
-		CREATE_GVCF_LIST ()
-		{
-			awk 'BEGIN {FS="\t"; OFS="\t"} \
-				$20=="'${FAMILY}'" \
-				{print "'${CORE_PATH}'",$1,$20,$8,"GVCF",$8".g.vcf.gz"}' \
-			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
-				| sort \
-				| uniq \
-			>| $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.gvcf.list
-		}
-
-	############################################
-	# create a list of all samples in a family #
-	# *list is for gatk3, *args is for gatk4 ###
-	############################################
-
-		CREATE_FAMILY_SAMPLE_LIST ()
-		{
-			awk 'BEGIN {FS="\t"; OFS="\t"} \
-				$20=="'${FAMILY}'" \
-				{print $8}' \
-			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
-				| sort \
-				| uniq \
-			>| $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.list \
-				&& cp $CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.list \
-				$CORE_PATH/$PROJECT/$FAMILY/${FAMILY}.sample.args
-		}
-
-	#################################################################################
-	# fix common formatting problems in bed files to use for family level functions #
-	# merge bait to target for gvcf creation, pad ###################################
-	# create picard style interval files ############################################
-	#################################################################################
-
-		FIX_BED_FILES_FAMILY ()
-		{
-			echo \
-			qsub \
-				$QSUB_ARGS \
-			-N A03-FIX_BED_FILES_${FAMILY}_${PROJECT} \
-				-o $CORE_PATH/$PROJECT/$FAMILY/LOGS/${FAMILY}-FIX_BED_FILES.log \
-			$SCRIPT_DIR/A03-FIX_BED_FILES_FAMILY.sh \
-				$ALIGNMENT_CONTAINER \
-				$CORE_PATH \
-				$PROJECT \
-				$FAMILY \
-				$CODING_BED \
-				$TARGET_BED \
-				$BAIT_BED \
-				$TITV_BED \
-				$CYTOBAND_BED \
-				$REF_GENOME \
-				$REF_DICT \
-				$PADDING_LENGTH \
-				$GVCF_PAD
-		}
 
 	###############################################################################################
 	# create a hold_id variable for haplotype caller gvcf gather step for all samples in a family #
@@ -2080,11 +2102,7 @@
 			| uniq);
 	do
 		CREATE_FAMILY_ARRAY
-		CREATE_GVCF_LIST
-		CREATE_FAMILY_SAMPLE_LIST
 		BUILD_HOLD_ID_PATH_GENOTYPE_GVCF
-		FIX_BED_FILES_FAMILY
-		echo sleep 0.1s
 		SCATTER_GENOTYPE_GVCF_PER_CHROMOSOME
 		echo sleep 0.1s
 	done
@@ -2107,7 +2125,7 @@
 				$QSUB_ARGS \
 			-N F02-COLLECT_MULTIPLE_METRICS_${SGE_SM_TAG}_$PROJECT \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_MULTIPLE_METRICS.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/F02-COLLECT_MULTIPLE_METRICS.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -2135,7 +2153,7 @@
 				$QSUB_ARGS \
 			-N F03-COLLECT_HS_METRICS_${SGE_SM_TAG}_${PROJECT} \
 				-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-COLLECT_HS_METRICS.log \
-			-hold_jid C01-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+			-hold_jid A02-FIX_BED_FILES_${SGE_SM_TAG}_${PROJECT},E01-BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
 			$SCRIPT_DIR/F03-COLLECT_HS_METRICS.sh \
 				$ALIGNMENT_CONTAINER \
 				$CORE_PATH \
@@ -3122,14 +3140,17 @@ $SCRIPT_DIR/X01-QC_REPORT_PREP.sh \
 
 		BUILD_HOLD_ID_PATH_PROJECT_WRAP_UP_FAMILY ()
 		{
-			for FAMILY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
-					$1=="'$PROJECT'" \
+			HOLD_ID_PATH_PCA=""
+
+			for FAMILY_ONLY in $(awk 'BEGIN {FS="\t"; OFS="\t"} \
+					$1=="'${PROJECT}'" \
 					{print $20}' \
 				~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
 					| sort \
 					| uniq);
 			do
-				HOLD_ID_PATH_PCA="M01-A01-PCA_RELATEDNESS_"$FAMILY"_"$PROJECT",""M01-A02-A01-BCFTOOLS_ROH_"$FAMILY"_"$PROJECT
+				CREATE_FAMILY_ARRAY
+				HOLD_ID_PATH_PCA=$HOLD_ID_PATH_PCA"M01-A01-PCA_RELATEDNESS_"$FAMILY"_"$PROJECT",""M01-A02-A01-BCFTOOLS_ROH_"$FAMILY"_"$PROJECT","
 			done
 		}
 
