@@ -1110,9 +1110,9 @@
 			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
 				| sed -r 's/[[:space:]]+/\t/g' \
 				| sed 's/chr//g' \
-				| grep -v "MT" \
+				| egrep "^[0-9]|^X|^Y" \
 				| cut -f 1 \
-				| sort \
+				| sort -V \
 				| uniq \
 				| singularity exec $ALIGNMENT_CONTAINER datamash \
 					collapse 1 \
@@ -1137,15 +1137,15 @@
 			HOLD_ID_PATH="-hold_jid "
 
 			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
-									| sed -r 's/[[:space:]]+/\t/g' \
-									| cut -f 1 \
-									| sed 's/chr//g' \
-									| grep -v "MT" \
-									| sort \
-									| uniq \
-									| singularity exec $ALIGNMENT_CONTAINER datamash \
-										collapse 1 \
-									| sed 's/,/ /g');
+				| sed -r 's/[[:space:]]+/\t/g' \
+				| sed 's/chr//g' \
+				| egrep "^[0-9]|^X|^Y" \
+				| cut -f 1 \
+				| sort -V \
+				| uniq \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					collapse 1 \
+				| sed 's/,/ /g');
 			do
 				HOLD_ID_PATH=$HOLD_ID_PATH"E02-HAPLOTYPE_CALLER_"$SM_TAG"_"$PROJECT"_chr"$CHROMOSOME","
 				HOLD_ID_PATH=`echo $HOLD_ID_PATH | sed 's/@/_/g'`
@@ -1413,6 +1413,30 @@
 					$SUBMIT_STAMP
 			}
 
+		##################################
+		# CONVERT MUTECT2 MT BAM TO CRAM #
+		##################################
+
+			MUTECT2_MT_BAM_TO_CRAM ()
+			{
+				echo \
+				qsub \
+					$QSUB_ARGS \
+				-N E03-A02-MUTECT2_MT_BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT} \
+					-o $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/LOGS/${SM_TAG}-MUTECT2_MT_BAM_TO_CRAM.log \
+				-hold_jid E03-MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				$SCRIPT_DIR/E03-A02-MUTECT2_MT_BAM_TO_CRAM.sh \
+					$ALIGNMENT_CONTAINER \
+					$CORE_PATH \
+					$PROJECT \
+					$FAMILY \
+					$SM_TAG \
+					$REF_GENOME \
+					$THREADS \
+					$SAMPLE_SHEET \
+					$SUBMIT_STAMP
+			}
+
 	###############################################################
 	### EKLIPSE WORKFLOW TO DETECT LARGE DELETIONS IN MT GENOME ###
 	###############################################################
@@ -1541,6 +1565,8 @@
 		RUN_ANNOVAR_MUTECT2_MT
 		echo sleep 0.1s
 		FIX_ANNOVAR_MUTECT2_MT
+		echo sleep 0.1s
+		MUTECT2_MT_BAM_TO_CRAM
 		echo sleep 0.1s
 		# run eklipse workflow
 		SUBSET_BAM_MT
@@ -2078,9 +2104,9 @@
 			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
 				| sed -r 's/[[:space:]]+/\t/g' \
 				| sed 's/chr//g' \
-				| grep -v "MT" \
+				| egrep "^[0-9]|^X|^Y" \
 				| cut -f 1 \
-				| sort \
+				| sort -V \
 				| uniq \
 				| singularity exec $ALIGNMENT_CONTAINER datamash \
 					collapse 1 \
@@ -2204,9 +2230,9 @@
 				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
 					| sed -r 's/[[:space:]]+/\t/g' \
 					| sed 's/chr//g' \
-					| grep -v "MT" \
+					| egrep "^[0-9]|^X|^Y" \
 					| cut -f 1 \
-					| sort \
+					| sort -V \
 					| uniq \
 					| singularity exec $ALIGNMENT_CONTAINER datamash \
 						collapse 1 \
@@ -2413,17 +2439,16 @@
 			| uniq);
 	do
 		CREATE_FAMILY_ARRAY
-			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
-				$BAIT_BED \
-					| sed -r 's/[[:space:]]+/\t/g' \
-					| sed 's/chr//g' \
-					| grep -v "MT" \
-					| cut -f 1 \
-					| sort \
-					| uniq \
-					| singularity exec $ALIGNMENT_CONTAINER datamash \
-						collapse 1 \
-					| sed 's/,/ /g');
+			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+				| sed -r 's/[[:space:]]+/\t/g' \
+				| sed 's/chr//g' \
+				| egrep "^[0-9]|^X|^Y" \
+				| cut -f 1 \
+				| sort -V \
+				| uniq \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					collapse 1 \
+				| sed 's/,/ /g');
 			do
 				CALL_VARIANT_ANNOTATOR
 				echo sleep 0.1s
@@ -2449,17 +2474,16 @@
 					| uniq )
 			do
 				HOLD_ID_PATH="-hold_jid "
-				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
-						$BAIT_BED \
-							| sed -r 's/[[:space:]]+/\t/g' \
-							| sed 's/chr//g' \
-							| grep -v "MT" \
-							| cut -f 1 \
-							| sort \
-							| uniq \
-							| singularity exec $ALIGNMENT_CONTAINER datamash \
-								collapse 1 \
-							| sed 's/,/ /g');
+				for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+					| sed -r 's/[[:space:]]+/\t/g' \
+					| sed 's/chr//g' \
+					| egrep "^[0-9]|^X|^Y" \
+					| cut -f 1 \
+					| sort -V \
+					| uniq \
+					| singularity exec $ALIGNMENT_CONTAINER datamash \
+						collapse 1 \
+					| sed 's/,/ /g');
 				do
 					HOLD_ID_PATH=$HOLD_ID_PATH"K01-VARIANT_ANNOTATOR_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
 				done
@@ -2644,17 +2668,16 @@
 			| uniq);
 	do
 		CREATE_FAMILY_ARRAY
-			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
-					$BAIT_BED \
-						| sed -r 's/[[:space:]]+/\t/g' \
-						| sed 's/chr//g' \
-						| grep -v "MT" \
-						| cut -f 1 \
-						| sort \
-						| uniq \
-						| singularity exec $ALIGNMENT_CONTAINER datamash \
-							collapse 1 \
-						| sed 's/,/ /g');
+			for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+				| sed -r 's/[[:space:]]+/\t/g' \
+				| sed 's/chr//g' \
+				| egrep "^[0-9]|^X|^Y" \
+				| cut -f 1 \
+				| sort -V \
+				| uniq \
+				| singularity exec $ALIGNMENT_CONTAINER datamash \
+					collapse 1 \
+				| sed 's/,/ /g');
 			do
 				CALL_FILTER_TO_FAMILY_ALL_SITES
 				echo sleep 0.1s
@@ -2678,17 +2701,16 @@
 					| uniq );
 			do
 				HOLD_ID_PATH="-hold_jid "
-					for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' \
-						$BAIT_BED \
-							| sed -r 's/[[:space:]]+/\t/g' \
-							| sed 's/chr//g' \
-							| grep -v "MT" \
-							| cut -f 1 \
-							| sort \
-							| uniq \
-							| singularity exec $ALIGNMENT_CONTAINER datamash \
-								collapse 1 \
-							| sed 's/,/ /g');
+					for CHROMOSOME in $(sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' $BAIT_BED \
+						| sed -r 's/[[:space:]]+/\t/g' \
+						| sed 's/chr//g' \
+						| egrep "^[0-9]|^X|^Y" \
+						| cut -f 1 \
+						| sort -V \
+						| uniq \
+						| singularity exec $ALIGNMENT_CONTAINER datamash \
+							collapse 1 \
+						| sed 's/,/ /g');
 					do
 						HOLD_ID_PATH=$HOLD_ID_PATH"L02-FILTER_TO_FAMILY_ALL_SITES_"$FAMILY"_"$PROJECT"_"$CHROMOSOME","
 					done
@@ -3048,6 +3070,7 @@ R01-A02-VCF_METRICS_TARGET_${SGE_SM_TAG}_${PROJECT},\
 R01-A01-A01-RUN_ANNOVAR_TARGET_${SGE_SM_TAG}_${PROJECT},\
 Q01-A02-VCF_METRICS_TITV_${SGE_SM_TAG}_${PROJECT},\
 Q01-A01-VCF_METRICS_BAIT_${SGE_SM_TAG}_${PROJECT},\
+E03-A02-MUTECT2_MT_BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT},\
 E04-A02-A01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT},\
 E04-A01-RUN_EKLIPSE_${SGE_SM_TAG}_${PROJECT},\
 E03-A01-A01-A02-A01-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\

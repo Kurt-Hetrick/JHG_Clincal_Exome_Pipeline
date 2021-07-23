@@ -63,7 +63,7 @@ START_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock track
 			CMD=${CMD}" --likelihood-calculation-engine PairHMM"
 			CMD=${CMD}" --annotation StrandBiasBySample"
 			CMD=${CMD}" --intervals MT:1-16569"
-		CMD=${CMD}" --bam-output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_RAW.HC.bam"
+		CMD=${CMD}" --bam-output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT.bam"
 		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_RAW.vcf"
 
 	# write command line to file and execute the command line

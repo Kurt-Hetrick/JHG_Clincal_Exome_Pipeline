@@ -45,7 +45,7 @@
 			${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
 				| sed -r 's/[[:space:]]+/\t/g' \
 				| cut -f 1 \
-				| egrep -v "X|Y|MT" \
+				| egrep "^[0-9]" \
 				| sort -k 1,1n \
 				| uniq \
 				| singularity exec ${ALIGNMENT_CONTAINER} datamash \

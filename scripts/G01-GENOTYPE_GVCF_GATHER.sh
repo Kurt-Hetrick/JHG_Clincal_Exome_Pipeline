@@ -43,39 +43,15 @@ START_GENOTYPE_GVCF_GATHER=`date '+%s'`
 # Start with creating a *list file, reference sorted, to put into --variant.
 # Assumption is that this is a correctly sorted GRCh37 reference file as the input reference used
 
-	# Put the autosome into a file, sort numerically
-
-		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}-${BAIT_BED_NAME}.bed \
-			| sed -r 's/[[:space:]]+/\t/g' \
-			| cut -f 1 \
-			| sort \
-			| uniq \
-			| awk '$1~/^[0-9]/' \
-			| sort -k1,1n \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "CONTROLS_PLUS_" "'${FAMILY}'" ".RAW." $1 ".vcf"}' \
-		>| ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.raw.vcf.list
-
-	# Append X if present
-
-		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}-${BAIT_BED_NAME}.bed \
-			| sed -r 's/[[:space:]]+/\t/g' \
-			| cut -f 1 \
-			| sort \
-			| uniq \
-			| awk '$1=="X"' \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "CONTROLS_PLUS_" "'${FAMILY}'" ".RAW." $1 ".vcf"}' \
-		>> ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.raw.vcf.list
-
-	# Append Y if present
-
-		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}-${BAIT_BED_NAME}.bed \
-			| sed -r 's/[[:space:]]+/\t/g' \
-			| cut -f 1 \
-			| sort \
-			| uniq \
-			| awk '$1=="Y"' \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "CONTROLS_PLUS_" "'${FAMILY}'" ".RAW." $1 ".vcf"}' \
-		>> ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.raw.vcf.list
+	sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}-${BAIT_BED_NAME}.bed \
+		| sed -r 's/[[:space:]]+/\t/g' \
+		| cut -f 1 \
+		| sort \
+		| uniq \
+		| egrep "^[0-9]|^X|^Y" \
+		| sort -V \
+		| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "CONTROLS_PLUS_" "'${FAMILY}'" ".RAW." $1 ".vcf"}' \
+	>| ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.raw.vcf.list
 
 	# construct command line
 

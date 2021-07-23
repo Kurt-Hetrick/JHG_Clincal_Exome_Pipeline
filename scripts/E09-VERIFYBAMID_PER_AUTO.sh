@@ -99,8 +99,8 @@ START_SELECT_VERIFYBAMID_VCF_CHR=`date '+%s'` # capture time process starts for 
 		${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
 			| sed -r 's/[[:space:]]+/\t/g' \
 			| cut -f 1 \
-			| egrep -v "X|Y|MT" \
-			| sort \
+			| egrep "^[0-9]" \
+			| sort -k 1,1n \
 			| uniq \
 			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				collapse 1 \

@@ -39,40 +39,16 @@
 
 # Start with creating a *list file, reference sorted, to put into --variant.
 # Assumption is that this is a correctly sorted GRCh37 reference file as the input reference used
-
-	# Put the autosome into a file, sort numerically
 	
-		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
-			| sed -r 's/[[:space:]]+/\t/g' \
-			| cut -f 1 \
-			| sort \
-			| uniq \
-			| awk '$1~/^[0-9]/' \
-			| sort -k1,1n \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" ".HC." $1 ".bam"}' \
-		>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt
-	
-	# Append X if present
-	
-		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
-			| sed -r 's/[[:space:]]+/\t/g' \
-			| cut -f 1 \
-			| sort \
-			| uniq \
-			| awk '$1=="X"' \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" ".HC." $1 ".bam"}' \
-		>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt
-	
-	# Append Y if present
-	
-		sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
-			| sed -r 's/[[:space:]]+/\t/g' \
-			| cut -f 1 \
-			| sort \
-			| uniq \
-			| awk '$1=="Y"' \
-			| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" ".HC." $1 ".bam"}' \
-		>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt
+	sed 's/\r//g; /^$/d; /^[[:space:]]*$/d' ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed \
+		| sed -r 's/[[:space:]]+/\t/g' \
+		| cut -f 1 \
+		| sort \
+		| uniq \
+		| egrep "^[0-9]|^X|^Y" \
+		| sort -V \
+		| awk '{print "'${CORE_PATH}'" "/" "'${PROJECT}'" "/TEMP/" "'${SM_TAG}'" ".HC." $1 ".bam"}' \
+	>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.HC_BAM.txt
 
 ## --Merge and Sort Bam files--
 

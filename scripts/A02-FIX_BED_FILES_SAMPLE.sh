@@ -55,7 +55,7 @@
 	# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
 	# PAD THE REFSEQ CODING BED FILE BY THE PADDING LENGTH
 	# remove chr prefix
-	# remove MT genome (done in another pipeline)
+	# filter to karyotypic chromosomes
 	# remove annotation fields
 
 		awk 1 ${CODING_BED} \
@@ -64,7 +64,7 @@
 			| awk 'BEGIN {OFS="\t"} \
 				{print $1,$2-"'${PADDING_LENGTH}'",$3+"'${PADDING_LENGTH}'"}' \
 			| sed 's/^chr//g' \
-			| grep -v "^MT" \
+			| egrep "^[0-9]|^X|^Y" \
 		>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_${CODING_BED_NAME}-${CODING_MD5}-${PADDING_LENGTH}-BP-PAD.bed
 
 # FIX AND PAD THE TARGET BED FILE
@@ -73,7 +73,7 @@
 	# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
 	# PAD THE TARGET BED FILE BY THE PADDING LENGTH
 	# remove chr prefix
-	# remove MT genome (done in another pipeline)
+	# filter to karyotypic chromosomes
 	# THIS IS FOR SLICING
 
 		awk 1 ${TARGET_BED} \
@@ -82,7 +82,7 @@
 			| awk 'BEGIN {OFS="\t"} \
 				{print $1,$2-"'${PADDING_LENGTH}'",$3+"'${PADDING_LENGTH}'"}' \
 			| sed 's/^chr//g' \
-			| grep -v "^MT" \
+			| egrep "^[0-9]|^X|^Y" \
 		>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_${TARGET_BED_NAME}-${PADDING_LENGTH}-BP-PAD.bed
 
 # FIX THE CODING BED FILE. THIS IS TO BE COMBINED WITH THE BAIT BED FILE
@@ -92,13 +92,13 @@
 		# remove CARRIAGE RETURNS
 		# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
 		# remove chr prefix
-		# remove MT genome (done in another pipeline)
+		# filter to karyotypic chromosomes
 
 			awk 1 ${CODING_BED} \
 				| sed 's/\r//g' \
 				| sed -r 's/[[:space:]]+/\t/g' \
 				| sed 's/^chr//g' \
-				| grep -v "^MT" \
+				| egrep "^[0-9]|^X|^Y" \
 			>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${CODING_BED_NAME}-${CODING_MD5}.bed
 
 # FIX AND PAD THE ANNOTATED CODING BED FILE
@@ -106,13 +106,13 @@
 	# remove CARRIAGE RETURNS
 	# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
 	# remove chr prefix
-	# remove MT genome (done in another pipeline)
+	# filter to karyotypic chromosomes
 
 		awk 1 ${CODING_BED} \
 			| sed 's/\r//g' \
 			| sed -r 's/[[:space:]]+/\t/g' \
 			| sed 's/^chr//g' \
-			| grep -v "^MT" \
+			| egrep "^[0-9]|^X|^Y" \
 			| awk 'BEGIN {OFS="\t"} \
 				{print $1,$2-"'${PADDING_LENGTH}'",$3+"'${PADDING_LENGTH}'",$4,$5,$6,$7}' \
 			>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_${CODING_BED_NAME}-${CODING_MD5}-${PADDING_LENGTH}-BP-PAD-ANNOTATED.bed
@@ -124,13 +124,13 @@
 		# remove CARRIAGE RETURNS
 		# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
 		# remove chr prefix
-		# remove MT genome (done in another pipeline)
+		# filter to karyotypic chromosomes
 
 			awk 1 ${BAIT_BED} \
 				| sed 's/\r//g' \
 				| sed -r 's/[[:space:]]+/\t/g' \
 				| sed 's/^chr//g' \
-				| grep -v "^MT" \
+				| egrep "^[0-9]|^X|^Y" \
 			>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${BAIT_BED_NAME}.bed
 
 # FIX THE TITV BED FILE FOR DATA PROCESSING AND METRICS REPORTS.
@@ -138,13 +138,13 @@
 	# remove CARRIAGE RETURNS
 	# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
 	# remove chr prefix
-	# remove MT genome (done in another pipeline)
+	# filter to karyotypic chromosomes
 
 		awk 1 ${TITV_BED} \
 			| sed 's/\r//g' \
 			| sed -r 's/[[:space:]]+/\t/g' \
 			| sed 's/^chr//g' \
-			| grep -v "^MT" \
+			| egrep "^[0-9]|^X|^Y" \
 		>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}-${TITV_BED_NAME}.bed
 
 # THE GVCF BED FILE IS THE CONCATENATION OF THE CIDR TWIST BAIT BED FILE
@@ -214,7 +214,7 @@
 	# remove CARRIAGE RETURNS
 	# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
 	# remove chr prefix
-	# remove MT genome (done in another pipeline)
+	# filter to karyotypic chromosomes
 	# keep the chr, subtract 120 from start, add 120 to the end, keep the gene symbol
 	# do a natural sort on the chromosome order and numerical sort on the start
 	# for genes/features that have the same coordinates, keep the first one (it really doesn't matter)
@@ -224,7 +224,7 @@
 			| sed 's/\r//g' \
 			| sed -r 's/[[:space:]]+/\t/g' \
 			| sed 's/^chr//g' \
-			| grep -v "^MT" \
+			| egrep "^[0-9]|^X|^Y" \
 			| awk 'BEGIN {OFS="\t"} \
 				{print $1,($2-120),($3+120),$4}' \
 			| sort \
@@ -243,7 +243,7 @@
 	# remove CARRIAGE RETURNS
 	# CONVERT VARIABLE LENGTH WHITESPACE FIELD DELIMETERS TO SINGLE TAB.
 	# remove chr prefix
-	# remove MT genome (done in another pipeline)
+	# filter to karyotypic chromosomes
 	# keep the chr, subtract 120 from start, add 120 to the end, keep the gene symbol
 	# do a natural sort on the chromosome order and numerical sort on the start
 	# merge overlapping intervals
@@ -252,7 +252,7 @@
 			| sed 's/\r//g' \
 			| sed -r 's/[[:space:]]+/\t/g' \
 			| sed 's/^chr//g' \
-			| grep -v "^MT" \
+			| egrep "^[0-9]|^X|^Y" \
 			| awk 'BEGIN {OFS="\t"} \
 				{print $1,($2-120),($3+120)}' \
 			| sort \
