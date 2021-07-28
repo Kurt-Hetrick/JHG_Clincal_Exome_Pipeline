@@ -35,18 +35,18 @@
 	GENDER=$8
 	PHENOTYPE=$9
 
-#########################################################
-##### Grabbing the BAM header (for RG ID,PU,LB,etc) #####
-################################################################################
-##### THIS IS THE HEADER #######################################################
-##### "PROJECT","SM_TAG","PLATFORM_UNIT","LIBRARY_NAME","PIPELINE_VERSION" #####
+####################################################################################
+##### Grabbing the BAM header (for RG ID,PU,LB,etc) ################################
+####################################################################################
+##### THIS IS THE HEADER ###########################################################
+##### "PROJECT","SM_TAG","PLATFORM_UNIT","LIBRARY_NAME","PIPELINE_VERSION" #########
 ##### "FAMILY","FATHER","MOTHER","EXPECTED_SEX","PHENOTYPE" ########################
-################################################################################
+####################################################################################
 
-	if [ -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt ]
+	if [ -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt ]
 		then
-			cat $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+			cat ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					-s \
 					-g 1,2 \
 					collapse 3 \
@@ -54,7 +54,7 @@
 					unique 5 \
 				| sed 's/,/;/g' \
 				| awk 'BEGIN {OFS="\t"} \
-					{print $0,"'$FAMILY'","'$FATHER'","'$MOTHER'","'$GENDER'","'$PHENOTYPE'"}' \
+					{print $0,"'${FAMILY}'","'${FATHER}'","'${MOTHER}'","'${GENDER}'","'${PHENOTYPE}'"}' \
 				| awk 'BEGIN {OFS="\t"} \
 					$9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"MALE",$10} \
 					$9=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"FEMALE",$10} \
@@ -64,19 +64,19 @@
 					$10=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
 					$10=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"UNAFFECTED"} \
 					$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"AFFECTED"}' \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					transpose \
-			>| $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-		elif [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt && \
-			-f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram ]];
+		elif [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt && \
+			-f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CRAM/${SM_TAG}.cram ]];
 			then
 
 			# grab field number for SM_TAG
 
-				SM_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools \
+				SM_FIELD=(`singularity exec ${ALIGNMENT_CONTAINER} samtools \
 					view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
+				${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
 					| cat -n \
@@ -85,9 +85,9 @@
 
 			# grab field number for PLATFORM_UNIT_TAG
 
-				PU_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools \
+				PU_FIELD=(`singularity exec ${ALIGNMENT_CONTAINER} samtools \
 					view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
+				${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
 					| cat -n \
@@ -96,9 +96,9 @@
 
 			# grab field number for LIBRARY_TAG
 
-				LB_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools \
+				LB_FIELD=(`singularity exec ${ALIGNMENT_CONTAINER} samtools \
 					view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
+				${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
 					| cat -n \
@@ -107,9 +107,9 @@
 
 			# grab field number for PROGRAM_TAG
 
-				PG_FIELD=(`singularity exec $ALIGNMENT_CONTAINER samtools \
+				PG_FIELD=(`singularity exec ${ALIGNMENT_CONTAINER} samtools \
 					view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
+				${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CRAM/${SM_TAG}.cram \
 					| grep -m 1 ^@RG \
 					| sed 's/\t/\n/g' \
 					| cat -n \
@@ -120,9 +120,9 @@
 				# fill in empty fields with NA thing (for loop in awk) is a lifesaver
 				# https://unix.stackexchange.com/questions/53448/replacing-missing-value-blank-space-with-zero
 
-				singularity exec $ALIGNMENT_CONTAINER samtools \
+				singularity exec ${ALIGNMENT_CONTAINER} samtools \
 					view -H \
-				$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/CRAM/${SM_TAG}.cram \
+				${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CRAM/${SM_TAG}.cram \
 					| grep ^@RG \
 					| awk \
 						-v SM_FIELD="$SM_FIELD" \
@@ -134,10 +134,10 @@
 						split($PU_FIELD,PU,":"); \
 						split($LB_FIELD,Library,":"); \
 						split($PG_FIELD,Pipeline,":"); \
-						print "'$PROJECT'",SMtag[2],PU[2],Library[2],Pipeline[2]}' \
+						print "'${PROJECT}'",SMtag[2],PU[2],Library[2],Pipeline[2]}' \
 					| awk 'BEGIN { FS = OFS = "\t" } \
 						{ for(i=1; i<=NF; i++) if($i ~ /^ *$/) $i = "NA" }; 1' \
-					| singularity exec $ALIGNMENT_CONTAINER datamash \
+					| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 						-s \
 						-g 1,2 \
 						collapse 3 \
@@ -145,7 +145,7 @@
 						unique 5 \
 					| sed 's/,/;/g' \
 					| awk 'BEGIN {OFS="\t"} \
-						{print $0,"'$FAMILY'","'$FATHER'","'$MOTHER'","'$GENDER'","'$PHENOTYPE'"}' \
+						{print $0,"'${FAMILY}'","'${FATHER}'","'${MOTHER}'","'${GENDER}'","'${PHENOTYPE}'"}' \
 					| awk 'BEGIN {OFS="\t"} \
 						$9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"MALE",$10} \
 						$9=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"FEMALE",$10} \
@@ -155,14 +155,14 @@
 						$10=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
 						$10=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"UNPHENOTYPE"} \
 						$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"PHENOTYPE"}' \
-					| singularity exec $ALIGNMENT_CONTAINER datamash \
+					| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 						transpose \
-				>| $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+				>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 		else
-			echo -e "$PROJECT\t$SM_TAG\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+			echo -e "${PROJECT}\t${SM_TAG}\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					transpose \
-			>| $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 #################################################
@@ -175,16 +175,16 @@
 	awk 'BEGIN {OFS="\t"} \
 		$2=="X"&&$3=="whole" {print "X",$6,$7} \
 		$2=="Y"&&$3=="whole" {print "Y",$6,$7}' \
-	$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ANEUPLOIDY_CHECK/${SM_TAG}.chrom_count_report.txt \
+	${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ANEUPLOIDY_CHECK/${SM_TAG}.chrom_count_report.txt \
 		| paste - - \
 		| awk 'BEGIN {OFS="\t"} \
 			END {if ($1=="X"&&$4=="Y") print $2,$3,$5,$6 ; \
 			else if ($1=="X"&&$4=="") print $2,$3,"NaN","NaN" ; \
 			else if ($1=="Y"&&$4=="") print "NaN","NaN",$5,$6 ; \
 			else print "NaN","NaN","NaN","NaN"}' \
-		| singularity exec $ALIGNMENT_CONTAINER datamash \
+		| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 			transpose \
-	>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+	>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 #############################################################################################
 ##### VERIFY BAM ID #########################################################################
@@ -194,21 +194,21 @@
 ##### "VERIFYBAM_DIFF_LK0_LK1","VERIFYBAM_AVG_DP" ###########################################
 #############################################################################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VERIFYBAMID/${SM_TAG}.selfSM ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/VERIFYBAMID/${SM_TAG}.selfSM ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {OFS="\t"} \
 				NR>1 \
 				{print $7*100,$4,$8,$9,($9-$8),$6}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VERIFYBAMID/${SM_TAG}.selfSM \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/VERIFYBAMID/${SM_TAG}.selfSM \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ####################################################################################
@@ -218,21 +218,21 @@
 ##### "MEDIAN_INSERT_SIZE","MEAN_INSERT_SIZE","STANDARD_DEVIATION_INSERT_SIZE" #####
 ####################################################################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/METRICS/${SM_TAG}.insert_size_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/INSERT_SIZE/METRICS/${SM_TAG}.insert_size_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {OFS="\t"} \
 				NR==8 \
 				{print $1,$6,$7}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/INSERT_SIZE/METRICS/${SM_TAG}.insert_size_metrics.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/INSERT_SIZE/METRICS/${SM_TAG}.insert_size_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ##########################################################################
@@ -244,22 +244,22 @@
 ##### "PCT_READS_ALIGNED_IN_PAIRS_R1","PCT_ADAPTER_R1" ###################
 ##########################################################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {OFS="\t"} \
 				NR==8 \
 				{if ($1=="UNPAIRED") print "0","0","0","0","0","0","0"; \
 				else print $7*100,$9,$13,$14,$15,$18*100,$24*100}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ##########################################################################
@@ -271,22 +271,22 @@
 ##### "PCT_READS_ALIGNED_IN_PAIRS_R2","PCT_ADAPTER_R2" ###################
 ##########################################################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {OFS="\t"} \
 				NR==9 \
 				{if ($1=="") print "0","0","0","0","0","0","0"; \
 				else print $7*100,$9,$13,$14,$15,$18*100,$24*100}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 #######################################################################################
@@ -298,22 +298,22 @@
 ##### "PCT_PF_READS_IMPROPER_PAIRS_PAIR","STRAND_BALANCE_PAIR","PCT_CHIMERAS_PAIR" #######
 ##########################################################################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {OFS="\t"} \
 				NR==10 \
 				{if ($1=="") print "0","0","0","0","0","0","0","0","0","0" ; \
 				else print $2,($2*$16/1000000000),$7*100,$13,$14,$15,$18*100,$20*100,$22,$23*100}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ALIGNMENT_SUMMARY/${SM_TAG}.alignment_summary_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ####################################################################################
@@ -327,27 +327,27 @@
 ##### "PERCENT_DUPLICATION_OPTICAL" ################################################
 ####################################################################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			MAX_RECORD=(`grep -n "^$" \
-					$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt \
+					${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt \
 					| awk 'BEGIN {FS=":"} \
 						NR==2 \
 						{print $1}'`)
 
 			awk 'BEGIN {OFS="\t"} \
-				NR>7&&NR<'$MAX_RECORD' \
+				NR>7&&NR<'${MAX_RECORD}' \
 				{if ($10!~/[0-9]/) print $5,$8,"NaN","NaN",$4,$7,$3,"NaN",$6,$2,"NaN" ; \
 				else if ($10~/[0-9]/&&$2=="0") print $5,$8,$9*100,$10,$4,$7,$3,($7/$3),$6,$2,"NaN" ; \
 				else print $5,$8,$9*100,$10,$4,$7,$3,($7/$3),$6,$2,($6/$2)}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/PICARD_DUPLICATES/${SM_TAG}_MARK_DUPLICATES.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				sum 1 \
 				sum 2 \
 				mean 4 \
@@ -363,9 +363,9 @@
 				else if ($3~/[0-9]/&&$1!="0"&&$8=="0") \
 					print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,"NaN",($2/$6)*100 ; \
 				else print $1,$2,(($7+($5*2))/($8+($6*2)))*100,$3,$4,$5,$6,($5/$6),$7,$8,($7/$8),($2/$6)*100}' \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 #######################################################################################################
@@ -384,12 +384,12 @@
 	# this will take when there are no reads in the file...but i don't think that it will handle when there are reads, but none fall on target
 	# the next time i that happens i'll fix this to handle it.
 
-		if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/HYB_SELECTION/${SM_TAG}_hybridization_selection_metrics.txt ]]
+		if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/HYB_SELECTION/${SM_TAG}_hybridization_selection_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {FS="\t";OFS="\t"} \
@@ -399,10 +399,10 @@
 				else if ($12!="?"&&$44=="") \
 					print $2,$1,$3,$4,$12*100,($14/1000000000),$19*100,$21,$22,$23,$24,$25,$26*100,$29*100,$31*100,$32*100,$33*100,$34*100,$39*100,$40*100,$41*100,$42*100,$51,$52,$53,$54 ; \
 				else print $2,$1,$3,$4,$12*100,($14/1000000000),$19*100,$21,$22,$23,$24,$25,$26*100,$29*100,$31*100,$32*100,$33*100,$34*100,$39*100,$40*100,$41*100,$42*100,$51,$52,$53,$54}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/HYB_SELECTION/${SM_TAG}_hybridization_selection_metrics.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/HYB_SELECTION/${SM_TAG}_hybridization_selection_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 		fi
 
 ##############################################
@@ -412,26 +412,26 @@
 ##### "Cref_Q","Gref_Q" ######################
 ##############################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/SUMMARY/${SM_TAG}.bait_bias_summary_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BAIT_BIAS/SUMMARY/${SM_TAG}.bait_bias_summary_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
-			grep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BAIT_BIAS/SUMMARY/${SM_TAG}.bait_bias_summary_metrics.txt \
+			grep -v "^#" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BAIT_BIAS/SUMMARY/${SM_TAG}.bait_bias_summary_metrics.txt \
 				| sed '/^$/d' \
 				| awk 'BEGIN {OFS="\t"} $12=="Cref"||$12=="Gref" {print $5}' \
 				| paste - - \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					collapse 1 \
 					collapse 2 \
 				| sed 's/,/;/g' \
 				| awk 'BEGIN {OFS="\t"} {print $0}' \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ############################################################
@@ -441,26 +441,26 @@
 ##### DEAMINATION_Q,OxoG_Q #################################
 ############################################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/SUMMARY/${SM_TAG}.pre_adapter_summary_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/PRE_ADAPTER/SUMMARY/${SM_TAG}.pre_adapter_summary_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
-			grep -v "^#" $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/PRE_ADAPTER/SUMMARY/${SM_TAG}.pre_adapter_summary_metrics.txt \
+			grep -v "^#" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/PRE_ADAPTER/SUMMARY/${SM_TAG}.pre_adapter_summary_metrics.txt \
 				| sed '/^$/d' \
 				| awk 'BEGIN {OFS="\t"} $12=="Deamination"||$12=="OxoG" {print $5}' \
 				| paste - - \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					collapse 1 \
 					collapse 2 \
 				| sed 's/,/;/g' \
 				| awk 'BEGIN {OFS="\t"} {print $0}' \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ###########################################################
@@ -470,34 +470,34 @@
 ##### PCT_A,PCT_C,PCT_G,PCT_T,PCT_N #######################
 ###########################################################
 
-	BASE_DISTIBUTION_BY_CYCLE_ROW_COUNT=(`wc -l $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/METRICS/${SM_TAG}.base_distribution_by_cycle_metrics.txt`)
+	BASE_DISTIBUTION_BY_CYCLE_ROW_COUNT=(`wc -l ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/METRICS/${SM_TAG}.base_distribution_by_cycle_metrics.txt`)
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/METRICS/${SM_TAG}.base_distribution_by_cycle_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/METRICS/${SM_TAG}.base_distribution_by_cycle_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
-		elif [[ -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/METRICS/${SM_TAG}.base_distribution_by_cycle_metrics.txt && \
-			$BASE_DISTIBUTION_BY_CYCLE_ROW_COUNT -lt 8 ]]
+		elif [[ -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/METRICS/${SM_TAG}.base_distribution_by_cycle_metrics.txt && \
+			${BASE_DISTIBUTION_BY_CYCLE_ROW_COUNT} -lt 8 ]]
 			then
 				echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					transpose \
-				>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+				>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 		else
-			sed '/^$/d' $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/METRICS/${SM_TAG}.base_distribution_by_cycle_metrics.txt \
+			sed '/^$/d' ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/METRICS/${SM_TAG}.base_distribution_by_cycle_metrics.txt \
 				| awk 'NR>6' \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					mean 3 \
 					mean 4 \
 					mean 5 \
 					mean 6 \
 					mean 7 \
-				| singularity exec $ALIGNMENT_CONTAINER datamash \
+				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ############################################
@@ -508,17 +508,17 @@
 ##### PCT_C_to_A,PCT_C_to_G,PCT_C_to_T #####
 ############################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ERROR_SUMMARY/${SM_TAG}.error_summary_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ERROR_SUMMARY/${SM_TAG}.error_summary_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
-			sed '/^$/d' $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/ERROR_SUMMARY/${SM_TAG}.error_summary_metrics.txt \
+			sed '/^$/d' ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/ERROR_SUMMARY/${SM_TAG}.error_summary_metrics.txt \
 				| awk 'NR>6 {print $6*100}' \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 #######################################################################################################
@@ -535,21 +535,21 @@
 
 	# since I don't have have any examples of what failures look like, I can't really build that in
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {FS="\t";OFS="\t"} \
 				NR==8 \
 				{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/VCF_METRICS/${SM_TAG}_BAIT.variant_calling_detail_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 	fi
 
 ###############################################################################################################
@@ -564,21 +564,21 @@
 ##### SNP_REFERENCE_BIAS_TARGET,HET_HOMVAR_RATIO_TARGET,PCT_GQ0_VARIANTS_TARGET,COUNT_GQ0_VARIANTS_TARGET #####
 ###############################################################################################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {FS="\t";OFS="\t"} \
 				NR==8 \
 				{print $6,$9,$10*100,$13,$15,$16*100,$18,$19,$20,$21,$22,$23,$24,$2,$3,$4}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/VCF_METRICS/${SM_TAG}_TARGET.variant_calling_detail_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 	fi
 
@@ -590,31 +590,31 @@
 ##### NOVEL_TI_TV_COUNT,NOVEL_TI_TV_RATIO ####
 ##############################################
 
-	if [[ ! -f $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TITV.variant_calling_detail_metrics.txt ]]
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/VCF_METRICS/${SM_TAG}_TITV.variant_calling_detail_metrics.txt ]]
 		then
 			echo -e NaN'\t'NaN'\t'NaN'\t'NaN \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 		else
 			awk 'BEGIN {FS="\t";OFS="\t"} \
 				NR==8 \
 				{print $6,$11,$8,$12}' \
-			$CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/VCF_METRICS/${SM_TAG}_TITV.variant_calling_detail_metrics.txt \
-			| singularity exec $ALIGNMENT_CONTAINER datamash \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/VCF_METRICS/${SM_TAG}_TITV.variant_calling_detail_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
-			>> $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 
 	fi
 ##############################
 # tranpose from rows to list #
 ##############################
 
-	cat $CORE_PATH/$PROJECT/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt \
-		| singularity exec $ALIGNMENT_CONTAINER datamash \
+	cat ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt \
+		| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 			transpose \
-	>| $CORE_PATH/$PROJECT/$FAMILY/$SM_TAG/REPORTS/QC_REPORT_PREP/${SM_TAG}.QC_REPORT_PREP.txt
+	>| ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/QC_REPORT_PREP/${SM_TAG}.QC_REPORT_PREP.txt
 
 #######################################
 # check the exit signal at this point #
