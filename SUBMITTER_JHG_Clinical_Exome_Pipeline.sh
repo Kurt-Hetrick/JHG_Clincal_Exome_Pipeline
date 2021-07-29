@@ -2427,6 +2427,7 @@
 			${REF_GENOME} \
 			${CHROMOSOME} \
 			${PHASE3_1KG_AUTOSOMES} \
+			${THREADS} \
 			${SAMPLE_SHEET} \
 			${SUBMIT_STAMP}
 	}

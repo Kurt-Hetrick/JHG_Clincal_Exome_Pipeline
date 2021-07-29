@@ -33,15 +33,17 @@
 	REF_GENOME=$6
 	CHROMOSOME=$7
 	PHASE3_1KG_AUTOSOMES=$8
-	SAMPLE_SHEET=$9
+	THREADS=$9
+	SAMPLE_SHEET=${10}
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=${10}
+	SUBMIT_STAMP=${11}
 
 START_ADD_MORE_ANNOTATION=`date '+%s'`
 
 	# construct command line
 
 		CMD="singularity exec ${GATK_3_7_0_CONTAINER} java -jar"
+			CMD=${CMD}" -XX:ParallelGCThreads=${THREADS}"
 			CMD=${CMD}" /usr/GenomeAnalysisTK.jar"
 		CMD=${CMD}" --analysis_type VariantAnnotator"
 			CMD=${CMD}" --reference_sequence ${REF_GENOME}"
