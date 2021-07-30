@@ -62,14 +62,14 @@
 
 			# for when the date is this 2018-09-05
 
-				ISO_8601=`echo ${RUN_DATE} \
-					| awk '{print "'${RUN_DATE}'" "T00:00:00-0500"}'`
+				ISO_8601=$(echo ${RUN_DATE} \
+					| awk '{print "'${RUN_DATE}'" "T00:00:00-0500"}')
 
 		else
 
 			# for when the data is like this 4/26/2018
 
-				ISO_8601=`echo ${RUN_DATE} \
+				ISO_8601=$(echo ${RUN_DATE} \
 					| awk '{split ($0,DATES,"/"); \
 					if (length(DATES[1]) < 2 && length(DATES[2]) < 2) \
 					print DATES[3]"-0"DATES[1]"-0"DATES[2]"T00:00:00-0500"; \
@@ -77,7 +77,7 @@
 					print DATES[3]"-0"DATES[1]"-"DATES[2]"T00:00:00-0500"; \
 					else if(length(DATES[1]) > 1 && length(DATES[2]) < 2) \
 					print DATES[3]"-"DATES[1]"-0"DATES[2]"T00:00:00-0500"; \
-					else print DATES[3]"-"DATES[1]"-"DATES[2]"T00:00:00-0500"}'`
+					else print DATES[3]"-"DATES[1]"-"DATES[2]"T00:00:00-0500"}')
 	fi
 
 # look for fastq files. allow fastq.gz and fastq extensions.
@@ -92,7 +92,7 @@
 	if [[ ${SEQUENCER_MODEL} == *"NovaSeq"* ]]
 		then
 
-			NOVASEQ_RUN_FOLDER=`ls ${NOVASEQ_REPO} | grep ${FLOWCELL}`
+			NOVASEQ_RUN_FOLDER=$(ls ${NOVASEQ_REPO} | grep ${FLOWCELL})
 
 			FINDPATH=${NOVASEQ_REPO}/${NOVASEQ_RUN_FOLDER}/FASTQ/${PROJECT}
 
@@ -100,11 +100,14 @@
 			# if it is found in the project/fastq folder under active, then use that one
 			FASTQ_1=`( echo du --max-depth=1 -a ${FINDPATH}/${SM_TAG}* -a ${FINDPATH}/${FIXED_PLATFORM_UNIT}* 2\> /dev/null \| grep L00${LANE}_R1_001.fastq \| cut -f 2 | bash ; \
 				ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_1.fastq* 2> /dev/null) | tail -n 1`
+
 			FASTQ_2=`( echo du --max-depth=1 -a ${FINDPATH}/${SM_TAG}* -a ${FINDPATH}/${FIXED_PLATFORM_UNIT}* 2\> /dev/null \| grep L00${LANE}_R2_001.fastq \| cut -f 2 | bash ; \
 				ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_2.fastq* 2> /dev/null) | tail -n 1`
 
 		else
+
 			FASTQ_1=`(ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_1.fastq* 2> /dev/null ; ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_R1_000.fastq* 2> /dev/null; ls ${CORE_PATH}/${PROJECT}/FASTQ/${SM_TAG}_R1_001.fastq* 2> /dev/null; ls ${CORE_PATH}/${PROJECT}/FASTQ/${SM_TAG}_1.fastq* 2> /dev/null)`
+
 			FASTQ_2=`(ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_2.fastq* 2> /dev/null ; ls ${CORE_PATH}/${PROJECT}/FASTQ/${FIXED_PLATFORM_UNIT}_R2_000.fastq* 2> /dev/null; ls ${CORE_PATH}/${PROJECT}/FASTQ/${SM_TAG}_R2_001.fastq* 2> /dev/null; ls ${CORE_PATH}/${PROJECT}/FASTQ/${SM_TAG}_2.fastq* 2> /dev/null)`
 	fi
 

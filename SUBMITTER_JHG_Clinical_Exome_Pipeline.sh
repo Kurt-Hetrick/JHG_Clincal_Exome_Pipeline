@@ -44,7 +44,7 @@
 
 	SUBMITTER_SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
-	SCRIPT_DIR="${SUBMITTER_SCRIPT_PATH}/scripts"
+	SCRIPT_DIR=${SUBMITTER_SCRIPT_PATH}/scripts
 
 ##################
 # CORE VARIABLES #
@@ -69,7 +69,7 @@
 
 	# used for tracking in the read group header of the cram file
 
-		PIPELINE_VERSION=`git --git-dir=${SCRIPT_DIR}/../.git --work-tree=${SCRIPT_DIR}/.. log --pretty=format:'%h' -n 1`
+		PIPELINE_VERSION=$(git --git-dir=${SCRIPT_DIR}/../.git --work-tree=${SCRIPT_DIR}/.. log --pretty=format:'%h' -n 1)
 
 	# load gcc for programs like verifyBamID
 	## this will get pushed out to all of the compute nodes since I specify env var to pushed out with qsub
@@ -83,19 +83,19 @@
 
 	# SUBMIT TIMESTAMP
 
-		SUBMIT_STAMP=`date '+%s'`
+		SUBMIT_STAMP=$(date '+%s')
 
 	# SUBMITTER_ID
 
-		SUBMITTER_ID=`whoami`
+		SUBMITTER_ID=$(whoami)
 
 	# grab submitter's name
 
-		PERSON_NAME=`getent passwd | awk 'BEGIN {FS=":"} $1=="'${SUBMITTER_ID}'" {print $5}'`
+		PERSON_NAME=$(getent passwd | awk 'BEGIN {FS=":"} $1=="'${SUBMITTER_ID}'" {print $5}')
 
 	# grab email addy
 
-		SEND_TO=`cat ${SCRIPT_DIR}/../email_lists.txt`
+		SEND_TO=$(cat ${SCRIPT_DIR}/../email_lists.txt)
 
 	# bind the host file system /mnt to the singularity container. in case I use it in the submitter.
 
@@ -319,18 +319,18 @@
 
 	# create variables using the base name for the sample sheet and ped file
 
-		MANIFEST_PREFIX=`basename ${SAMPLE_SHEET} .csv`
-		PED_PREFIX=`basename ${PED_FILE} .ped`
+		MANIFEST_PREFIX=$(basename ${SAMPLE_SHEET} .csv)
+		PED_PREFIX=$(basename ${PED_FILE} .ped)
 
 	# fix any commonly seen formatting issues in the sample sheet
 
 		FORMAT_MANIFEST ()
 		{
 			awk 1 ${SAMPLE_SHEET} \
-			| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
-			| awk 'NR>1' \
-			| sed 's/,/\t/g' \
-			| sort -k 8,8 \
+				| sed 's/\r//g; /^$/d; /^[[:space:]]*$/d; /^,/d' \
+				| awk 'NR>1' \
+				| sed 's/,/\t/g' \
+				| sort -k 8,8 \
 			>| ~/CGC_PIPELINE_TEMP/SORTED.${MANIFEST_PREFIX}.txt
 		}
 
@@ -736,115 +736,115 @@
 
 	CREATE_PLATFORM_UNIT_ARRAY ()
 	{
-			PLATFORM_UNIT_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
-				$8$2$3$4=="'${PLATFORM_UNIT}'" \
-				{split($19,INDEL,";"); \
-				print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],\
-				$20,$21,$22,$23,$24}' \
-			~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
-				| sort \
-				| uniq`)
+		PLATFORM_UNIT_ARRAY=(`awk 'BEGIN {FS="\t"; OFS="\t"} \
+			$8$2$3$4=="'${PLATFORM_UNIT}'" \
+			{split($19,INDEL,";"); \
+			print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$12,$15,$16,$17,$18,INDEL[1],INDEL[2],\
+			$20,$21,$22,$23,$24}' \
+		~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
+			| sort \
+			| uniq`)
 
-				#  1  Project=the Seq Proj folder name
+			#  1  Project=the Seq Proj folder name
 
-					PROJECT=${PLATFORM_UNIT_ARRAY[0]}
+				PROJECT=${PLATFORM_UNIT_ARRAY[0]}
 
-				#  2  FCID=flowcell that sample read group was performed on
+			#  2  FCID=flowcell that sample read group was performed on
 
-					FCID=${PLATFORM_UNIT_ARRAY[1]}
+				FCID=${PLATFORM_UNIT_ARRAY[1]}
 
-				#  3  Lane=lane of flowcell that sample read group was performed on
+			#  3  Lane=lane of flowcell that sample read group was performed on
 
-					LANE=${PLATFORM_UNIT_ARRAY[2]}
+				LANE=${PLATFORM_UNIT_ARRAY[2]}
 
-				#  4  Index=sample barcode
+			#  4  Index=sample barcode
 
-					INDEX=${PLATFORM_UNIT_ARRAY[3]}
+				INDEX=${PLATFORM_UNIT_ARRAY[3]}
 
-				#  5  Platform=type of sequencing chemistry matching SAM specification
+			#  5  Platform=type of sequencing chemistry matching SAM specification
 
-					PLATFORM=${PLATFORM_UNIT_ARRAY[4]}
+				PLATFORM=${PLATFORM_UNIT_ARRAY[4]}
 
-				#  6  Library_Name=library group of the sample read group,
-					# Used during Marking Duplicates to determine if molecules are to be considered as part of the same library or not
+			#  6  Library_Name=library group of the sample read group,
+				# Used during Marking Duplicates to determine if molecules are to be considered as part of the same library or not
 
-					LIBRARY=${PLATFORM_UNIT_ARRAY[5]}
+				LIBRARY=${PLATFORM_UNIT_ARRAY[5]}
 
-				#  7  Date=should be the run set up date, but doesn't have to be
+			#  7  Date=should be the run set up date, but doesn't have to be
 
-					RUN_DATE=${PLATFORM_UNIT_ARRAY[6]}
+				RUN_DATE=${PLATFORM_UNIT_ARRAY[6]}
 
-				#  8  SM_Tag=sample ID
+			#  8  SM_Tag=sample ID
 
-					SM_TAG=${PLATFORM_UNIT_ARRAY[7]}
+				SM_TAG=${PLATFORM_UNIT_ARRAY[7]}
 
-						# sge sm tag. If there is an @ in the qsub or holdId name it breaks
+					# sge sm tag. If there is an @ in the qsub or holdId name it breaks
 
-							SGE_SM_TAG=$(echo ${SM_TAG} | sed 's/@/_/g')
+						SGE_SM_TAG=$(echo ${SM_TAG} | sed 's/@/_/g')
 
-				#  9  Center=the center/funding mechanism
+			#  9  Center=the center/funding mechanism
 
-					CENTER=${PLATFORM_UNIT_ARRAY[8]}
+				CENTER=${PLATFORM_UNIT_ARRAY[8]}
 
-				# 10  Description=Sequencer model and/or setting (setting e.g. "Rapid-Run")
-				## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq”
+			# 10  Description=Sequencer model and/or setting (setting e.g. "Rapid-Run")
+			## Models: “HiSeq-X”,“HiSeq-4000”,“HiSeq-2500”,“HiSeq-2000”,“NextSeq-500”,“MiSeq”
 
-					SEQUENCER_MODEL=${PLATFORM_UNIT_ARRAY[9]}
+				SEQUENCER_MODEL=${PLATFORM_UNIT_ARRAY[9]}
 
-					########################
-					# 11  Seq_Exp_ID: SKIP #
-					########################
+				########################
+				# 11  Seq_Exp_ID: SKIP #
+				########################
 
-				# 12  Genome_Ref=the reference genome used in the analysis pipeline
+			# 12  Genome_Ref=the reference genome used in the analysis pipeline
 
-					REF_GENOME=${PLATFORM_UNIT_ARRAY[10]}
+				REF_GENOME=${PLATFORM_UNIT_ARRAY[10]}
 
-					#####################################
-					# 13  Operator: SKIP ################
-					# 14  Extra_VCF_Filter_Params: SKIP #
-					#####################################
+				#####################################
+				# 13  Operator: SKIP ################
+				# 14  Extra_VCF_Filter_Params: SKIP #
+				#####################################
 
-				# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
+			# 15  TS_TV_BED_File=refseq (select) cds plus other odds and ends (.e.g. missing omim))
 
-					TITV_BED=${PLATFORM_UNIT_ARRAY[11]}
+				TITV_BED=${PLATFORM_UNIT_ARRAY[11]}
 
-				# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
-				# Used for limited where to run base quality score recalibration on where to create gvcf files.
+			# 16  Baits_BED_File=a super bed file incorporating bait, target, padding and overlap with ucsc coding exons.
+			# Used for limited where to run base quality score recalibration on where to create gvcf files.
 
-					BAIT_BED=${PLATFORM_UNIT_ARRAY[12]}
+				BAIT_BED=${PLATFORM_UNIT_ARRAY[12]}
 
-				# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
+			# 17  Targets_BED_File=bed file acquired from manufacturer of their targets.
 
-					TARGET_BED=${PLATFORM_UNIT_ARRAY[13]}
+				TARGET_BED=${PLATFORM_UNIT_ARRAY[13]}
 
-				# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in base call quality score recalibration.
+			# 18  KNOWN_SITES_VCF=used to annotate ID field in VCF file. masking in base call quality score recalibration.
 
-					DBSNP=${PLATFORM_UNIT_ARRAY[14]}
+				DBSNP=${PLATFORM_UNIT_ARRAY[14]}
 
-				# 19  KNOWN_INDEL_FILES=used for BQSR masking
+			# 19  KNOWN_INDEL_FILES=used for BQSR masking
 
-					KNOWN_INDEL_1=${PLATFORM_UNIT_ARRAY[15]}
-					KNOWN_INDEL_2=${PLATFORM_UNIT_ARRAY[16]}
+				KNOWN_INDEL_1=${PLATFORM_UNIT_ARRAY[15]}
+				KNOWN_INDEL_2=${PLATFORM_UNIT_ARRAY[16]}
 
-				# 20 FAMILY
+			# 20 FAMILY
 
-					FAMILY=${PLATFORM_UNIT_ARRAY[17]}
+				FAMILY=${PLATFORM_UNIT_ARRAY[17]}
 
-				# 21 MOM
+			# 21 MOM
 
-					MOM=${PLATFORM_UNIT_ARRAY[18]}
+				MOM=${PLATFORM_UNIT_ARRAY[18]}
 
-				# 22 DAD
+			# 22 DAD
 
-					DAD=${PLATFORM_UNIT_ARRAY[19]}
+				DAD=${PLATFORM_UNIT_ARRAY[19]}
 
-				# 23 GENDER
+			# 23 GENDER
 
-					GENDER=${PLATFORM_UNIT_ARRAY[20]}
+				GENDER=${PLATFORM_UNIT_ARRAY[20]}
 
-				# 24 PHENOTYPE
+			# 24 PHENOTYPE
 
-					PHENOTYPE=${PLATFORM_UNIT_ARRAY[21]}
+				PHENOTYPE=${PLATFORM_UNIT_ARRAY[21]}
 	}
 
 ########################################################################
@@ -856,33 +856,33 @@
 
 	RUN_BWA ()
 	{
-			echo \
-			qsub \
-				${QSUB_ARGS} \
-			-N A01-BWA_${SGE_SM_TAG}_${FCID}_${LANE}_${INDEX} \
-				-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}_${FCID}_${LANE}_${INDEX}-BWA.log \
-			${SCRIPT_DIR}/A01-BWA.sh \
-				${ALIGNMENT_CONTAINER} \
-				${CORE_PATH} \
-				${PROJECT} \
-				${FCID} \
-				${LANE} \
-				${INDEX} \
-				${PLATFORM} \
-				${LIBRARY} \
-				${RUN_DATE} \
-				${SM_TAG} \
-				${CENTER} \
-				${SEQUENCER_MODEL} \
-				${REF_GENOME} \
-				${PIPELINE_VERSION} \
-				${BAIT_BED} \
-				${TARGET_BED} \
-				${TITV_BED} \
-				${NOVASEQ_REPO} \
-				${THREADS} \
-				${SAMPLE_SHEET} \
-				${SUBMIT_STAMP}
+		echo \
+		qsub \
+			${QSUB_ARGS} \
+		-N A01-BWA_${SGE_SM_TAG}_${FCID}_${LANE}_${INDEX} \
+			-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}_${FCID}_${LANE}_${INDEX}-BWA.log \
+		${SCRIPT_DIR}/A01-BWA.sh \
+			${ALIGNMENT_CONTAINER} \
+			${CORE_PATH} \
+			${PROJECT} \
+			${FCID} \
+			${LANE} \
+			${INDEX} \
+			${PLATFORM} \
+			${LIBRARY} \
+			${RUN_DATE} \
+			${SM_TAG} \
+			${CENTER} \
+			${SEQUENCER_MODEL} \
+			${REF_GENOME} \
+			${PIPELINE_VERSION} \
+			${BAIT_BED} \
+			${TARGET_BED} \
+			${TITV_BED} \
+			${NOVASEQ_REPO} \
+			${THREADS} \
+			${SAMPLE_SHEET} \
+			${SUBMIT_STAMP}
 	}
 
 #############################
