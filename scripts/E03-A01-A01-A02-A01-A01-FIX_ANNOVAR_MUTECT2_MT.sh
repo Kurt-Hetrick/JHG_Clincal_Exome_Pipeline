@@ -40,10 +40,20 @@ START_FIX_ANNOVAR=`date '+%s'` # capture time process starts for wall clock trac
 
 	# construct command line
 
-		CMD="sed -i -e '1s/vcf3/gnomAD\[exclude_AC\/AN\]/'"
+		CMD="sed -i -e '1s/vcf3/gnomAD_v3.1/'"
 		CMD=${CMD}" -e '1s/vcf2/GB_Freq.MMdisease/'"
 			CMD=${CMD}" -e '1s/vcf/GB_Freq.MMpolymorphisms/'"
-			CMD=${CMD}" -e '1s/Otherinfo11/gnomADplusVCF-INFO/'"
+			CMD=${CMD}" -e '1s/Otherinfo13/${SAMPLE_ID}/'"
+			CMD=${CMD}" -e '1s/Otherinfo12/VCF_FORMAT/'"
+			CMD=${CMD}" -e '1s/Otherinfo11/VCF_INFO/'"
+			CMD=${CMD}" -e '1s/Otherinfo10/VCF_FILTER/'"
+			CMD=${CMD}" -e '1s/Otherinfo9/VCF_QUAL/'"
+			CMD=${CMD}" -e '1s/Otherinfo8/VCF_ALT/'"
+			CMD=${CMD}" -e '1s/Otherinfo7/VCF_REF/'"
+			CMD=${CMD}" -e '1s/Otherinfo6/VCF_ID/'"
+			CMD=${CMD}" -e '1s/Otherinfo5/VCF_POS/'"
+			CMD=${CMD}" -e '1s/Otherinfo4/VCF_CHROM/'"
+			CMD=${CMD}" -e '1s/Otherinfo3/VCF_CUMULATIVE_AD/'"
 			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_ANNOVAR_MT/${SM_TAG}.GRCh37_MT_multianno.txt"
 		CMD=${CMD}" &&"
 			CMD=${CMD}" mv -v ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_ANNOVAR_MT/${SM_TAG}.GRCh37_MT_multianno*"

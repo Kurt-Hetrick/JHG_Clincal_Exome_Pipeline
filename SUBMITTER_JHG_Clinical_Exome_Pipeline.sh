@@ -172,6 +172,9 @@
 
 	MT_COVERAGE_R_SCRIPT="${SCRIPT_DIR}/mito_coverage_graph.r"
 
+	MITO_MAGICK_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_magick-6.8.9.9.0.simg"
+		# magick package for R. see dockerfile for details.
+
 	CNV_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/cnv_exomedepth-dev.simg"
 
 	EXOME_DEPTH_R_SCRIPT="${SCRIPT_DIR}/runExomeDepth.r"
@@ -277,7 +280,8 @@
 		MT_PICARD_INTERVAL_LIST="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/MT.interval_list"
 		MT_MASK="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/hg37_MT_blacklist_sites.hg37.MT.bed"
 		GNOMAD_MT="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/GRCh37_MT_gnomAD.vcf.gz"
-		ANNOVAR_MT_DB_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/annovar_db/"
+		# ANNOVAR_MT_DB_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/annovar_db/"
+		ANNOVAR_MT_DB_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/annovar_db/2021_02_02/annovar/humandb"
 		MT_GENBANK="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/MITO/NC_012920.1.gb"
 
 	# CNV calling workflow
@@ -482,7 +486,7 @@
 		${CORE_PATH}/${PROJECT}/${FAMILY}/{LOGS,PCA,RELATEDNESS,ROH} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/VCF/{RAW,VQSR} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/{CNV_OUTPUT,CRAM,GVCF,HC_CRAM,LOGS} \
-		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/{COLLECTHSMETRICS_MT,MUTECT2_MT,HAPLOTYPES,ANNOVAR_MT,EKLIPSE} \
+		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/{COLLECTHSMETRICS_MT,MUTECT2_MT,HAPLOGROUPS,ANNOVAR_MT,EKLIPSE} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/{ALIGNMENT_SUMMARY,ANEUPLOIDY_CHECK,ANNOVAR,ERROR_SUMMARY,PICARD_DUPLICATES,QC_REPORT_PREP,QUALITY_YIELD,RG_HEADER,TI_TV,VCF_METRICS,VERIFYBAMID,VERIFYBAMID_AUTO} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BAIT_BIAS/{METRICS,SUMMARY} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/{METRICS,PDF} \
@@ -1350,6 +1354,8 @@
 		#############################################################
 		# add gnomad annotation to info field of mutect2 vcf output #
 		#############################################################
+		# REMOVE #
+		##########
 
 			GNOMAD_MUTECT2_MT ()
 			{
@@ -1381,7 +1387,7 @@
 					${QSUB_ARGS} \
 				-N E03-A01-A01-A02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_ANNOVAR_MUTECT2_MT.log \
-				-hold_jid E03-A01-A01-A02-GNOMAD_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				-hold_jid E03-A01-A01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 				${SCRIPT_DIR}/E03-A01-A01-A02-A01-RUN_ANNOVAR_MUTECT2_MT.sh \
 					${MITO_MUTECT2_CONTAINER} \
 					${CORE_PATH} \
@@ -1561,8 +1567,8 @@
 		echo sleep 0.1s
 		HAPLOGREP2_MUTECT2_MT
 		echo sleep 0.1s
-		GNOMAD_MUTECT2_MT
-		echo sleep 0.1s
+		# GNOMAD_MUTECT2_MT
+		# echo sleep 0.1s
 		RUN_ANNOVAR_MUTECT2_MT
 		echo sleep 0.1s
 		FIX_ANNOVAR_MUTECT2_MT

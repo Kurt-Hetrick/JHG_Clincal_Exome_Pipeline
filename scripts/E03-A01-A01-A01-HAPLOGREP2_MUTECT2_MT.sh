@@ -47,7 +47,7 @@ START_HAPLOGREP2_MUTECT2_MT=`date '+%s'` # capture time process starts for wall 
 			CMD=$CMD" --extend-report"
 			CMD=$CMD" --format vcf"
 			CMD=$CMD" --hits 5"
-		CMD=$CMD" --out ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/HAPLOTYPES/${SM_TAG}.haplotypes.txt"
+		CMD=$CMD" --out ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/HAPLOGROUPS/${SM_TAG}.haplogroups.txt"
 
 	# write command line to file and execute the command line
 

@@ -46,9 +46,10 @@ START_ANNOVAR_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clo
 			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT.vcf"
 			CMD=${CMD}" ${ANNOVAR_MT_DB_DIR}"
 			CMD=${CMD}" --buildver GRCh37_MT"
-			CMD=${CMD}" --protocol ensGene,vcf,vcf,vcf,clinvar_20200316,avsnp150"
+			CMD=${CMD}" --protocol ensGene,vcf,vcf,vcf,clinvar_20210123,avsnp150"
 			CMD=${CMD}" --operation g,f,f,f,f,f"
-			CMD=${CMD}" --vcfdbfile GRCh37_MT_MMpolymorphisms.vcf,GRCh37_MT_MMdisease.vcf,GRCh37_MT_gnomAD.vcf"
+			CMD=${CMD}" --argument '','','','--infoasscore','',''"
+			CMD=${CMD}" --vcfdbfile GRCh37_MT_MMpolymorphisms_20210423.vcf,GRCh37_MT_MMdisease_20210423.vcf,GRCh37_MT_gnomAD_3-1.vcf"
 			CMD=${CMD}" --vcfinput"
 		CMD=${CMD}" --outfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_ANNOVAR_MT/${SM_TAG}"
 
