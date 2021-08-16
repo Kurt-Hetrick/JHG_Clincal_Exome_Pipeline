@@ -187,11 +187,6 @@
 
 	ANNOVAR_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/annovarwrangler-20210126.simg"
 
-	# PIPELINE PROGRAMS TO BE IMPLEMENTED
-		# JAVA_1_6="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/jre1.6.0_25/bin"
-		# CIDRSEQSUITE_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/CIDRSeqSuiteSoftware_Version_4_0/"
-		# ANNOVAR_DIR="/mnt/clinical/ddl/NGS/Exome_Resources/PROGRAMS/ANNOVAR/2013_09_11"
-
 	# ANNOVAR PARAMETERS AND INPUTS
 
 		ANNOVAR_DATABASE_FILE="${SCRIPT_DIR}/../resources/CFTR.final.csv"
@@ -1351,31 +1346,6 @@
 					${SUBMIT_STAMP}
 			}
 
-		#############################################################
-		# add gnomad annotation to info field of mutect2 vcf output #
-		#############################################################
-		# REMOVE #
-		##########
-
-			GNOMAD_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					${QSUB_ARGS} \
-				-N E03-A01-A01-A02-GNOMAD_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-GNOMAD_MUTECT2_MT.log \
-				-hold_jid E03-A01-A01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				${SCRIPT_DIR}/E03-A01-A01-A02-GNOMAD_MUTECT2_MT.sh \
-					${MITO_MUTECT2_CONTAINER} \
-					${CORE_PATH} \
-					${PROJECT} \
-					${FAMILY} \
-					${SM_TAG} \
-					${GNOMAD_MT} \
-					${SAMPLE_SHEET} \
-					${SUBMIT_STAMP}
-			}
-
 		##########################################
 		# run annovar on final mutect2 based vcf #
 		##########################################
@@ -1567,8 +1537,6 @@
 		echo sleep 0.1s
 		HAPLOGREP2_MUTECT2_MT
 		echo sleep 0.1s
-		# GNOMAD_MUTECT2_MT
-		# echo sleep 0.1s
 		RUN_ANNOVAR_MUTECT2_MT
 		echo sleep 0.1s
 		FIX_ANNOVAR_MUTECT2_MT
