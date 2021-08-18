@@ -30,25 +30,28 @@
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
-	GNOMAD_MT=$6
+	ANNOVAR_MT_DB_DIR=$6
 
 	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
 	SUBMIT_STAMP=$8
 
-## add gnomad info annotation to mutect2 vcf
+## run gnomad on mutect2 vcf annotated with gnomad
 
-START_GNOMAD_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_ANNOVAR_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 	# construct command line
 
-		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} bcftools"
-		CMD=${CMD}" annotate"
-			CMD=${CMD}" --force"
-			CMD=${CMD}" -a ${GNOMAD_MT}"
-			CMD=${CMD}" -c INFO"
-			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf.gz"
-		CMD=${CMD}" >| ${CORE_PATH}/${PROJECT}/$FAMILY/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT.vcf"
+		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} table_annovar.pl"
+			CMD=${CMD}"  ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf"
+			CMD=${CMD}" ${ANNOVAR_MT_DB_DIR}"
+			CMD=${CMD}" --buildver GRCh37_MT"
+			CMD=${CMD}" --protocol ensGene,vcf,vcf,vcf,clinvar_20210123,avsnp150"
+			CMD=${CMD}" --operation g,f,f,f,f,f"
+			CMD=${CMD}" --argument '','','','--infoasscore','',''"
+			CMD=${CMD}" --vcfdbfile GRCh37_MT_MMpolymorphisms_20210423.vcf,GRCh37_MT_MMdisease_20210423.vcf,GRCh37_MT_gnomAD_3-1.vcf"
+			CMD=${CMD}" --vcfinput"
+		CMD=${CMD}" --outfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_ANNOVAR_MT/${SM_TAG}"
 
 	# write command line to file and execute the command line
 
@@ -70,11 +73,11 @@ START_GNOMAD_MUTECT2_MT=`date '+%s'` # capture time process starts for wall cloc
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_GNOMAD_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_ANNOVAR_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo ${SM_TAG}_${PROJECT},H01,GNOMAD_MUTECT2_MT,${HOSTNAME},${START_GNOMAD_MUTECT2_MT},${END_GNOMAD_MUTECT2_MT} \
+	echo ${SM_TAG}_${PROJECT},I01,ANNOVAR_MUTECT2_MT,${HOSTNAME},${START_ANNOVAR_MUTECT2_MT},${END_ANNOVAR_MUTECT2_MT} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
 # exit with the signal from samtools bam to cram

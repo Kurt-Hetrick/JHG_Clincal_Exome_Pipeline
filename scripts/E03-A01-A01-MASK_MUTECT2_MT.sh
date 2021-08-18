@@ -28,12 +28,13 @@
 	CORE_PATH=$2
 
 	PROJECT=$3
-	SM_TAG=$4
-	MT_MASK=$5
+	FAMILY=$4
+	SM_TAG=$5
+	MT_MASK=$6
 
-	SAMPLE_SHEET=$6
+	SAMPLE_SHEET=$7
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=$7
+	SUBMIT_STAMP=$8
 
 ## mask mutect2 vcf annotating blacklisted sites
 
@@ -47,7 +48,7 @@ START_MASK_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock 
 			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED.vcf"
 			CMD=${CMD}" --mask ${MT_MASK}"
 			CMD=${CMD}" --mask-name blacklisted_site"
-		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf.gz"
+		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf"
 
 	# write command line to file and execute the command line
 

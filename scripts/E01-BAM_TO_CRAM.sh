@@ -164,7 +164,8 @@ END_CRAM=`date '+%s'` # capture time process stops for wall clock tracking purpo
 				>| ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt
 		else
 			echo -e "${PROJECT}\t${SM_TAG}\tNA\tNA\tNA" \
-			| $DATAMASH_DIR/datamash transpose \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
+				transpose \
 			>| ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt
 	fi
 

@@ -118,6 +118,12 @@
 				QSUB_ARGS=${QSUB_ARGS}" -p ${PRIORITY}" \
 				QSUB_ARGS=${QSUB_ARGS}" -j y"
 
+			# qsub args for magick package in R (imgmagick_merge.r)
+			# image packages will use all cpu threads by default.
+			# to configure set env variable to desired thread count.
+
+				IMGMAGICK_QSUB_ARGS=${QSUB_ARGS}" -v MAGICK_THREAD_LIMIT=${THREADS}"
+
 #####################
 # PIPELINE PROGRAMS #
 #####################
@@ -170,10 +176,14 @@
 	MITO_EKLIPSE_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_eklipse-master-c25931b.0.simg"
 		# https://github.com/dooguypapua/eKLIPse AND all of its dependencies
 
-	MT_COVERAGE_R_SCRIPT="${SCRIPT_DIR}/mito_coverage_graph.r"
-
 	MITO_MAGICK_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_magick-6.8.9.9.0.simg"
 		# magick package for R. see dockerfile for details.
+
+	EKLIPSE_CIRCOS_LEGEND="${SCRIPT_DIR}/circos_legend.png"
+
+	EKLIPSE_FORMAT_CIRCOS_PLOT_R_SCRIPT="${SCRIPT_DIR}/imgmagick_merge.r"
+
+	MT_COVERAGE_R_SCRIPT="${SCRIPT_DIR}/mito_coverage_graph.r"
 
 	CNV_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/cnv_exomedepth-dev.simg"
 
@@ -1317,6 +1327,7 @@
 					${MITO_MUTECT2_CONTAINER} \
 					${CORE_PATH} \
 					${PROJECT} \
+					${FAMILY} \
 					${SM_TAG} \
 					${MT_MASK} \
 					${SAMPLE_SHEET} \
@@ -1355,10 +1366,10 @@
 				echo \
 				qsub \
 					${QSUB_ARGS} \
-				-N E03-A01-A01-A02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				-N E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_ANNOVAR_MUTECT2_MT.log \
 				-hold_jid E03-A01-A01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				${SCRIPT_DIR}/E03-A01-A01-A02-A01-RUN_ANNOVAR_MUTECT2_MT.sh \
+				${SCRIPT_DIR}/E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT.sh \
 					${MITO_MUTECT2_CONTAINER} \
 					${CORE_PATH} \
 					${PROJECT} \
@@ -1378,10 +1389,10 @@
 				echo \
 				qsub \
 					${QSUB_ARGS} \
-				-N E03-A01-A01-A02-A01-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				-N E03-A01-A01-A02-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
 					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-FIX_ANNOVAR_MUTECT2_MT.log \
-				-hold_jid E03-A01-A01-A02-A01-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				${SCRIPT_DIR}/E03-A01-A01-A02-A01-A01-FIX_ANNOVAR_MUTECT2_MT.sh \
+				-hold_jid E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				${SCRIPT_DIR}/E03-A01-A01-A02-A01-FIX_ANNOVAR_MUTECT2_MT.sh \
 					${CORE_PATH} \
 					${PROJECT} \
 					${FAMILY} \
@@ -1461,6 +1472,30 @@
 					${SM_TAG} \
 					${MT_GENBANK} \
 					${THREADS} \
+					${SAMPLE_SHEET} \
+					${SUBMIT_STAMP}
+			}
+
+		#####################################
+		# ADD LEGEND TO EKLIPSE CIRCOS PLOT #
+		#####################################
+
+			FORMAT_EKLIPSE_CIRCOS ()
+			{
+				echo \
+				qsub \
+					${IMGMAGICK_QSUB_ARGS} \
+				-N E04-A01-A01-FORMAT_EKLIPSE_CIRCOS_${SGE_SM_TAG}_${PROJECT} \
+					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-FORMAT_EKLIPSE_CIRCOS.log \
+				-hold_jid E04-A01-RUN_EKLIPSE_${SGE_SM_TAG}_${PROJECT} \
+				${SCRIPT_DIR}/E04-A01-A01-FORMAT_EKLIPSE_CIRCOS.sh \
+					${MITO_MAGICK_CONTAINER} \
+					${CORE_PATH} \
+					${PROJECT} \
+					${FAMILY} \
+					${SM_TAG} \
+					${EKLIPSE_FORMAT_CIRCOS_PLOT_R_SCRIPT} \
+					${EKLIPSE_CIRCOS_LEGEND} \
 					${SAMPLE_SHEET} \
 					${SUBMIT_STAMP}
 			}
@@ -1547,6 +1582,8 @@
 		SUBSET_BAM_MT
 		echo sleep 0.1s
 		RUN_EKLIPSE
+		echo sleep 0.1s
+		FORMAT_EKLIPSE_CIRCOS
 		echo sleep 0.1s
 		# generate coverage for mt genome
 		COLLECTHSMETRICS_MT
@@ -3054,8 +3091,8 @@ Q01-A02-VCF_METRICS_TITV_${SGE_SM_TAG}_${PROJECT},\
 Q01-A01-VCF_METRICS_BAIT_${SGE_SM_TAG}_${PROJECT},\
 E03-A02-MUTECT2_MT_BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT},\
 E04-A02-A01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT},\
-E04-A01-RUN_EKLIPSE_${SGE_SM_TAG}_${PROJECT},\
-E03-A01-A01-A02-A01-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
+E04-A01-A01-FORMAT_EKLIPSE_CIRCOS_${SGE_SM_TAG}_${PROJECT},\
+E03-A01-A01-A02-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
 E03-A01-A01-A01-HAPLOGREP2_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
 E09-A01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT},\
 E06-A03-A01-FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT},\
@@ -3171,10 +3208,10 @@ ${SCRIPT_DIR}/X01-QC_REPORT_PREP.sh \
 			echo \
 			qsub \
 				${QSUB_ARGS} \
-			-N X.01-X.01_END_PROJECT_TASKS_${PROJECT} \
+			-N X01-X01_END_PROJECT_TASKS_${PROJECT} \
 				-o ${CORE_PATH}/${PROJECT}/LOGS/${PROJECT}-END_PROJECT_TASKS.log \
 			${HOLD_ID_PATH_QC_REPORT_PREP}${HOLD_ID_PATH_PCA} \
-			${SCRIPT_DIR}/X.01-X.01-END_PROJECT_TASKS.sh \
+			${SCRIPT_DIR}/X01-X01-END_PROJECT_TASKS.sh \
 				${ALIGNMENT_CONTAINER} \
 				${CORE_PATH} \
 				${PROJECT} \
@@ -3217,33 +3254,3 @@ ${SCRIPT_DIR}/X01-QC_REPORT_PREP.sh \
 	printf "${SAMPLE_SHEET}\nhas finished submitting at\n`date`\nby `whoami`" \
 		| mail -s "${PERSON_NAME} has submitted SUBMITTER_JHG-DDL_EXOME_PIPELINE.sh" \
 			${SEND_TO}
-
-# ###########################################################
-# ##### ANNOVAR #############################################
-# ##### TO BE DELETED WHEN ANNOVAR IS FULLY IMPLEMENTED #####
-# ###########################################################
-
-# ## RUN ANNOVAR
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-# ~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
-# | sort -k 1,1 -k 2,2 -k 3,3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.16-A.01_RUN_ANNOVAR_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-# "-hold_jid","S.16_FILTER_TO_SAMPLE_VARIANTS_TARGET_"smtag[1]"_"smtag[2]"_"$1,\
-# "-pe slots 5",\
-# "-o","'${CORE_PATH}'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".RUN_ANNOVAR.log",\
-# "'${SCRIPT_DIR}'""/S.16-A.01_RUN_ANNOVAR.sh",\
-# "'$JAVA_1_6'","'$CIDRSEQSUITE_DIR'","'${CORE_PATH}'",$1,$2,$3"\n""sleep 3s"}'
-
-# ## REFORMAT ANNOVAR
-
-# awk 'BEGIN {FS="\t"; OFS="\t"} {print $1,$20,$8}' \
-# ~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt \
-# | sort -k 1,1 -k 2,2 -k 3,3 \
-# | uniq \
-# | awk '{split($3,smtag,"[@]"); print "qsub","-N","S.16-A.01-A.01_REFORMAT_ANNOVAR_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-# "-hold_jid","S.16-A.01_RUN_ANNOVAR_"smtag[1]"_"smtag[2]"_"$2"_"$1,\
-# "-o","'${CORE_PATH}'/"$1"/"$2"/"$3"/LOGS/"$3"_"$2"_"$1".REFORMAT_ANNOVAR.log",\
-# "'${SCRIPT_DIR}'""/S.16-A.01-A.01_REFORMAT_ANNOVAR.sh",\
-# "'$ANNOVAR_DIR'","'${CORE_PATH}'",$1,$2,$3"\n""sleep 3s"}'

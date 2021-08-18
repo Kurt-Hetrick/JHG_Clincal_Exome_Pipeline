@@ -24,34 +24,43 @@
 
 # INPUT VARIABLES
 
-	MITO_MUTECT2_CONTAINER=$1
+	MITO_MAGICK_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
-	ANNOVAR_MT_DB_DIR=$6
+	EKLIPSE_FORMAT_CIRCOS_PLOT_R_SCRIPT=$6
+	EKLIPSE_CIRCOS_LEGEND=$7
 
-	SAMPLE_SHEET=$7
+	SAMPLE_SHEET=$8
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=$8
+	SUBMIT_STAMP=$9
 
-## run gnomad on mutect2 vcf annotated with gnomad
+## run alex's r script to generate plot for mt genome coverage
 
-START_ANNOVAR_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_FIX_EKLIPSE_CIRCOS_PLOT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+
+	# EKLIPSE WRITES AN OUTPUT FOLDER APPENDING A RANDOM HASH TO FOLDER NAME.
+	# CREATE A VARIABLE CONTAINING THE FULL PATH FOR THE LATEST EKLIPSE RUN
+
+		LATEST_EKLIPSE_OUTPUT_DIR=$(ls -trd ${CORE_PATH}/${PROJECT}/$FAMILY/${SM_TAG}/MT_OUTPUT/EKLIPSE/* | tail -n 1)
 
 	# construct command line
 
-		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} table_annovar.pl"
-			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT.vcf"
-			CMD=${CMD}" ${ANNOVAR_MT_DB_DIR}"
-			CMD=${CMD}" --buildver GRCh37_MT"
-			CMD=${CMD}" --protocol ensGene,vcf,vcf,vcf,clinvar_20210123,avsnp150"
-			CMD=${CMD}" --operation g,f,f,f,f,f"
-			CMD=${CMD}" --argument '','','','--infoasscore','',''"
-			CMD=${CMD}" --vcfdbfile GRCh37_MT_MMpolymorphisms_20210423.vcf,GRCh37_MT_MMdisease_20210423.vcf,GRCh37_MT_gnomAD_3-1.vcf"
-			CMD=${CMD}" --vcfinput"
-		CMD=${CMD}" --outfile ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_ANNOVAR_MT/${SM_TAG}"
+		CMD="singularity exec ${MITO_MAGICK_CONTAINER} Rscript"
+			CMD=${CMD}" ${EKLIPSE_FORMAT_CIRCOS_PLOT_R_SCRIPT}"
+			# eklipse circos plot legend
+			CMD=${CMD}" ${EKLIPSE_CIRCOS_LEGEND}"
+			# input file
+			CMD=${CMD}" ${LATEST_EKLIPSE_OUTPUT_DIR}/eKLIPse_${SM_TAG}.png"
+			# sample name
+			CMD=${CMD}" ${SM_TAG}"
+		# output directory
+		CMD=${CMD}" ${LATEST_EKLIPSE_OUTPUT_DIR}"
+		# remove original eklipse output plot
+		CMD=${CMD}" &&"
+			CMD=${CMD}" rm -rvf $LATEST_EKLIPSE_OUTPUT_DIR/eKLIPse_${SM_TAG}.png"
 
 	# write command line to file and execute the command line
 
@@ -73,13 +82,13 @@ START_ANNOVAR_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clo
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_ANNOVAR_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_FIX_EKLIPSE_CIRCOS_PLOT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
 
 # write out timing metrics to file
 
-	echo ${SM_TAG}_${PROJECT},I01,ANNOVAR_MUTECT2_MT,${HOSTNAME},${START_ANNOVAR_MUTECT2_MT},${END_ANNOVAR_MUTECT2_MT} \
+	echo ${SM_TAG}_${PROJECT},G01,FIX_EKLIPSE_CIRCOS_PLOT,${HOSTNAME},${START_FIX_EKLIPSE_CIRCOS_PLOT},${END_FIX_EKLIPSE_CIRCOS_PLOT} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
-# exit with the signal from samtools bam to cram
+# exit with the signal
 
 	exit ${SCRIPT_STATUS}
