@@ -48,7 +48,17 @@ START_FIX_EKLIPSE_CIRCOS_PLOT=`date '+%s'` # capture time process starts for wal
 
 	# construct command line
 
-		CMD="singularity exec ${MITO_MAGICK_CONTAINER} Rscript"
+		# fix/format eklipse textual output
+		CMD="sed -e 's/,/\./g' -e 's/\"//g' -e 's/;/\t/g'"
+			CMD=${CMD}" ${LATEST_EKLIPSE_OUTPUT_DIR}/eKLIPse_deletions.csv"
+		CMD=${CMD}"  >| ${LATEST_EKLIPSE_OUTPUT_DIR}/${SM_TAG}_deletions.tsv"
+		CMD=${CMD}" &&"
+		CMD=${CMD}" sed -e '1s/,/;/' -e 's/\"//g' -e 's/;/\t/g' -e 's/,/\./g'"
+			CMD=${CMD}" ${LATEST_EKLIPSE_OUTPUT_DIR}/eKLIPse_genes.csv"
+		CMD=${CMD}"  >| ${LATEST_EKLIPSE_OUTPUT_DIR}/${SM_TAG}_genes.tsv"
+		CMD=${CMD}" &&"
+		# run alex wilson's r script to embed circos plot legend into eklipse circos plot
+		CMD=${CMD}"singularity exec ${MITO_MAGICK_CONTAINER} Rscript"
 			CMD=${CMD}" ${EKLIPSE_FORMAT_CIRCOS_PLOT_R_SCRIPT}"
 			# eklipse circos plot legend
 			CMD=${CMD}" ${EKLIPSE_CIRCOS_LEGEND}"
@@ -58,9 +68,11 @@ START_FIX_EKLIPSE_CIRCOS_PLOT=`date '+%s'` # capture time process starts for wal
 			CMD=${CMD}" ${SM_TAG}"
 		# output directory
 		CMD=${CMD}" ${LATEST_EKLIPSE_OUTPUT_DIR}"
-		# remove original eklipse output plot
+		# remove original eklipse output files
 		CMD=${CMD}" &&"
-			CMD=${CMD}" rm -rvf $LATEST_EKLIPSE_OUTPUT_DIR/eKLIPse_${SM_TAG}.png"
+			CMD=${CMD}" rm -rvf ${LATEST_EKLIPSE_OUTPUT_DIR}/eKLIPse_${SM_TAG}.png"
+			CMD=${CMD}" ${LATEST_EKLIPSE_OUTPUT_DIR}/eKLIPse_deletions.csv"
+			CMD=${CMD}" ${LATEST_EKLIPSE_OUTPUT_DIR}/eKLIPse_genes.csv"
 
 	# write command line to file and execute the command line
 

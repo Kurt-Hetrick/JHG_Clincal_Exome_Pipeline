@@ -128,122 +128,142 @@
 # PIPELINE PROGRAMS #
 #####################
 
-	ALIGNMENT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/ddl_ce_control_align-0.0.4.simg"
-	# contains the following software and is on Ubuntu 16.04.5 LTS
-		# gatk 4.0.11.0 (base image). also contains the following.
-			# Python 3.6.2 :: Continuum Analytics, Inc.
-				# samtools 0.1.19
-				# bcftools 0.1.19
-				# bedtools v2.25.0
-				# bgzip 1.2.1
-				# tabix 1.2.1
-				# samtools, bcftools, bgzip and tabix will be replaced with newer versions.
-				# R 3.2.5
-					# dependencies = c("gplots","digest", "gtable", "MASS", "plyr", "reshape2", "scales", "tibble", "lazyeval")    # for ggplot2
-					# getopt_1.20.0.tar.gz
-					# optparse_1.3.2.tar.gz
-					# data.table_1.10.4-2.tar.gz
-					# gsalib_2.1.tar.gz
-					# ggplot2_2.2.1.tar.gz
-				# openjdk version "1.8.0_181"
-				# /gatk/gatk.jar -> /gatk/gatk-package-4.0.11.0-local.jar
-		# added
-			# picard.jar 2.17.0 (as /gatk/picard.jar)
-			# samblaster-v.0.1.24
-			# sambamba-0.6.8
-			# bwa-0.7.15
-			# datamash-1.6
-			# verifyBamID v1.1.3
-			# samtools 1.10
-			# bgzip 1.10
-			# tabix 1.10
-			# bcftools 1.10.2
+	############################
+	# BASE PIPELINE CONTAINERS #
+	############################
 
-	GATK_3_7_0_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/gatk3-3.7-0.simg"
-	# singularity pull docker://broadinstitute/gatk3:3.7-0
-	# used for generating the depth of coverage reports.
-		# comes with R 3.1.1 with appropriate packages needed to create gatk pdf output
-		# also comes with some version of java 1.8
-		# jar file is /usr/GenomeAnalysisTK.jar
-
-	MITO_MUTECT2_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_mutect2-4.1.3.0.0.simg"
-		# uses broadinstitute/gatk:4.1.3.0 as the base image (as /gatk/gatk.jar)
+		ALIGNMENT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/ddl_ce_control_align-0.0.4.simg"
+		# contains the following software and is on Ubuntu 16.04.5 LTS
+			# gatk 4.0.11.0 (base image). also contains the following.
+				# Python 3.6.2 :: Continuum Analytics, Inc.
+					# samtools 0.1.19
+					# bcftools 0.1.19
+					# bedtools v2.25.0
+					# bgzip 1.2.1
+					# tabix 1.2.1
+					# samtools, bcftools, bgzip and tabix will be replaced with newer versions.
+					# R 3.2.5
+						# dependencies = c("gplots","digest", "gtable", "MASS", "plyr", "reshape2", "scales", "tibble", "lazyeval")    # for ggplot2
+						# getopt_1.20.0.tar.gz
+						# optparse_1.3.2.tar.gz
+						# data.table_1.10.4-2.tar.gz
+						# gsalib_2.1.tar.gz
+						# ggplot2_2.2.1.tar.gz
+					# openjdk version "1.8.0_181"
+					# /gatk/gatk.jar -> /gatk/gatk-package-4.0.11.0-local.jar
 			# added
-				# bcftools-1.10.2
-				# haplogrep-2.1.20.jar (as /jars/haplogrep-2.1.20.jar)
-				# annovar
+				# picard.jar 2.17.0 (as /gatk/picard.jar)
+				# samblaster-v.0.1.24
+				# sambamba-0.6.8
+				# bwa-0.7.15
+				# datamash-1.6
+				# verifyBamID v1.1.3
+				# samtools 1.10
+				# bgzip 1.10
+				# tabix 1.10
+				# bcftools 1.10.2
 
-	MITO_EKLIPSE_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_eklipse-master-c25931b.0.simg"
-		# https://github.com/dooguypapua/eKLIPse AND all of its dependencies
+		GATK_3_7_0_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/gatk3-3.7-0.simg"
+		# singularity pull docker://broadinstitute/gatk3:3.7-0
+		# used for generating the depth of coverage reports.
+			# comes with R 3.1.1 with appropriate packages needed to create gatk pdf output
+			# also comes with some version of java 1.8
+			# jar file is /usr/GenomeAnalysisTK.jar
 
-	MITO_MAGICK_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_magick-6.8.9.9.0.simg"
-		# magick package for R. see dockerfile for details.
+	################################################################
+	# MITOCHONDRIA ANALYSIS CONTAINERS AND AUXILIARY SCRIPTS/FILES #
+	################################################################
 
-	EKLIPSE_CIRCOS_LEGEND="${SCRIPT_DIR}/circos_legend.png"
+		MITO_MUTECT2_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_mutect2-4.1.3.0.0.simg"
+			# uses broadinstitute/gatk:4.1.3.0 as the base image (as /gatk/gatk.jar)
+				# added
+					# bcftools-1.10.2
+					# haplogrep-2.1.20.jar (as /jars/haplogrep-2.1.20.jar)
+					# annovar
 
-	EKLIPSE_FORMAT_CIRCOS_PLOT_R_SCRIPT="${SCRIPT_DIR}/imgmagick_merge.r"
+		MITO_EKLIPSE_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_eklipse-master-c25931b.0.simg"
+			# https://github.com/dooguypapua/eKLIPse AND all of its dependencies
 
-	MT_COVERAGE_R_SCRIPT="${SCRIPT_DIR}/mito_coverage_graph.r"
+		MITO_MAGICK_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/mito_magick-6.8.9.9.0.simg"
+			# magick package for R. see dockerfile for details.
 
-	CNV_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/cnv_exomedepth-dev.simg"
+		EKLIPSE_CIRCOS_LEGEND="${SCRIPT_DIR}/circos_legend.png"
 
-	EXOME_DEPTH_R_SCRIPT="${SCRIPT_DIR}/runExomeDepth.r"
+		EKLIPSE_FORMAT_CIRCOS_PLOT_R_SCRIPT="${SCRIPT_DIR}/imgmagick_merge.r"
 
-	FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="${SCRIPT_DIR}/FORMAT_AND_ZOOM_ANNOTSV.r"
+		MT_COVERAGE_R_SCRIPT="${SCRIPT_DIR}/mito_coverage_graph.r"
 
-	PCA_RELATEDNESS_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/pca-relatedness-0.0.1.simg"
+	#################################################
+	# CNV ANALYSIS CONTAINERS AND AUXILIARY SCRIPTS #
+	#################################################
 
-	VT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/vt-0.5772.ca352e2c.0.simg"
+		CNV_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/cnv_exomedepth-dev.simg"
 
-	ANNOVAR_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/annovarwrangler-20210126.simg"
+		EXOME_DEPTH_R_SCRIPT="${SCRIPT_DIR}/runExomeDepth.r"
 
-	# ANNOVAR PARAMETERS AND INPUTS
+		FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="${SCRIPT_DIR}/FORMAT_AND_ZOOM_ANNOTSV.r"
 
-		ANNOVAR_DATABASE_FILE="${SCRIPT_DIR}/../resources/CFTR.final.csv"
-		ANNOVAR_REF_BUILD="hg19"
+	#################################
+	# PCA AND RELATEDNESS CONTAINER #
+	#################################
 
-		ANNOVAR_INFO_FIELD_KEYS="VariantType," \
-			ANNOVAR_INFO_FIELD_KEYS=${ANNOVAR_INFO_FIELD_KEYS}"DP" \
+		PCA_RELATEDNESS_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/pca-relatedness-0.0.1.simg"
 
-		ANNOVAR_HEADER_MAPPINGS="af=gnomad211_exome_AF," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_popmax=gnomad211_exome_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_male=gnomad211_exome_AF_male," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_female=gnomad211_exome_AF_female," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_raw=gnomad211_exome_AF_raw," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_afr=gnomad211_exome_AF_afr," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_sas=gnomad211_exome_AF_sas," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_amr=gnomad211_exome_AF_amr," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_eas=gnomad211_exome_AF_eas," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_nfe=gnomad211_exome_AF_nfe," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_fin=gnomad211_exome_AF_fin," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_asj=gnomad211_exome_AF_asj," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_oth=gnomad211_exome_AF_oth," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_af_popmax=gnomad211_exome_non_topmed_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_af_popmax=gnomad211_exome_non_neuro_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_af_popmax=gnomad211_exome_non_cancer_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_af_popmax=gnomad211_exome_controls_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF=gnomad211_genome_AF," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_popmax=gnomad211_genome_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_male=gnomad211_genome_AF_male," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_female=gnomad211_genome_AF_female," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_raw=gnomad211_genome_AF_raw," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_afr=gnomad211_genome_AF_afr," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_sas=gnomad211_genome_AF_sas," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_amr=gnomad211_genome_AF_amr," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_eas=gnomad211_genome_AF_eas," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_nfe=gnomad211_genome_AF_nfe," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_fin=gnomad211_genome_AF_fin," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_asj=gnomad211_genome_AF_asj," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_oth=gnomad211_genome_AF_oth," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_AF_popmax=gnomad211_genome_non_topmed_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_AF_popmax=gnomad211_genome_non_neuro_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_AF_popmax=gnomad211_genome_non_cancer_AF_popmax," \
-			ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_AF_popmax=gnomad211_genome_controls_AF_popmax"
+	#################################################
+	# WES ANNOVAR CONTAINERS, PARAMETERS AND INPUTS #
+	#################################################
 
-			ANNOVAR_VCF_COLUMNS="CHROM,"
-				ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"POS,"
-				ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"REF,"
-				ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"ALT"
+		VT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/vt-0.5772.ca352e2c.0.simg"
+
+		ANNOVAR_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/annovarwrangler-20210126.simg"
+
+		# ANNOVAR PARAMETERS AND INPUTS
+
+			ANNOVAR_DATABASE_FILE="${SCRIPT_DIR}/../resources/CFTR.final.csv"
+			ANNOVAR_REF_BUILD="hg19"
+
+			ANNOVAR_INFO_FIELD_KEYS="VariantType," \
+				ANNOVAR_INFO_FIELD_KEYS=${ANNOVAR_INFO_FIELD_KEYS}"DP" \
+
+			ANNOVAR_HEADER_MAPPINGS="af=gnomad211_exome_AF," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_popmax=gnomad211_exome_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_male=gnomad211_exome_AF_male," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_female=gnomad211_exome_AF_female," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_raw=gnomad211_exome_AF_raw," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_afr=gnomad211_exome_AF_afr," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_sas=gnomad211_exome_AF_sas," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_amr=gnomad211_exome_AF_amr," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_eas=gnomad211_exome_AF_eas," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_nfe=gnomad211_exome_AF_nfe," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_fin=gnomad211_exome_AF_fin," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_asj=gnomad211_exome_AF_asj," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_oth=gnomad211_exome_AF_oth," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_af_popmax=gnomad211_exome_non_topmed_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_af_popmax=gnomad211_exome_non_neuro_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_af_popmax=gnomad211_exome_non_cancer_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_af_popmax=gnomad211_exome_controls_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF=gnomad211_genome_AF," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_popmax=gnomad211_genome_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_male=gnomad211_genome_AF_male," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_female=gnomad211_genome_AF_female," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_raw=gnomad211_genome_AF_raw," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_afr=gnomad211_genome_AF_afr," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_sas=gnomad211_genome_AF_sas," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_amr=gnomad211_genome_AF_amr," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_eas=gnomad211_genome_AF_eas," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_nfe=gnomad211_genome_AF_nfe," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_fin=gnomad211_genome_AF_fin," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_asj=gnomad211_genome_AF_asj," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_oth=gnomad211_genome_AF_oth," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_AF_popmax=gnomad211_genome_non_topmed_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_AF_popmax=gnomad211_genome_non_neuro_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_AF_popmax=gnomad211_genome_non_cancer_AF_popmax," \
+				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_AF_popmax=gnomad211_genome_controls_AF_popmax"
+
+				ANNOVAR_VCF_COLUMNS="CHROM,"
+					ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"POS,"
+					ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"REF,"
+					ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"ALT"
 
 ##################
 # PIPELINE FILES #
