@@ -203,6 +203,8 @@
 
 		FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="${SCRIPT_DIR}/FORMAT_AND_ZOOM_ANNOTSV.r"
 
+		EMEDGENE_CONVERSION_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/cnv2vcf-master-55ef4c8.0.simg"
+
 	#################################
 	# PCA AND RELATEDNESS CONTAINER #
 	#################################
@@ -1711,6 +1713,29 @@
 				${SUBMIT_STAMP}
 		}
 
+	##########################################################
+	# convert exomeDepth output to VCF using emedgene's tool #
+	##########################################################
+
+		CONVERT_EXOMEDEPTH_TO_VCF ()
+		{
+			echo \
+			qsub \
+				${QSUB_ARGS} \
+			-N E05-A03-CONVERT_EXOMEDEPTH_TO_VCF_${SGE_SM_TAG}_${PROJECT} \
+				-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-CONVERT_EXOMEDEPTH_TO_VCF.log \
+			-hold_jid E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+			${SCRIPT_DIR}/E05-A03-CONVERT_EXOMEDEPTH_TO_VCF.sh \
+				${EMEDGENE_CONVERSION_CONTAINER} \
+				${CORE_PATH} \
+				${PROJECT} \
+				${FAMILY} \
+				${SM_TAG} \
+				${REF_GENOME} \
+				${SAMPLE_SHEET} \
+				${SUBMIT_STAMP}
+		}
+
 ##############################
 # RUN STEPS FOR CNV WORKFLOW #
 ##############################
@@ -1729,6 +1754,8 @@
 		RUN_ANNOTSV
 		echo sleep 0.1s
 		RUN_FORMAT_AND_ZOOM_ANNOTSV
+		echo sleep 0.1s
+		CONVERT_EXOMEDEPTH_TO_VCF
 		echo sleep 0.1s
 	done
 
