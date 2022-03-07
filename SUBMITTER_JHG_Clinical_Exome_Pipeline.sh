@@ -201,7 +201,7 @@
 
 		EXOME_DEPTH_R_SCRIPT="${SCRIPT_DIR}/runExomeDepth.r"
 
-		FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="${SCRIPT_DIR}/FORMAT_AND_ZOOM_ANNOTSV.r"
+		# FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="${SCRIPT_DIR}/FORMAT_AND_ZOOM_ANNOTSV.r"
 
 		EMEDGENE_CONVERSION_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/cnv2vcf-master-55ef4c8.0.simg"
 
@@ -215,57 +215,57 @@
 	# WES ANNOVAR CONTAINERS, PARAMETERS AND INPUTS #
 	#################################################
 
-		VT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/vt-0.5772.ca352e2c.0.simg"
+		# VT_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/vt-0.5772.ca352e2c.0.simg"
 
-		ANNOVAR_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/annovarwrangler-20210126.simg"
+		# ANNOVAR_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/annovarwrangler-20210126.simg"
 
-		# ANNOVAR PARAMETERS AND INPUTS
+		# # ANNOVAR PARAMETERS AND INPUTS
 
-			ANNOVAR_DATABASE_FILE="${SCRIPT_DIR}/../resources/CFTR.final.csv"
-			ANNOVAR_REF_BUILD="hg19"
+		# 	ANNOVAR_DATABASE_FILE="${SCRIPT_DIR}/../resources/CFTR.final.csv"
+		# 	ANNOVAR_REF_BUILD="hg19"
 
-			ANNOVAR_INFO_FIELD_KEYS="VariantType," \
-				ANNOVAR_INFO_FIELD_KEYS=${ANNOVAR_INFO_FIELD_KEYS}"DP" \
+		# 	ANNOVAR_INFO_FIELD_KEYS="VariantType," \
+		# 		ANNOVAR_INFO_FIELD_KEYS=${ANNOVAR_INFO_FIELD_KEYS}"DP" \
 
-			ANNOVAR_HEADER_MAPPINGS="af=gnomad211_exome_AF," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_popmax=gnomad211_exome_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_male=gnomad211_exome_AF_male," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_female=gnomad211_exome_AF_female," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_raw=gnomad211_exome_AF_raw," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_afr=gnomad211_exome_AF_afr," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_sas=gnomad211_exome_AF_sas," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_amr=gnomad211_exome_AF_amr," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_eas=gnomad211_exome_AF_eas," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_nfe=gnomad211_exome_AF_nfe," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_fin=gnomad211_exome_AF_fin," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_asj=gnomad211_exome_AF_asj," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_oth=gnomad211_exome_AF_oth," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_af_popmax=gnomad211_exome_non_topmed_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_af_popmax=gnomad211_exome_non_neuro_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_af_popmax=gnomad211_exome_non_cancer_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_af_popmax=gnomad211_exome_controls_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF=gnomad211_genome_AF," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_popmax=gnomad211_genome_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_male=gnomad211_genome_AF_male," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_female=gnomad211_genome_AF_female," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_raw=gnomad211_genome_AF_raw," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_afr=gnomad211_genome_AF_afr," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_sas=gnomad211_genome_AF_sas," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_amr=gnomad211_genome_AF_amr," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_eas=gnomad211_genome_AF_eas," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_nfe=gnomad211_genome_AF_nfe," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_fin=gnomad211_genome_AF_fin," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_asj=gnomad211_genome_AF_asj," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_oth=gnomad211_genome_AF_oth," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_AF_popmax=gnomad211_genome_non_topmed_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_AF_popmax=gnomad211_genome_non_neuro_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_AF_popmax=gnomad211_genome_non_cancer_AF_popmax," \
-				ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_AF_popmax=gnomad211_genome_controls_AF_popmax"
+		# 	ANNOVAR_HEADER_MAPPINGS="af=gnomad211_exome_AF," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_popmax=gnomad211_exome_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_male=gnomad211_exome_AF_male," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_female=gnomad211_exome_AF_female," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_raw=gnomad211_exome_AF_raw," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_afr=gnomad211_exome_AF_afr," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_sas=gnomad211_exome_AF_sas," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_amr=gnomad211_exome_AF_amr," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_eas=gnomad211_exome_AF_eas," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_nfe=gnomad211_exome_AF_nfe," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_fin=gnomad211_exome_AF_fin," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_asj=gnomad211_exome_AF_asj," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"af_oth=gnomad211_exome_AF_oth," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_af_popmax=gnomad211_exome_non_topmed_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_af_popmax=gnomad211_exome_non_neuro_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_af_popmax=gnomad211_exome_non_cancer_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_af_popmax=gnomad211_exome_controls_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF=gnomad211_genome_AF," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_popmax=gnomad211_genome_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_male=gnomad211_genome_AF_male," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_female=gnomad211_genome_AF_female," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_raw=gnomad211_genome_AF_raw," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_afr=gnomad211_genome_AF_afr," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_sas=gnomad211_genome_AF_sas," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_amr=gnomad211_genome_AF_amr," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_eas=gnomad211_genome_AF_eas," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_nfe=gnomad211_genome_AF_nfe," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_fin=gnomad211_genome_AF_fin," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_asj=gnomad211_genome_AF_asj," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"AF_oth=gnomad211_genome_AF_oth," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_topmed_AF_popmax=gnomad211_genome_non_topmed_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_neuro_AF_popmax=gnomad211_genome_non_neuro_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"non_cancer_AF_popmax=gnomad211_genome_non_cancer_AF_popmax," \
+		# 		ANNOVAR_HEADER_MAPPINGS=${ANNOVAR_HEADER_MAPPINGS}"controls_AF_popmax=gnomad211_genome_controls_AF_popmax"
 
-				ANNOVAR_VCF_COLUMNS="CHROM,"
-					ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"POS,"
-					ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"REF,"
-					ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"ALT"
+		# 		ANNOVAR_VCF_COLUMNS="CHROM,"
+		# 			ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"POS,"
+		# 			ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"REF,"
+		# 			ANNOVAR_VCF_COLUMNS=${ANNOVAR_VCF_COLUMNS}"ALT"
 
 ##################
 # PIPELINE FILES #
@@ -276,7 +276,7 @@
 		GENE_LIST="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/RefSeqGene.GRCh37.rCRS.MT.bed"
 			# md5 dec069c279625cfb110c2e4c5480e036
 		VERIFY_VCF="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/Omni25_genotypes_1525_samples_v2.b37.PASS.ALL.sites.vcf"
-		CODING_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINES/TWIST/JHGenomics_CGC_Clinical_Exome_Control_Set/GRCh37_RefSeqSelect_OMIM_DDL_CDS_exon_primary_assembly_NoYpar_HGNC_annotated.bed"
+		CODING_BED="/mnt/clinical/ddl/NGS/Exome_Resources/BED_FILES_PHASE_2/GRCh37_Mane-RefSeqSelect_OMIM_CDS_exon_primary_assembly_HGNC_annotated.bed"
 		CYTOBAND_BED="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/GRCh37.Cytobands.bed"
 		HAPMAP="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/hapmap_3.3.b37.vcf"
 		OMNI_1KG="/mnt/clinical/ddl/NGS/Exome_Resources/PIPELINE_FILES/1000G_omni2.5.b37.vcf"
@@ -298,7 +298,7 @@
 		CONTROL_REPO="/mnt/clinical/ddl/NGS/Exome_Data/TWIST_CONTROL_SET1.200601_PIPELINE_2_0_0"
 		CONTROL_PED_FILE="${CONTROL_REPO}/TWIST_CONTROL_SET1.200601.ped"
 
-	# SFAFASFA
+	# CONTROL DATA SET GENOME VCF FILE TO MERGE WITH FAMILY/SAMPLE GVCF FILES FOR JOINT CALLING.
 
 		CONTROL_DATA_SET_FILE="CGC_CONTROL_SET_3_7.g.vcf.gz"
 
@@ -1383,45 +1383,45 @@
 		# run annovar on final mutect2 based vcf #
 		##########################################
 
-			RUN_ANNOVAR_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					${QSUB_ARGS} \
-				-N E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_ANNOVAR_MUTECT2_MT.log \
-				-hold_jid E03-A01-A01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				${SCRIPT_DIR}/E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT.sh \
-					${MITO_MUTECT2_CONTAINER} \
-					${CORE_PATH} \
-					${PROJECT} \
-					${FAMILY} \
-					${SM_TAG} \
-					${ANNOVAR_MT_DB_DIR} \
-					${SAMPLE_SHEET} \
-					${SUBMIT_STAMP}
-			}
+			# RUN_ANNOVAR_MUTECT2_MT ()
+			# {
+			# 	echo \
+			# 	qsub \
+			# 		${QSUB_ARGS} \
+			# 	-N E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+			# 		-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_ANNOVAR_MUTECT2_MT.log \
+			# 	-hold_jid E03-A01-A01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+			# 	${SCRIPT_DIR}/E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT.sh \
+			# 		${MITO_MUTECT2_CONTAINER} \
+			# 		${CORE_PATH} \
+			# 		${PROJECT} \
+			# 		${FAMILY} \
+			# 		${SM_TAG} \
+			# 		${ANNOVAR_MT_DB_DIR} \
+			# 		${SAMPLE_SHEET} \
+			# 		${SUBMIT_STAMP}
+			# }
 
 		##########################################
 		# run annovar on final mutect2 based vcf #
 		##########################################
 
-			FIX_ANNOVAR_MUTECT2_MT ()
-			{
-				echo \
-				qsub \
-					${QSUB_ARGS} \
-				-N E03-A01-A01-A02-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-FIX_ANNOVAR_MUTECT2_MT.log \
-				-hold_jid E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
-				${SCRIPT_DIR}/E03-A01-A01-A02-A01-FIX_ANNOVAR_MUTECT2_MT.sh \
-					${CORE_PATH} \
-					${PROJECT} \
-					${FAMILY} \
-					${SM_TAG} \
-					${SAMPLE_SHEET} \
-					${SUBMIT_STAMP}
-			}
+			# FIX_ANNOVAR_MUTECT2_MT ()
+			# {
+			# 	echo \
+			# 	qsub \
+			# 		${QSUB_ARGS} \
+			# 	-N E03-A01-A01-A02-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+			# 		-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-FIX_ANNOVAR_MUTECT2_MT.log \
+			# 	-hold_jid E03-A01-A01-A02-RUN_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+			# 	${SCRIPT_DIR}/E03-A01-A01-A02-A01-FIX_ANNOVAR_MUTECT2_MT.sh \
+			# 		${CORE_PATH} \
+			# 		${PROJECT} \
+			# 		${FAMILY} \
+			# 		${SM_TAG} \
+			# 		${SAMPLE_SHEET} \
+			# 		${SUBMIT_STAMP}
+			# }
 
 		##################################
 		# CONVERT MUTECT2 MT BAM TO CRAM #
@@ -1594,10 +1594,10 @@
 		echo sleep 0.1s
 		HAPLOGREP2_MUTECT2_MT
 		echo sleep 0.1s
-		RUN_ANNOVAR_MUTECT2_MT
-		echo sleep 0.1s
-		FIX_ANNOVAR_MUTECT2_MT
-		echo sleep 0.1s
+		# RUN_ANNOVAR_MUTECT2_MT
+		# echo sleep 0.1s
+		# FIX_ANNOVAR_MUTECT2_MT
+		# echo sleep 0.1s
 		MUTECT2_MT_BAM_TO_CRAM
 		echo sleep 0.1s
 		# run eklipse workflow
@@ -1670,48 +1670,48 @@
 	# run annotSV on the exomeDepth output #
 	########################################
 
-		RUN_ANNOTSV ()
-		{
-			echo \
-			qsub \
-				${QSUB_ARGS} \
-			-N E05-A02-RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
-				-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_ANNOTSV.log \
-			-hold_jid E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
-			${SCRIPT_DIR}/E05-A02-RUN_ANNOTSV.sh \
-				${CNV_CONTAINER} \
-				${CORE_PATH} \
-				${PROJECT} \
-				${FAMILY} \
-				${SM_TAG} \
-				${SAMPLE_SHEET} \
-				${SUBMIT_STAMP}
-		}
+		# RUN_ANNOTSV ()
+		# {
+		# 	echo \
+		# 	qsub \
+		# 		${QSUB_ARGS} \
+		# 	-N E05-A02-RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
+		# 		-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_ANNOTSV.log \
+		# 	-hold_jid E05-RUN_EXOME_DEPTH_${SGE_SM_TAG}_${PROJECT} \
+		# 	${SCRIPT_DIR}/E05-A02-RUN_ANNOTSV.sh \
+		# 		${CNV_CONTAINER} \
+		# 		${CORE_PATH} \
+		# 		${PROJECT} \
+		# 		${FAMILY} \
+		# 		${SM_TAG} \
+		# 		${SAMPLE_SHEET} \
+		# 		${SUBMIT_STAMP}
+		# }
 
 	########################################################################################
 	# reformat the header in the annotSV output and filter to zoom gene list if applicable #
 	########################################################################################
 
-		RUN_FORMAT_AND_ZOOM_ANNOTSV ()
-		{
-			echo \
-			qsub \
-				${QSUB_ARGS} \
-			-N E05-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
-				-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_FORMAT_AND_ZOOM_ANNOTSV.log \
-			-hold_jid E05-A02-RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
-			${SCRIPT_DIR}/E05-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV.sh \
-				${CNV_CONTAINER} \
-				${CORE_PATH} \
-				${PROJECT} \
-				${FAMILY} \
-				${SM_TAG} \
-				${FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT} \
-				${ZOOM_LIST} \
-				${ZOOM_NAME} \
-				${SAMPLE_SHEET} \
-				${SUBMIT_STAMP}
-		}
+		# RUN_FORMAT_AND_ZOOM_ANNOTSV ()
+		# {
+		# 	echo \
+		# 	qsub \
+		# 		${QSUB_ARGS} \
+		# 	-N E05-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
+		# 		-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_FORMAT_AND_ZOOM_ANNOTSV.log \
+		# 	-hold_jid E05-A02-RUN_ANNOTSV_${SGE_SM_TAG}_${PROJECT} \
+		# 	${SCRIPT_DIR}/E05-A02-A01-RUN_FORMAT_AND_ZOOM_ANNOTSV.sh \
+		# 		${CNV_CONTAINER} \
+		# 		${CORE_PATH} \
+		# 		${PROJECT} \
+		# 		${FAMILY} \
+		# 		${SM_TAG} \
+		# 		${FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT} \
+		# 		${ZOOM_LIST} \
+		# 		${ZOOM_NAME} \
+		# 		${SAMPLE_SHEET} \
+		# 		${SUBMIT_STAMP}
+		# }
 
 	##########################################################
 	# convert exomeDepth output to VCF using emedgene's tool #
@@ -1751,10 +1751,10 @@
 		echo sleep 0.1s
 		CALCULATE_PCT_CNV_COVERAGE
 		echo sleep 0.1s
-		RUN_ANNOTSV
-		echo sleep 0.1s
-		RUN_FORMAT_AND_ZOOM_ANNOTSV
-		echo sleep 0.1s
+		# RUN_ANNOTSV
+		# echo sleep 0.1s
+		# RUN_FORMAT_AND_ZOOM_ANNOTSV
+		# echo sleep 0.1s
 		CONVERT_EXOMEDEPTH_TO_VCF
 		echo sleep 0.1s
 	done
@@ -3048,52 +3048,52 @@
 	# decompose on target plus user defined pad sample variant sites to target bed file #
 	#####################################################################################
 
-		DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET ()
-		{
-			echo \
-			qsub \
-				${QSUB_ARGS} \
-			-N R01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
-				-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-DECOMPOSE_SAMPLE_VARIANTS_TARGET.log \
-			-hold_jid R01-FILTER_TO_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
-			${SCRIPT_DIR}/R01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET.sh \
-				${VT_CONTAINER} \
-				${CORE_PATH} \
-				${PROJECT} \
-				${FAMILY} \
-				${SM_TAG} \
-				${REF_GENOME} \
-				${SAMPLE_SHEET} \
-				${SUBMIT_STAMP}
-		}
+		# DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET ()
+		# {
+		# 	echo \
+		# 	qsub \
+		# 		${QSUB_ARGS} \
+		# 	-N R01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
+		# 		-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-DECOMPOSE_SAMPLE_VARIANTS_TARGET.log \
+		# 	-hold_jid R01-FILTER_TO_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
+		# 	${SCRIPT_DIR}/R01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET.sh \
+		# 		${VT_CONTAINER} \
+		# 		${CORE_PATH} \
+		# 		${PROJECT} \
+		# 		${FAMILY} \
+		# 		${SM_TAG} \
+		# 		${REF_GENOME} \
+		# 		${SAMPLE_SHEET} \
+		# 		${SUBMIT_STAMP}
+		# }
 
 	#############################################################################
 	# run annovar on decomposed on target plus user defined pad sample vcf file #
 	#############################################################################
 
-		RUN_ANNOVAR_ON_TARGET ()
-		{
-			echo \
-			qsub \
-				${QSUB_ARGS} \
-			-N R01-A01-A01-RUN_ANNOVAR_TARGET_${SGE_SM_TAG}_${PROJECT} \
-				-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_ANNOVAR_TARGET.log \
-			-hold_jid R01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
-			${SCRIPT_DIR}/R01-A01-A01-RUN_ANNOVAR_TARGET.sh \
-				${ANNOVAR_CONTAINER} \
-				${CORE_PATH} \
-				${PROJECT} \
-				${FAMILY} \
-				${SM_TAG} \
-				${ANNOVAR_DATABASE_FILE} \
-				${ANNOVAR_REF_BUILD} \
-				${ANNOVAR_INFO_FIELD_KEYS} \
-				${ANNOVAR_HEADER_MAPPINGS} \
-				${ANNOVAR_VCF_COLUMNS} \
-				${THREADS} \
-				${SAMPLE_SHEET} \
-				${SUBMIT_STAMP}
-		}
+		# RUN_ANNOVAR_ON_TARGET ()
+		# {
+		# 	echo \
+		# 	qsub \
+		# 		${QSUB_ARGS} \
+		# 	-N R01-A01-A01-RUN_ANNOVAR_TARGET_${SGE_SM_TAG}_${PROJECT} \
+		# 		-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-RUN_ANNOVAR_TARGET.log \
+		# 	-hold_jid R01-A01-DECOMPOSE_SAMPLE_VARIANTS_TARGET_${SGE_SM_TAG}_${PROJECT} \
+		# 	${SCRIPT_DIR}/R01-A01-A01-RUN_ANNOVAR_TARGET.sh \
+		# 		${ANNOVAR_CONTAINER} \
+		# 		${CORE_PATH} \
+		# 		${PROJECT} \
+		# 		${FAMILY} \
+		# 		${SM_TAG} \
+		# 		${ANNOVAR_DATABASE_FILE} \
+		# 		${ANNOVAR_REF_BUILD} \
+		# 		${ANNOVAR_INFO_FIELD_KEYS} \
+		# 		${ANNOVAR_HEADER_MAPPINGS} \
+		# 		${ANNOVAR_VCF_COLUMNS} \
+		# 		${THREADS} \
+		# 		${SAMPLE_SHEET} \
+		# 		${SUBMIT_STAMP}
+		# }
 
 	############################################################################################
 	# generate vcf metrics for sample variant sites from target bed file plus user defined pad #
@@ -3133,13 +3133,11 @@ qsub \
 	-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-QC_REPORT_PREP.log \
 -hold_jid \
 R01-A02-VCF_METRICS_TARGET_${SGE_SM_TAG}_${PROJECT},\
-R01-A01-A01-RUN_ANNOVAR_TARGET_${SGE_SM_TAG}_${PROJECT},\
 Q01-A02-VCF_METRICS_TITV_${SGE_SM_TAG}_${PROJECT},\
 Q01-A01-VCF_METRICS_BAIT_${SGE_SM_TAG}_${PROJECT},\
 E03-A02-MUTECT2_MT_BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT},\
 E04-A02-A01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT},\
 E04-A01-A01-FORMAT_EKLIPSE_CIRCOS_${SGE_SM_TAG}_${PROJECT},\
-E03-A01-A01-A02-A01-FIX_ANNOVAR_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
 E03-A01-A01-A01-HAPLOGREP2_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
 E09-A01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT},\
 E06-A03-A01-FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT},\
@@ -3188,10 +3186,10 @@ ${SCRIPT_DIR}/X01-QC_REPORT_PREP.sh \
 		echo sleep 0.1s
 		EXTRACT_SAMPLE_VARIANTS_ON_TARGET
 		echo sleep 0.1s
-		DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET
-		echo sleep 0.1s
-		RUN_ANNOVAR_ON_TARGET
-		echo sleep 0.1s
+		# DECOMPOSE_SAMPLE_VARIANTS_ON_TARGET
+		# echo sleep 0.1s
+		# RUN_ANNOVAR_ON_TARGET
+		# echo sleep 0.1s
 		VCF_METRICS_TARGET
 		echo sleep 0.1s
 		QC_REPORT_PREP
