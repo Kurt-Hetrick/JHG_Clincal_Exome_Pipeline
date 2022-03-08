@@ -47,7 +47,7 @@ START_FILTER_TO_FAMILY_TARGET_VARIANT_ONLY=`date '+%s'`
 			CMD=${CMD}" --disable_auto_index_creation_and_locking_when_reading_rods"
 			CMD=${CMD}" --excludeNonVariants"
 			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${FAMILY}.VQSR.ANNOTATED.ALL.SITES.TARGET.vcf.gz"
-		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/$FAMILY/VCF/${FAMILY}.VARIANT_SITES_TARGET.vcf.gz"
+		CMD=${CMD}" --out ${CORE_PATH}/${PROJECT}/$FAMILY/EMEDGENE/${FAMILY}.VARIANT_SITES_TARGET.vcf.gz"
 
 	# write command line to file and execute the command line
 

@@ -43,7 +43,7 @@ START_HAPLOGREP2_MUTECT2_MT=`date '+%s'` # capture time process starts for wall 
 
 		CMD="singularity exec ${MITO_MUTECT2_CONTAINER} java -jar"
 		CMD=$CMD" /jars/haplogrep-2.1.20.jar"
-			CMD=$CMD" --in ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf"
+			CMD=$CMD" --in ${CORE_PATH}/${PROJECT}/${FAMILY}/EMEDGENE/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf"
 			CMD=$CMD" --extend-report"
 			CMD=$CMD" --format vcf"
 			CMD=$CMD" --hits 5"

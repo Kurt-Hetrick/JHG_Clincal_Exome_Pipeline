@@ -46,7 +46,7 @@ START_CONVERT_EXOMEDEPTH=`date '+%s'` # capture time process starts for wall clo
 		CMD="singularity exec ${EMEDGENE_CONVERSION_CONTAINER} exomedepth_to_vcf.py"
 			CMD=${CMD}" -i ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT/${SM_TAG}.exomeDepth.bed"
 			CMD=${CMD}" -r ${REF_GENOME}"
-		CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/CNV_OUTPUT/${SM_TAG}.exomeDepth.vcf"
+		CMD=${CMD}" -o ${CORE_PATH}/${PROJECT}/${FAMILY}/EMEDGENE/${SM_TAG}.exomeDepth.vcf"
 
 	# write command line to file and execute the command line
 

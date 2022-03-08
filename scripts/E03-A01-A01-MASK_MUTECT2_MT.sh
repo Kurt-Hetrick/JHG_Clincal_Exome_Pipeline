@@ -48,7 +48,7 @@ START_MASK_MUTECT2_MT=`date '+%s'` # capture time process starts for wall clock 
 			CMD=${CMD}" --variant ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.MUTECT2_MT_FILTERED.vcf"
 			CMD=${CMD}" --mask ${MT_MASK}"
 			CMD=${CMD}" --mask-name blacklisted_site"
-		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/MUTECT2_MT/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf"
+		CMD=${CMD}" --output ${CORE_PATH}/${PROJECT}/${FAMILY}/EMEDGENE/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf"
 
 	# write command line to file and execute the command line
 
