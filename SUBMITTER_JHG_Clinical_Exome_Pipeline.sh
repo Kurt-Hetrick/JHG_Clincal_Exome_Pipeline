@@ -193,6 +193,8 @@
 
 		MT_COVERAGE_R_SCRIPT="${SCRIPT_DIR}/mito_coverage_graph.r"
 
+		GATK_4_2_5_0_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/gatk-4.2.5.0.simg"
+
 	#################################################
 	# CNV ANALYSIS CONTAINERS AND AUXILIARY SCRIPTS #
 	#################################################
@@ -513,7 +515,7 @@
 		${CORE_PATH}/${PROJECT}/${FAMILY}/{LOGS,PCA,RELATEDNESS,ROH,EMEDGENE} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/VCF/{RAW,VQSR} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/{CNV_OUTPUT,CRAM,GVCF,HC_CRAM,LOGS} \
-		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/{COLLECTHSMETRICS_MT,MUTECT2_MT,HAPLOGROUPS,ANNOVAR_MT,EKLIPSE} \
+		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/{COLLECTHSMETRICS_MT,MUTECT2_MT,HAPLOGROUPS,ANNOVAR_MT,EKLIPSE,VCF_METRICS_MT} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/{ALIGNMENT_SUMMARY,ANEUPLOIDY_CHECK,ANNOVAR,ERROR_SUMMARY,PICARD_DUPLICATES,QC_REPORT_PREP,QUALITY_YIELD,RG_HEADER,TI_TV,VCF_METRICS,VERIFYBAMID,VERIFYBAMID_AUTO} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BAIT_BIAS/{METRICS,SUMMARY} \
 		${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/BASE_DISTRIBUTION_BY_CYCLE/{METRICS,PDF} \
@@ -1379,6 +1381,32 @@
 					${SUBMIT_STAMP}
 			}
 
+		#######################################################################
+		# generate vcf metrics on mito mutect2 filtered and masked vcf output #
+		#######################################################################
+
+			VCF_METRICS_MT ()
+			{
+				echo \
+				qsub \
+					${QSUB_ARGS} \
+				-N E03-A01-A01-A02-VCF_METRICS_MT_${SGE_SM_TAG}_${PROJECT} \
+					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-VCF_METRICS_MT.log \
+				-hold_jid E03-A01-A01-MASK_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT} \
+				${SCRIPT_DIR}/E03-A01-A01-A02-VCF_METRICS_MT.sh \
+					${ALIGNMENT_CONTAINER} \
+					${CORE_PATH} \
+					${PROJECT} \
+					${FAMILY} \
+					${SM_TAG} \
+					${REF_DICT} \
+					${DBSNP} \
+					${MT_PICARD_INTERVAL_LIST} \
+					${THREADS} \
+					${SAMPLE_SHEET} \
+					${SUBMIT_STAMP}
+			}
+
 		##########################################
 		# run annovar on final mutect2 based vcf #
 		##########################################
@@ -1540,7 +1568,7 @@
 					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-COLLECTHSMETRICS_MT.log \
 				-hold_jid E04-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
 				${SCRIPT_DIR}/E04-A02-COLLECTHSMETRICS_MT.sh \
-					${MITO_MUTECT2_CONTAINER} \
+					${GATK_4_2_5_0_CONTAINER} \
 					${CORE_PATH} \
 					${PROJECT} \
 					${FAMILY} \
@@ -1593,6 +1621,8 @@
 		MASK_MUTECT2_MT
 		echo sleep 0.1s
 		HAPLOGREP2_MUTECT2_MT
+		echo sleep 0.1s
+		VCF_METRICS_MT
 		echo sleep 0.1s
 		# RUN_ANNOVAR_MUTECT2_MT
 		# echo sleep 0.1s
@@ -3139,6 +3169,7 @@ E03-A02-MUTECT2_MT_BAM_TO_CRAM_${SGE_SM_TAG}_${PROJECT},\
 E04-A02-A01-PLOT_MT_COVERAGE_${SGE_SM_TAG}_${PROJECT},\
 E04-A01-A01-FORMAT_EKLIPSE_CIRCOS_${SGE_SM_TAG}_${PROJECT},\
 E03-A01-A01-A01-HAPLOGREP2_MUTECT2_MT_${SGE_SM_TAG}_${PROJECT},\
+E03-A01-A01-A02-VCF_METRICS_MT_${SGE_SM_TAG}_${PROJECT}.\
 E09-A01-CAT_VERIFYBAMID_AUTOSOME_${SGE_SM_TAG}_${PROJECT},\
 E06-A03-A01-FILTER_ANNOTATED_PER_INTERVAL_${SGE_SM_TAG}_${PROJECT},\
 E06-A02-A01-A01-BGZIP_ANNOTATED_PER_BASE_${SGE_SM_TAG}_${PROJECT},\

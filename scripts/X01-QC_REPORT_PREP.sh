@@ -605,8 +605,105 @@
 			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \
 			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
-
 	fi
+
+########################################################################################################
+##### HYBRIDIZATION SELECTION REPORT FOR MITOCHONDRIA ##################################################
+########################################################################################################
+##### THIS IS THE HEADER ###############################################################################
+##### "MT_MEAN_TARGET_CVG","MT_MAX_TARGET_CVG","MT_MIN_TARGET_CVG" #####################################
+##### "MT_PCT_TARGET_BASES_10X","MT_PCT_TARGET_BASES_20X","MT_PCT_TARGET_BASES_30X" ####################
+##### "MT_PCT_TARGET_BASES_40X","MT_PCT_TARGET_BASES_50X","MT_PCT_TARGET_BASES_100X" ###################
+##### "PCT_TARGET_BASES_250X","PCT_TARGET_BASES_500X","PCT_TARGET_BASES_1000X" #########################
+##### "PCT_TARGET_BASES_2500X","PCT_TARGET_BASES_5000X","PCT_TARGET_BASES_10000X" ######################
+##### "MT_TOTAL_READS","MT_PF_UNIQUE_READS","MT_PCT_PF_UQ_READS","MT_PF_UQ_READS_ALIGNED" ##############
+##### "MT_PCT_PF_UQ_READS_ALIGNED","MT_PF_BASES","MT_PF_BASES_ALIGNED","MT_PF_UQ_BASES_ALIGNED" ########
+##### "MT_ON_TARGET_BASES","MT_PCT_USABLE_BASES_ON_TARGET" #############################################
+##### "MT_PCT_EXC_DUPE","MT_PCT_EXC_ADAPTER","MT_PCT_EXC_MAPQ","MT_PCT_EXC_BASEQ","MT_PCT_EXC_OVERLAP" #
+##### "MT_MEAN_BAIT_CVG,"MT_PCT_USABLE_BASES_ON_BAIT","MT_AT_DROPOUT","MT_GC_DROPOUT" ##################
+########################################################################################################
+
+	# this will take when there are no reads in the file...but i don't think that it will handle when there are reads, but none fall on target
+	# the next time i that happens i'll fix this to handle it.
+
+		if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/COLLECTHSMETRICS_MT/${SM_TAG}.output.metrics ]]
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
+				transpose \
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		else
+
+			awk 'BEGIN {FS="\t";OFS="\t"} \
+				NR==8 \
+				{print $34,$36,$37,\
+					$48*100,$49*100,$50*100,$51*100,$52*100,$53*100,\
+					$54*100,$55*100,$56*100,$57*100,$58*100,$59*100,\
+					$23,$26,$32*100,$27,$33*100,$25,$28,$29,$30,$12,\
+					$39*100,$40*100,$41*100,$42*100,$43*100,\
+					$10,$11*100,$63,$64}' \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/COLLECTHSMETRICS_MT/${SM_TAG}.output.metrics \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
+				transpose \
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+		fi
+
+#######################################################################################################
+##### GRAB VCF METRICS MUTECT2 MT VCF AFTER FILTERING AND MASKING #####################################
+#######################################################################################################
+##### THIS IS THE HEADER ##############################################################################
+##### MT_COUNT_PASS_BIALLELIC_SNV,MT_COUNT_FILTERED_SNV,MT_PERCENT_PASS_SNV_SNP138 ####################
+##### MT_COUNT_PASS_BIALLELIC_INDEL,MT_COUNT_FILTERED_INDEL,MT_PERCENT_PASS_INDEL_SNP138 ##############
+##### MT_COUNT_PASS_MULTIALLELIC_SNV,MT_COUNT_PASS_MULTIALLELIC_SNV_SNP138 ############################
+##### MT_COUNT_PASS_COMPLEX_INDEL,MT_COUNT_PASS_COMPLEX_INDEL_SNP138 ##################################
+##### MT_SNP_REFERENCE_BIAS,MT_PCT_GQ0_VARIANTS,MT_COUNT_GQ0_VARIANTS #################################
+#######################################################################################################
+
+	# since I don't have have any examples of what failures look like, I can't really build that in
+
+	if [[ ! -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/VCF_METRICS_MT/${SM_TAG}_MUTECT2_MT.variant_calling_detail_metrics.txt ]]
+		then
+			echo -e NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN'\t'NaN \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
+				transpose \
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		else
+			awk 'BEGIN {FS="\t";OFS="\t"} \
+				NR==8 \
+				{print $6,$9,$10*100,$13,$15,$16*100,$20,$21,$22,$23,$24,$3*100,$4}' \
+			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/VCF_METRICS_MT/${SM_TAG}_MUTECT2_MT.variant_calling_detail_metrics.txt \
+			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
+				transpose \
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+		fi
+
+#########################################################
+##### COUNT HOW MANY DELETIONS DETECTED BY EKLIPLSE #####
+#########################################################
+##### THIS IS THE HEADER ################################
+##### MT_COUNT_EKLIPSE_DEL ##############################
+#########################################################
+
+	# EKLIPSE WRITES AN OUTPUT FOLDER APPENDING A RANDOM HASH TO FOLDER NAME.
+	# CREATE A VARIABLE CONTAINING THE FULL PATH FOR THE LATEST EKLIPSE RUN
+
+		LATEST_EKLIPSE_OUTPUT_DIR=$(ls -trd ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/EKLIPSE/* | tail -n 1)
+
+		echo ${LATEST_EKLIPSE_OUTPUT_DIR}/${SM_TAG}_deletions.tsv
+
+	if [[ ! -f ${LATEST_EKLIPSE_OUTPUT_DIR}/${SM_TAG}_deletions.tsv ]]
+		then
+			echo -e NaN \
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+
+		else
+			awk 'BEGIN {OFS="\t"} END {print NR-1}' \
+				${LATEST_EKLIPSE_OUTPUT_DIR}/${SM_TAG}_deletions.tsv \
+			>> ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
+	fi
+
 ##############################
 # tranpose from rows to list #
 ##############################

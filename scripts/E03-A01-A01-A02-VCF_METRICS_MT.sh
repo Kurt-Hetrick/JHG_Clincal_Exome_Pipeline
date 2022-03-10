@@ -24,34 +24,43 @@
 
 # INPUT VARIABLES
 
-	GATK_4_2_5_0_CONTAINER=$1
+	ALIGNMENT_CONTAINER=$1
 	CORE_PATH=$2
 
 	PROJECT=$3
 	FAMILY=$4
 	SM_TAG=$5
-	REF_GENOME=$6
-	MT_PICARD_INTERVAL_LIST=$7
-
-	SAMPLE_SHEET=$8
+	REF_DICT=$6
+	DBSNP=$7
+	MT_PICARD_INTERVAL_LIST=$8
+	THREADS=$9
+	SAMPLE_SHEET=${10}
 		SAMPLE_SHEET_NAME=$(basename ${SAMPLE_SHEET} .csv)
-	SUBMIT_STAMP=$9
+	SUBMIT_STAMP=${11}
 
-## run collecthsmetrics on full bam file targeting only the mt genome
+# filter to variants only for a sample
 
-START_COLLECTHSMETRICS_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+START_VCF_METRICS_BAIT=`date '+%s'`
 
 	# construct command line
 
-		CMD="singularity exec ${GATK_4_2_5_0_CONTAINER} java -jar"
+		CMD="singularity exec ${ALIGNMENT_CONTAINER} java -jar"
 			CMD=${CMD}" /gatk/gatk.jar"
-		CMD=${CMD}" CollectHsMetrics"
-			CMD=${CMD}" --INPUT ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}_MT.bam"
-			CMD=${CMD}" --REFERENCE_SEQUENCE ${REF_GENOME}"
+		CMD=${CMD}" CollectVariantCallingMetrics"
+			CMD=${CMD}" --INPUT ${CORE_PATH}/${PROJECT}/${FAMILY}/EMEDGENE/${SM_TAG}.MUTECT2_MT_FILTERED_MASKED.vcf"
+			CMD=${CMD}" --DBSNP ${DBSNP}"
+			CMD=${CMD}" --SEQUENCE_DICTIONARY ${REF_DICT}"
 			CMD=${CMD}" --TARGET_INTERVALS ${MT_PICARD_INTERVAL_LIST}"
-			CMD=${CMD}" --BAIT_INTERVALS ${MT_PICARD_INTERVAL_LIST}"
-		CMD=${CMD}" --PER_BASE_COVERAGE ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/COLLECTHSMETRICS_MT/${SM_TAG}_per_base_cov.tsv"
-		CMD=${CMD}" --OUTPUT ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/COLLECTHSMETRICS_MT/${SM_TAG}.output.metrics"
+			CMD=${CMD}" --THREAD_COUNT ${THREADS}"
+		CMD=${CMD}" --OUTPUT ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/VCF_METRICS_MT/${SM_TAG}_MUTECT2_MT"
+		CMD=${CMD}" &&"
+		CMD=${CMD}" mv -v"
+			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/VCF_METRICS_MT/${SM_TAG}_MUTECT2_MT.variant_calling_detail_metrics"
+			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/VCF_METRICS_MT/${SM_TAG}_MUTECT2_MT.variant_calling_detail_metrics.txt"
+		CMD=${CMD}" &&"
+		CMD=${CMD}" mv -v"
+			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/VCF_METRICS_MT/${SM_TAG}_MUTECT2_MT.variant_calling_summary_metrics"
+			CMD=${CMD}" ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/VCF_METRICS_MT/${SM_TAG}_MUTECT2_MT.variant_calling_summary_metrics.txt"
 
 	# write command line to file and execute the command line
 
@@ -73,13 +82,13 @@ START_COLLECTHSMETRICS_MT=`date '+%s'` # capture time process starts for wall cl
 					exit ${SCRIPT_STATUS}
 			fi
 
-END_COLLECTHSMETRICS_MT=`date '+%s'` # capture time process starts for wall clock tracking purposes.
+END_VCF_METRICS_BAIT=`date '+%s'`
 
 # write out timing metrics to file
 
-	echo ${SM_TAG}_${PROJECT},F01,COLLECTHSMETRICS_MT,${HOSTNAME},${START_COLLECTHSMETRICS_MT},${END_COLLECTHSMETRICS_MT} \
+	echo ${SM_TAG}_${PROJECT},H01,VCF_METRICS_BAIT,${HOSTNAME},${START_VCF_METRICS_BAIT},${END_VCF_METRICS_BAIT} \
 	>> ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.WALL.CLOCK.TIMES.csv
 
-# exit with the signal from samtools bam to cram
+# exit with the signal from the program
 
 	exit ${SCRIPT_STATUS}
