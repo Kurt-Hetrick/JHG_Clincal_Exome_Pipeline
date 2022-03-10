@@ -691,8 +691,6 @@
 
 		LATEST_EKLIPSE_OUTPUT_DIR=$(ls -trd ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/EKLIPSE/* | tail -n 1)
 
-		echo ${LATEST_EKLIPSE_OUTPUT_DIR}/${SM_TAG}_deletions.tsv
-
 	if [[ ! -f ${LATEST_EKLIPSE_OUTPUT_DIR}/${SM_TAG}_deletions.tsv ]]
 		then
 			echo -e NaN \
