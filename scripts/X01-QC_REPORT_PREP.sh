@@ -614,8 +614,6 @@
 ##### "MT_MEAN_TARGET_CVG","MT_MAX_TARGET_CVG","MT_MIN_TARGET_CVG" #####################################
 ##### "MT_PCT_TARGET_BASES_10X","MT_PCT_TARGET_BASES_20X","MT_PCT_TARGET_BASES_30X" ####################
 ##### "MT_PCT_TARGET_BASES_40X","MT_PCT_TARGET_BASES_50X","MT_PCT_TARGET_BASES_100X" ###################
-##### "PCT_TARGET_BASES_250X","PCT_TARGET_BASES_500X","PCT_TARGET_BASES_1000X" #########################
-##### "PCT_TARGET_BASES_2500X","PCT_TARGET_BASES_5000X","PCT_TARGET_BASES_10000X" ######################
 ##### "MT_TOTAL_READS","MT_PF_UNIQUE_READS","MT_PCT_PF_UQ_READS","MT_PF_UQ_READS_ALIGNED" ##############
 ##### "MT_PCT_PF_UQ_READS_ALIGNED","MT_PF_BASES","MT_PF_BASES_ALIGNED","MT_PF_UQ_BASES_ALIGNED" ########
 ##### "MT_ON_TARGET_BASES","MT_PCT_USABLE_BASES_ON_TARGET" #############################################
@@ -639,10 +637,9 @@
 				NR==8 \
 				{print $34,$36,$37,\
 					$48*100,$49*100,$50*100,$51*100,$52*100,$53*100,\
-					$54*100,$55*100,$56*100,$57*100,$58*100,$59*100,\
 					$23,$26,$32*100,$27,$33*100,$25,$28,$29,$30,$12,\
 					$39*100,$40*100,$41*100,$42*100,$43*100,\
-					$10,$11*100,$63,$64}' \
+					$10,$11*100,$54,$55}' \
 			${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/MT_OUTPUT/COLLECTHSMETRICS_MT/${SM_TAG}.output.metrics \
 			| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 				transpose \

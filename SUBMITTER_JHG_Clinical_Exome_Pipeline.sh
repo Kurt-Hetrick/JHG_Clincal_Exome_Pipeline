@@ -193,7 +193,11 @@
 
 		MT_COVERAGE_R_SCRIPT="${SCRIPT_DIR}/mito_coverage_graph.r"
 
-		GATK_4_2_5_0_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/gatk-4.2.5.0.simg"
+		# gatk 4.2.5.0 (log4j fixed version) does not work on rhel6 host os b/c the kernel is too old.
+
+			# GATK_4_2_5_0_CONTAINER="/mnt/clinical/ddl/NGS/CIDRSeqSuite/containers/gatk-4.2.5.0.simg"
+
+		GATK_CONTAINER_4_2_2_0="/mnt/research/tools/LINUX/00_GIT_REPO_KURT/CIDR_EXOME_MITO/containers/gatk-4.2.2.0.simg"
 
 	#################################################
 	# CNV ANALYSIS CONTAINERS AND AUXILIARY SCRIPTS #
@@ -1568,7 +1572,7 @@
 					-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}-COLLECTHSMETRICS_MT.log \
 				-hold_jid E04-MAKE_BAM_MT_${SGE_SM_TAG}_${PROJECT} \
 				${SCRIPT_DIR}/E04-A02-COLLECTHSMETRICS_MT.sh \
-					${GATK_4_2_5_0_CONTAINER} \
+					${MITO_MUTECT2_CONTAINER} \
 					${CORE_PATH} \
 					${PROJECT} \
 					${FAMILY} \
