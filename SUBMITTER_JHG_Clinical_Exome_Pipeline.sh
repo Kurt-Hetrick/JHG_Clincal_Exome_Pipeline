@@ -384,6 +384,11 @@
 			>| ~/CGC_PIPELINE_TEMP/${MANIFEST_PREFIX}.${PED_PREFIX}.join.txt
 		}
 
+# run above functions to format sample sheet/manifest and then format ped file and merge with formatted sample sheet/manifest
+
+FORMAT_MANIFEST
+MERGE_PED_MANIFEST
+
 #############################################################################
 ### CREATE_SAMPLE_ARRAY #####################################################
 ### create an array from values of the merged sample sheet and ped file #####
@@ -544,8 +549,6 @@
 
 	SETUP_PROJECT ()
 	{
-		FORMAT_MANIFEST
-		MERGE_PED_MANIFEST
 		CREATE_SAMPLE_ARRAY
 		MAKE_PROJ_DIR_TREE
 		echo Project started at `date` >| ${CORE_PATH}/${PROJECT}/REPORTS/PROJECT_START_END_TIMESTAMP.txt
