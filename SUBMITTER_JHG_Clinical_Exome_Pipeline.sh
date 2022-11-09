@@ -302,7 +302,7 @@
 	# where the control data set resides.
 
 		CONTROL_REPO="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37"
-		CONTROL_PED_FILE="${CONTROL_REPO}/TWIST_CONTROL_SET1.200601.ped"
+		CONTROL_PED_FILE="${CONTROL_REPO}/CONTROL_SET.ped"
 
 	# CONTROL DATA SET GENOME VCF FILE TO MERGE WITH FAMILY/SAMPLE GVCF FILES FOR JOINT CALLING.
 
@@ -325,15 +325,15 @@
 
 			# read count from female reference panel, won't need to change unless changes in bed file or reference samples
 
-				REF_PANEL_FEMALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountFemaleUniqBed22.rda"
+				REF_PANEL_FEMALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountFemaleUniqBed.rda"
 
 			# read count from male reference panel, won't need to change unless changes in bed file or reference samples
 
-				REF_PANEL_MALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountMaleUniqBed26.rda"
+				REF_PANEL_MALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountMaleUniqBed.rda"
 
 			# if subject sex is not specified as 'm' or 'f', it will use count of all sample
 
-				REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountAllUniqBed48.rda"
+				REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountAllUniqBed.rda"
 
 ############################################################################
 ##### PIPELINE AND PROJECT SET-UP ##########################################
