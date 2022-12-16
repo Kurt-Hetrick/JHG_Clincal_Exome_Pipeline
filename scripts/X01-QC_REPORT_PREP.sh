@@ -34,14 +34,15 @@
 	MOTHER=$7
 	GENDER=$8
 	PHENOTYPE=$9
+	GIT_LFS_VERSION=${10}
 
-####################################################################################
-##### Grabbing the BAM header (for RG ID,PU,LB,etc) ################################
-####################################################################################
-##### THIS IS THE HEADER ###########################################################
-##### "PROJECT","SM_TAG","PLATFORM_UNIT","LIBRARY_NAME","PIPELINE_VERSION" #########
-##### "FAMILY","FATHER","MOTHER","EXPECTED_SEX","PHENOTYPE" ########################
-####################################################################################
+##########################################################################################
+##### Grabbing the BAM header (for RG ID,PU,LB,etc) ######################################
+##########################################################################################
+##### THIS IS THE HEADER #################################################################
+##### "PROJECT","SM_TAG","PLATFORM_UNIT","LIBRARY_NAME","PIPELINE_VERSION" ###############
+##### "PIPELINE_FILES_VERSION","FAMILY","FATHER","MOTHER","EXPECTED_SEX","PHENOTYPE" #####
+##########################################################################################
 
 	if [ -f ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/REPORTS/RG_HEADER/${SM_TAG}.RG_HEADER.txt ]
 		then
@@ -54,16 +55,16 @@
 					unique 5 \
 				| sed 's/,/;/g' \
 				| awk 'BEGIN {OFS="\t"} \
-					{print $0,"'${FAMILY}'","'${FATHER}'","'${MOTHER}'","'${GENDER}'","'${PHENOTYPE}'"}' \
+					{print $0 , "ddl-ngs-main-" "'${GIT_LFS_VERSION}'" , "'${FAMILY}'" , "'${FATHER}'" , "'${MOTHER}'" , "'${GENDER}'" , "'${PHENOTYPE}'"}' \
 				| awk 'BEGIN {OFS="\t"} \
-					$9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"MALE",$10} \
-					$9=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"FEMALE",$10} \
-					$9!="1"&&$9!="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"UNKNOWN",$10}' \
+					$10=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MALE",$11} \
+					$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"FEMALE",$11} \
+					$10!="1"&&$10!="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"UNKNOWN",$11}' \
 				| awk 'BEGIN {OFS="\t"} \
-					$10=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
-					$10=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
-					$10=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"UNAFFECTED"} \
-					$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"AFFECTED"}' \
+					$11=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,"MISSING"} \
+					$11=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,"MISSING"} \
+					$11=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,"UNAFFECTED"} \
+					$11=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,"AFFECTED"}' \
 				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					transpose \
 			>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
@@ -145,21 +146,21 @@
 						unique 5 \
 					| sed 's/,/;/g' \
 					| awk 'BEGIN {OFS="\t"} \
-						{print $0,"'${FAMILY}'","'${FATHER}'","'${MOTHER}'","'${GENDER}'","'${PHENOTYPE}'"}' \
+						{print $0 , "ddl-ngs-main-" "'${GIT_LFS_VERSION}'" , "'${FAMILY}'" , "'${FATHER}'" , "'${MOTHER}'" , "'${GENDER}'" , "'${PHENOTYPE}'"}' \
 					| awk 'BEGIN {OFS="\t"} \
-						$9=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,"MALE",$10} \
-						$9=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"FEMALE",$10} \
-						$9!="1"&&$9!="2" {print $1,$2,$3,$4,$5,$6,$7,$8,"UNKNOWN",$10}' \
+						$10=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MALE",$11} \
+						$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"FEMALE",$11} \
+						$10!="1"&&$10!="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"UNKNOWN",$11}' \
 					| awk 'BEGIN {OFS="\t"} \
-						$10=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
-						$10=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"MISSING"} \
-						$10=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"UNPHENOTYPE"} \
-						$10=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,"PHENOTYPE"}' \
+						$11=="-9" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,"MISSING"} \
+						$11=="0" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,"MISSING"} \
+						$11=="1" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,"UNPHENOTYPE"} \
+						$11=="2" {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,"PHENOTYPE"}' \
 					| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 						transpose \
 				>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
 		else
-			echo -e "${PROJECT}\t${SM_TAG}\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" \
+			echo -e "${PROJECT}\t${SM_TAG}\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" \
 				| singularity exec ${ALIGNMENT_CONTAINER} datamash \
 					transpose \
 			>| ${CORE_PATH}/${PROJECT}/TEMP/${SM_TAG}.QC_REPORT_TEMP.txt
