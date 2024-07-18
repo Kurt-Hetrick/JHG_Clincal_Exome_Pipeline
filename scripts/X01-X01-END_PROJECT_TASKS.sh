@@ -271,7 +271,7 @@
 		| uniq ; \
 	cat ${CORE_PATH}/${PROJECT}/*/*/REPORTS/VERIFYBAMID_AUTO/*.VERIFYBAMID.PER_AUTOSOME.txt \
 		| grep -v "^#" ) \
-		| sed 's/\t/,/g' \
+		| sed 's/\t/,/g; s/ /,/g' \
 	>| ${CORE_PATH}/${PROJECT}/REPORTS/${PROJECT}.PER_AUTOSOME_VERIFYBAMID.${TIMESTAMP}.csv
 
 ################################################################################################
