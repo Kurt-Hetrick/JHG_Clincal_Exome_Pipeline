@@ -120,9 +120,13 @@
 
 		CORE_PATH="/mnt/clinical/ddl/NGS/Exome_Data"
 
-	# Directory where NovaSeqa runs are located.
+	# Directory where NovaSeq runs are located.
 
 		NOVASEQ_REPO="/mnt/instrument_files/novaseq"
+
+	# Directory where NovaSeqx runs are located.
+
+		NOVASEQXPLUS_REPO="/mnt/instrument_files/novaseqx"
 
 	# grab the git short hash for the pipeline scripts
 	# to be used for tracking in the read group header of the cram file and written to the QC report
@@ -510,7 +514,7 @@
 	# BASE PIPELINE CONTAINERS #
 	############################
 
-		ALIGNMENT_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/ddl_ce_control_align-0.0.4.simg"
+		ALIGNMENT_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/ddl_ce_control_align-0.0.4.simg"
 		# contains the following software and is on Ubuntu 16.04.5 LTS
 			# gatk 4.0.11.0 (base image). also contains the following.
 				# Python 3.6.2 :: Continuum Analytics, Inc.
@@ -541,28 +545,31 @@
 				# tabix 1.10
 				# bcftools 1.10.2
 
-		GATK_3_7_0_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/gatk3-3.7-0.simg"
+		GATK_3_7_0_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/gatk3-3.7-0.simg"
 		# singularity pull docker://broadinstitute/gatk3:3.7-0
 		# used for generating the depth of coverage reports.
 			# comes with R 3.1.1 with appropriate packages needed to create gatk pdf output
 			# also comes with some version of java 1.8
 			# jar file is /usr/GenomeAnalysisTK.jar
 
+		ORAD_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/orad-2.7.0.simg"
+		# used to convert illumina's ora format into fastq (done on a i/o stream, not physically)
+
 	################################################################
 	# MITOCHONDRIA ANALYSIS CONTAINERS AND AUXILIARY SCRIPTS/FILES #
 	################################################################
 
-		MITO_MUTECT2_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/mito_mutect2-4.1.3.0.0.simg"
+		MITO_MUTECT2_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/mito_mutect2-4.1.3.0.0.simg"
 			# uses broadinstitute/gatk:4.1.3.0 as the base image (as /gatk/gatk.jar)
 				# added
 					# bcftools-1.10.2
 					# haplogrep-2.1.20.jar (as /jars/haplogrep-2.1.20.jar)
 					# annovar
 
-		MITO_EKLIPSE_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/mito_eklipse-master-c25931b.0.simg"
+		MITO_EKLIPSE_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/mito_eklipse-master-c25931b.0.simg"
 			# https://github.com/dooguypapua/eKLIPse AND all of its dependencies
 
-		MITO_MAGICK_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/mito_magick-6.8.9.9.0.simg"
+		MITO_MAGICK_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/mito_magick-6.8.9.9.0.simg"
 			# magick package for R. see dockerfile for details.
 
 		EKLIPSE_CIRCOS_LEGEND="${SCRIPT_DIR}/circos_legend.png"
@@ -573,7 +580,7 @@
 
 		# gatk 4.2.5.0 (log4j fixed version) does not work on rhel6 host os b/c the kernel is too old.
 
-			# GATK_4_2_5_0_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/gatk-4.2.5.0.simg"
+			# GATK_4_2_5_0_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/gatk-4.2.5.0.simg"
 
 		# GATK_CONTAINER_4_2_2_0="/mnt/research/tools/LINUX/00_GIT_REPO_KURT/CIDR_EXOME_MITO/containers/gatk-4.2.2.0.simg"
 
@@ -581,27 +588,27 @@
 	# CNV ANALYSIS CONTAINERS AND AUXILIARY SCRIPTS #
 	#################################################
 
-		CNV_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/cnv_exomedepth-dev.simg"
+		CNV_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/cnv_exomedepth-dev.simg"
 
 		EXOME_DEPTH_R_SCRIPT="${SCRIPT_DIR}/runExomeDepth.r"
 
 		# FORMAT_AND_ZOOM_ANNOTSV_R_SCRIPT="${SCRIPT_DIR}/FORMAT_AND_ZOOM_ANNOTSV.r"
 
-		EMEDGENE_CONVERSION_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/cnv2vcf-master-55ef4c8.0.simg"
+		EMEDGENE_CONVERSION_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/cnv2vcf-master-55ef4c8.0.simg"
 
 	#################################
 	# PCA AND RELATEDNESS CONTAINER #
 	#################################
 
-		PCA_RELATEDNESS_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/pca-relatedness-0.0.1.simg"
+		PCA_RELATEDNESS_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/pca-relatedness-0.0.1.simg"
 
 	#################################################
 	# WES ANNOVAR CONTAINERS, PARAMETERS AND INPUTS #
 	#################################################
 
-		# VT_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/vt-0.5772.ca352e2c.0.simg"
+		# VT_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/vt-0.5772.ca352e2c.0.simg"
 
-		# ANNOVAR_CONTAINER="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/containers/annovarwrangler-20210126.simg"
+		# ANNOVAR_CONTAINER="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/containers/annovarwrangler-20210126.simg"
 
 		# # ANNOVAR PARAMETERS AND INPUTS
 
@@ -657,29 +664,30 @@
 
 	# Core Pipeline
 
-		GENE_LIST="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/RefSeqGene.GRCh37.rCRS.MT.bed"
+		GENE_LIST="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/RefSeqGene.GRCh37.rCRS.MT.bed"
 			# md5 dec069c279625cfb110c2e4c5480e036
-		VERIFY_VCF="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/Omni25_genotypes_1525_samples_v2.b37.PASS.ALL.sites.vcf.gz"
-		CODING_BED="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/GRCh37_Mane-RefSeqSelect_OMIM_CDS_exon_primary_assembly_HGNC_annotated.bed"
-		CYTOBAND_BED="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/GRCh37.Cytobands.bed"
-		HAPMAP="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/hapmap_3.3.b37.vcf.gz"
-		OMNI_1KG="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/1000G_omni2.5.b37.vcf.gz"
-		HI_CONF_1KG_PHASE1_SNP="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/1000G_phase1.snps.high_confidence.b37.vcf.gz"
-		MILLS_1KG_GOLD_INDEL="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/Mills_and_1000G_gold_standard.indels.b37.vcf.gz"
-		PHASE3_1KG_AUTOSOMES="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/ALL.autosomes.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz"
-		DBSNP_129="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/dbsnp_138.b37.excluding_sites_after_129.vcf.gz"
-		UCSC_REPEATMASK="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/ucsc_grch37_repeatmasker.sorted_no_alt_MT.bed"
+		VERIFY_VCF="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/Omni25_genotypes_1525_samples_v2.b37.PASS.ALL.sites.vcf.gz"
+		CODING_BED="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/GRCh37_Mane-RefSeqSelect_OMIM_CDS_exon_primary_assembly_HGNC_annotated.bed"
+		CYTOBAND_BED="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/GRCh37.Cytobands.bed"
+		HAPMAP="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/hapmap_3.3.b37.vcf.gz"
+		OMNI_1KG="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/1000G_omni2.5.b37.vcf.gz"
+		HI_CONF_1KG_PHASE1_SNP="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/1000G_phase1.snps.high_confidence.b37.vcf.gz"
+		MILLS_1KG_GOLD_INDEL="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/Mills_and_1000G_gold_standard.indels.b37.vcf.gz"
+		PHASE3_1KG_AUTOSOMES="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/ALL.autosomes.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz"
+		DBSNP_129="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/dbsnp_138.b37.excluding_sites_after_129.vcf.gz"
+		UCSC_REPEATMASK="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/ucsc_grch37_repeatmasker.sorted_no_alt_MT.bed"
 			# sortBed -i ucsc_grch37_repeatmasker.bed \
 			# | awk '$1!~"_"&&$1!~"chrM"' \
 			# | sed 's/^chr//g' \
 			# > ucsc_grch37_repeatmasker.sorted_no_alt_MT.bed
-		MDUST_REPEATMASK="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/LCR-hs37d5.bed"
+		MDUST_REPEATMASK="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/bed_files/LCR-hs37d5.bed"
 			# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4271055/
 			# https://github.com/lh3/varcmp/tree/master/scripts
+		ORADATA="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/oradata"
 
 	# where the control data set resides.
 
-		CONTROL_REPO="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37"
+		CONTROL_REPO="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37"
 		CONTROL_PED_FILE="${CONTROL_REPO}/CONTROL_SET.ped"
 
 	# CONTROL DATA SET GENOME VCF FILE TO MERGE WITH FAMILY/SAMPLE GVCF FILES FOR JOINT CALLING.
@@ -688,12 +696,12 @@
 
 	# Mitochondrial Pipline
 
-		MT_PICARD_INTERVAL_LIST="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/mito/MT.interval_list"
-		MT_MASK="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/mito/hg37_MT_blacklist_sites.hg37.MT.bed"
-		# GNOMAD_MT="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/mito/GRCh37_MT_gnomAD.vcf.gz"
-		# ANNOVAR_MT_DB_DIR="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/mito/annovar_db/"
-		# ANNOVAR_MT_DB_DIR="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/mito/annovar_db/2021_02_02/annovar/humandb"
-		MT_GENBANK="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/mito/NC_012920.1.gb"
+		MT_PICARD_INTERVAL_LIST="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/mito/MT.interval_list"
+		MT_MASK="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/mito/hg37_MT_blacklist_sites.hg37.MT.bed"
+		# GNOMAD_MT="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/mito/GRCh37_MT_gnomAD.vcf.gz"
+		# ANNOVAR_MT_DB_DIR="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/mito/annovar_db/"
+		# ANNOVAR_MT_DB_DIR="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/mito/annovar_db/2021_02_02/annovar/humandb"
+		MT_GENBANK="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/mito/NC_012920.1.gb"
 
 	# CNV calling workflow
 
@@ -703,15 +711,15 @@
 
 			# read count from female reference panel, won't need to change unless changes in bed file or reference samples
 
-				REF_PANEL_FEMALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountFemaleUniqBed.rda"
+				REF_PANEL_FEMALE_READ_COUNT_RDA="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountFemaleUniqBed.rda"
 
 			# read count from male reference panel, won't need to change unless changes in bed file or reference samples
 
-				REF_PANEL_MALE_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountMaleUniqBed.rda"
+				REF_PANEL_MALE_READ_COUNT_RDA="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountMaleUniqBed.rda"
 
 			# if subject sex is not specified as 'm' or 'f', it will use count of all sample
 
-				REF_PANEL_ALL_READ_COUNT_RDA="/mnt/clinical/ddl/NGS/NGS_PIPELINE_RESOURCES/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountAllUniqBed.rda"
+				REF_PANEL_ALL_READ_COUNT_RDA="${GIT_LFS_DIR}/JHG_Clinical_Exome_Pipeline/GRCh37/cnv/refCountAllUniqBed.rda"
 
 ############################################################################
 ##### PIPELINE AND PROJECT SET-UP ##########################################
@@ -1319,6 +1327,8 @@ MERGE_PED_MANIFEST
 			-o ${CORE_PATH}/${PROJECT}/${FAMILY}/${SM_TAG}/LOGS/${SM_TAG}_${FCID}_${LANE}_${INDEX}-BWA.log \
 		${SCRIPT_DIR}/A01-BWA.sh \
 			${ALIGNMENT_CONTAINER} \
+			${ORAD_CONTAINER} \
+			${ORADATA} \
 			${CORE_PATH} \
 			${PROJECT} \
 			${FCID} \
@@ -1336,6 +1346,7 @@ MERGE_PED_MANIFEST
 			${TARGET_BED} \
 			${TITV_BED} \
 			${NOVASEQ_REPO} \
+			${NOVASEQXPLUS_REPO} \
 			${THREADS} \
 			${SAMPLE_SHEET} \
 			${SUBMIT_STAMP}
